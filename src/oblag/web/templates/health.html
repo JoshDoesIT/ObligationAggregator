@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Adapter health — ObligationAggregator{% endblock %}
+{% block content %}
+<h2>Adapter health</h2>
+<table>
+  <tr><th>Adapter</th><th>Last run</th><th>Last success</th><th>Failures</th><th>Items</th><th>Error</th></tr>
+  {% for a in adapters %}
+  <tr>
+    <td>{{ a.adapter }}</td>
+    <td class="muted">{{ a.last_run_at or '—' }}</td>
+    <td class="muted">{{ a.last_success_at or '—' }}</td>
+    <td>{{ a.consecutive_failures }}</td>
+    <td>{{ a.items_seen_last_run }}</td>
+    <td><code style="white-space:pre-wrap">{{ a.last_error or '' }}</code></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

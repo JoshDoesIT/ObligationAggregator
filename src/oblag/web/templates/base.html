@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ObligationAggregator{% endblock %}</title>
+  <style>
+    :root { --fg:#1a1d21; --muted:#6b7280; --bg:#fff; --card:#f6f7f9; --accent:#2456d6;
+            --hard:#166534; --firm:#1e40af; --est:#b45309; --derived:#6b7280; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fg:#e5e7eb; --muted:#9ca3af; --bg:#111418; --card:#1b1f26; --accent:#7ea2ff;
+              --hard:#4ade80; --firm:#93c5fd; --est:#fbbf24; --derived:#9ca3af; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font:15px/1.5 system-ui, sans-serif; color:var(--fg); background:var(--bg); }
+    header { padding:.7rem 1.2rem; border-bottom:1px solid var(--card); display:flex; gap:1.2rem;
+             align-items:baseline; flex-wrap:wrap; }
+    header h1 { font-size:1.05rem; margin:0; }
+    header a { color:var(--accent); text-decoration:none; }
+    main { padding:1rem 1.2rem; max-width:1100px; margin:0 auto; }
+    table { border-collapse:collapse; width:100%; }
+    th, td { text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--card);
+             vertical-align:top; }
+    th { color:var(--muted); font-weight:600; font-size:.8rem; text-transform:uppercase; }
+    .pill { display:inline-block; padding:.05rem .55rem; border-radius:999px; font-size:.78rem;
+            background:var(--card); white-space:nowrap; }
+    .state-comment_open { color:var(--hard); }
+    .state-final_pending_effective { color:var(--est); }
+    .state-withdrawn, .state-superseded { color:var(--muted); }
+    .conf-statutory_hard { color:var(--hard); }
+    .conf-published_firm { color:var(--firm); }
+    .conf-agency_estimate { color:var(--est); font-style:italic; }
+    .conf-derived { color:var(--derived); font-style:italic; }
+    .muted { color:var(--muted); }
+    .card { background:var(--card); border-radius:8px; padding:.8rem 1rem; margin:.7rem 0; }
+    form.filters { display:flex; gap:.5rem; flex-wrap:wrap; margin:.6rem 0 1rem; }
+    input, select { padding:.35rem .5rem; border:1px solid var(--muted); border-radius:6px;
+                    background:var(--bg); color:var(--fg); }
+    button { padding:.35rem .8rem; border:0; border-radius:6px; background:var(--accent);
+             color:#fff; cursor:pointer; }
+    code { background:var(--card); padding:.05rem .3rem; border-radius:4px; font-size:.85em; }
+    .ghost { text-decoration: line-through; opacity:.55; }
+    details summary { cursor:pointer; color:var(--accent); }
+  </style>
+</head>
+<body>
+<header>
+  <h1><a href="/">ObligationAggregator</a></h1>
+  <nav style="display:flex; gap:1rem;">
+    <a href="/?state=comment_open">Comment windows open</a>
+    <a href="/deadlines">Upcoming deadlines</a>
+    <a href="/events">Events</a>
+    <a href="/watchlists">Watchlists</a>
+    <a href="/health">Health</a>
+    <a href="/docs" title="OpenAPI">API</a>
+  </nav>
+</header>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

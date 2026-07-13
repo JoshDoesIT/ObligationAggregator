@@ -25,13 +25,18 @@ display_policy, created_at.
 ### pipeline_item
 One tracked lifecycle item (an NPRM, a draft SP, a procedure file, a version release).
 Fields: id, source_system, jurisdiction, title, abstract, url, state (ItemState),
-native_status (source-native string), content_fingerprint, obligation_id (nullable FK),
+native_status (source-native string), track (`proposed | final | default` — lifecycle track,
+so an NPRM and its final rule stay distinct items), content_fingerprint,
+obligation_id (nullable FK),
 resolved_change_id (nullable — set when a proposed item resolves to a final one),
 first_seen_at, last_seen_at.
 
 ### join_key
-(pipeline_item_id, type, value); UNIQUE(type, value). Types: `rin, docket_id, fr_doc_number,
-nist_pub_url, celex, oeil_procedure, bill_id, iso_project, pci_doc, legiscan_bill`.
+(pipeline_item_id, type, value); UNIQUE(pipeline_item_id, type, value). NOT globally unique:
+the same `rin` legitimately appears on both the proposed-track and final-track item — the
+linker uses that shared key to resolve proposed→final. Identity resolution disambiguates by
+`pipeline_item.track`. Types: `rin, docket_id, fr_doc_number, nist_pub_url, celex,
+oeil_procedure, bill_id, iso_project, pci_doc, legiscan_bill`.
 
 ### key_date  (append-only)
 pipeline_item_id, date_type, value (date), confidence, source_snapshot_id (nullable FK),

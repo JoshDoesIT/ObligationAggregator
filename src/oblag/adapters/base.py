@@ -48,6 +48,8 @@ class NormalizedItem:
     join_keys: list[tuple[str, str]] = field(default_factory=list)
     dates: list[NormalizedDate] = field(default_factory=list)
     obligation_slug: str | None = None
+    track: str = "default"  # lifecycle track: "proposed" | "final" | "default" (spec 01)
+    native_meta: dict[str, str] = field(default_factory=dict)  # extra statemap inputs
     anomalies: list[str] = field(default_factory=list)  # defensive-parse notes → anomaly events
 
     @property
@@ -63,6 +65,7 @@ class NormalizedItem:
             "title": self.title,
             "abstract": self.abstract,
             "native_status": self.native_status,
+            "native_meta": sorted(self.native_meta.items()),
             "dates": sorted(
                 (d.date_type.value, d.label or "", d.value.isoformat(), d.confidence.value)
                 for d in self.dates

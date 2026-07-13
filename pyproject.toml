@@ -59,6 +59,10 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["SIM108"]
 
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI/Typer dependency-injection idioms are call-in-default by design
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "typer.Option", "typer.Argument"]
+
 [tool.mypy]
 python_version = "3.11"
 packages = ["oblag"]

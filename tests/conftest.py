@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from oblag.db.models import Base
 
@@ -15,7 +16,11 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 @pytest.fixture()
 def engine():
-    eng = create_engine("sqlite://")  # in-memory
+    # StaticPool: one shared connection so the TestClient's worker threads see the same
+    # in-memory database as the test's own session.
+    eng = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(eng)
     yield eng
     eng.dispose()

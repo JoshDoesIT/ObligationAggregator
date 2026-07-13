@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Deadlines — ObligationAggregator{% endblock %}
+{% block content %}
+<h2>Upcoming deadlines</h2>
+<p class="muted">Current (non-superseded) future dates on active items. Confidence is explicit:
+an <span class="conf-agency_estimate">agency estimate</span> is never a
+<span class="conf-statutory_hard">statutory deadline</span>.</p>
+<table>
+  <tr><th>In</th><th>Date</th><th>Type</th><th>Item</th><th>Confidence</th></tr>
+  {% for d in deadlines %}
+  <tr>
+    <td><strong>{{ d.days_until }}d</strong></td>
+    <td>{{ d.value }}</td>
+    <td>{{ d.date_type }}{% if d.label %} <span class="muted">({{ d.label }})</span>{% endif %}</td>
+    <td><a href="/items/{{ d.item_id }}">{{ d.title }}</a>
+        <span class="pill state-{{ d.state }}">{{ d.state }}</span></td>
+    <td><span class="conf-{{ d.confidence }}">{{ d.confidence }}</span></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -28,13 +28,16 @@ def make_item(**kw) -> PipelineItem:
     return PipelineItem(**defaults)
 
 
-def test_join_key_unique_across_items(db):
-    a, b = make_item(), make_item(title="other")
+def test_join_key_shared_across_tracks_but_unique_per_item(db):
+    # the same RIN on two items (proposed + final track) is legal — the linker relies on it
+    a, b = make_item(track="proposed"), make_item(title="final rule", track="final")
     db.add_all([a, b])
     db.flush()
     db.add(JoinKey(pipeline_item_id=a.id, type="rin", value="1670-AA04"))
-    db.flush()
     db.add(JoinKey(pipeline_item_id=b.id, type="rin", value="1670-AA04"))
+    db.flush()
+    # but duplicated on the same item is not
+    db.add(JoinKey(pipeline_item_id=a.id, type="rin", value="1670-AA04"))
     with pytest.raises(IntegrityError):
         db.flush()
 

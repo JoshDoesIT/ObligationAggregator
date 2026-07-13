@@ -112,6 +112,8 @@ class PipelineItem(Base):
     url: Mapped[str | None] = mapped_column(String(1024))
     state: Mapped[ItemState] = mapped_column(Enum(ItemState), index=True)
     native_status: Mapped[str | None] = mapped_column(String(255))
+    track: Mapped[str] = mapped_column(String(16), default="default")
+    native_meta: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     content_fingerprint: Mapped[str | None] = mapped_column(String(64))
     obligation_id: Mapped[int | None] = mapped_column(ForeignKey("obligation.id"))
     resolved_change_id: Mapped[int | None] = mapped_column(ForeignKey("pipeline_item.id"))
@@ -130,7 +132,9 @@ class PipelineItem(Base):
 
 class JoinKey(Base):
     __tablename__ = "join_key"
-    __table_args__ = (UniqueConstraint("type", "value", name="uq_join_key_type_value"),)
+    __table_args__ = (
+        UniqueConstraint("pipeline_item_id", "type", "value", name="uq_join_key_item_type_value"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     pipeline_item_id: Mapped[int] = mapped_column(ForeignKey("pipeline_item.id"), index=True)

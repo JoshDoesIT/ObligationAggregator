@@ -1,8 +1,8 @@
 """baseline schema
 
-Revision ID: 6434687cab5b
+Revision ID: 0afe12c4e89c
 Revises:
-Create Date: 2026-07-13 23:40:45.374170
+Create Date: 2026-07-13 23:43:39.237453
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 from alembic import op
 
-revision = "6434687cab5b"
+revision = "0afe12c4e89c"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -101,6 +101,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("native_status", sa.String(length=255), nullable=True),
+        sa.Column("track", sa.String(length=16), nullable=False),
         sa.Column("content_fingerprint", sa.String(length=64), nullable=True),
         sa.Column("obligation_id", sa.Integer(), nullable=True),
         sa.Column("resolved_change_id", sa.Integer(), nullable=True),
@@ -189,7 +190,9 @@ def upgrade() -> None:
             ["pipeline_item.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("type", "value", name="uq_join_key_type_value"),
+        sa.UniqueConstraint(
+            "pipeline_item_id", "type", "value", name="uq_join_key_item_type_value"
+        ),
     )
     op.create_index(
         op.f("ix_join_key_pipeline_item_id"), "join_key", ["pipeline_item_id"], unique=False
