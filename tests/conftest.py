@@ -54,3 +54,48 @@ def _isolate_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 def load_fixture(*parts: str) -> bytes:
     return (FIXTURES.joinpath(*parts)).read_bytes()
+
+
+@pytest.fixture()
+def client(engine, db, monkeypatch):
+    """TestClient wired to the test engine."""
+    import oblag.db.session as dbsession
+
+    monkeypatch.setattr(dbsession, "_engine", engine)
+    monkeypatch.setattr(
+        dbsession, "_session_factory", sessionmaker(bind=engine, expire_on_commit=False)
+    )
+    from fastapi.testclient import TestClient
+
+    from oblag.web.app import create_app
+
+    return TestClient(create_app())
+
+
+@pytest.fixture()
+def seeded(db):
+    """Catalog + one CIRCIA-like item with a future comment_close."""
+    from datetime import date, timedelta
+
+    from oblag.adapters.base import NormalizedDate, NormalizedItem
+    from oblag.catalog import seed_obligations
+    from oblag.core.reducer import reduce_item
+    from oblag.db.models import Confidence, DateType
+
+    seed_obligations(db)
+    future = date.today() + timedelta(days=30)
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="federal_register",
+            external_key=("fr_doc_number", "2024-06526"),
+            jurisdiction="US-Federal",
+            title="CIRCIA Reporting Requirements",
+            native_status="PRORULE",
+            track="proposed",
+            join_keys=[("rin", "1670-AA04")],
+            dates=[NormalizedDate(DateType.comment_close, future, Confidence.published_firm)],
+        ),
+    )
+    db.commit()
+    return future

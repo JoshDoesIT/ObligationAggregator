@@ -84,6 +84,46 @@ def deadlines_page(request: Request, db: Session = Depends(get_db), within_days:
     return templates.TemplateResponse(request, "deadlines.html", data)
 
 
+@router.get("/watchlists", response_class=HTMLResponse)
+def watchlists_page(request: Request, db: Session = Depends(get_db)):
+    from oblag.web import watchlists as wl_api
+
+    data = wl_api.list_watchlists(db=db)
+    return templates.TemplateResponse(request, "watchlists.html", data)
+
+
+@router.post("/watchlists", response_class=HTMLResponse)
+async def watchlists_create(request: Request, db: Session = Depends(get_db)):
+    from fastapi.responses import RedirectResponse
+
+    from oblag.web import watchlists as wl_api
+
+    form = await request.form()
+    csv = lambda key: [s.strip() for s in str(form.get(key, "")).split(",") if s.strip()]  # noqa: E731
+    body = wl_api.WatchlistIn(
+        name=str(form.get("name", "unnamed")),
+        channel=str(form.get("channel", "rss")),
+        target=str(form.get("target") or "") or None,
+        filters=wl_api.WatchlistFilters(
+            source_systems=csv("source_systems"),
+            states=csv("states"),
+            event_types=csv("event_types"),
+        ),
+    )
+    wl_api.create_watchlist(body, db=db)
+    return RedirectResponse("/watchlists", status_code=303)
+
+
+@router.post("/watchlists/{watchlist_id}/delete", response_class=HTMLResponse)
+def watchlists_delete(watchlist_id: int, db: Session = Depends(get_db)):
+    from fastapi.responses import RedirectResponse
+
+    from oblag.web import watchlists as wl_api
+
+    wl_api.delete_watchlist(watchlist_id, db=db)
+    return RedirectResponse("/watchlists", status_code=303)
+
+
 @router.get("/health", response_class=HTMLResponse)
 def health_page(request: Request, db: Session = Depends(get_db)):
     data = api.adapter_health(db=db)

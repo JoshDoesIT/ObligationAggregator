@@ -14,8 +14,10 @@ def create_app() -> FastAPI:
     )
     init_db()
 
-    from oblag.web import api, html
+    from oblag.web import api, html, watchlists
 
     app.include_router(api.router)
+    app.include_router(watchlists.router)
+    app.include_router(watchlists.rss_router)
     app.include_router(html.router)
     return app

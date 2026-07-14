@@ -7,7 +7,7 @@ from oblag.adapters.base import SourceAdapter
 _REGISTRY: dict[str, type[SourceAdapter]] = {}
 
 # Adapter modules ship incrementally; each module calls register() at import time.
-_BUILTIN_MODULES: list[str] = ["federal_register"]
+_BUILTIN_MODULES: list[str] = ["federal_register", "nist_csrc"]
 
 
 def register(cls: type[SourceAdapter]) -> type[SourceAdapter]:

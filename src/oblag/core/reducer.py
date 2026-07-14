@@ -15,8 +15,16 @@ from oblag.db.models import (
     ItemState,
     JoinKey,
     KeyDate,
+    Obligation,
     PipelineItem,
 )
+
+
+def _resolve_obligation(session: Session, slug: str | None) -> int | None:
+    if not slug:
+        return None
+    row = session.query(Obligation.id).filter_by(slug=slug).one_or_none()
+    return row[0] if row else None
 
 
 @dataclass
@@ -167,6 +175,7 @@ def reduce_item(
             native_meta=dict(ni.native_meta),
             track=ni.track,
             content_fingerprint=ni.content_fingerprint,
+            obligation_id=_resolve_obligation(session, ni.obligation_slug),
         )
         session.add(item)
         session.flush()
@@ -318,6 +327,8 @@ def reduce_item(
         item.abstract = ni.abstract
         item.url = ni.url or item.url
 
+    if item.obligation_id is None and ni.obligation_slug:
+        item.obligation_id = _resolve_obligation(session, ni.obligation_slug)
     item.last_seen_at = datetime.now(UTC)
     _note_item_anomalies(session, item, ni, snapshot_id, events)
     session.flush()

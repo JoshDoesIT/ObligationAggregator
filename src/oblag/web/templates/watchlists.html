@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Watchlists — ObligationAggregator{% endblock %}
+{% block content %}
+<h2>Watchlists</h2>
+<p class="muted">Alerts on transitions: comment windows, final rules, effective-date countdowns,
+projected-date slips. Filters are ANDed; empty filter = match all.</p>
+
+<div class="card">
+  <form method="post" action="/watchlists" class="filters" style="align-items:center">
+    <input name="name" placeholder="name" required>
+    <select name="channel">
+      <option value="rss">rss</option>
+      <option value="email">email</option>
+      <option value="webhook">webhook</option>
+    </select>
+    <input name="target" placeholder="email addr / webhook URL (rss: blank)">
+    <input name="source_systems" placeholder="sources (csv)">
+    <input name="states" placeholder="states (csv)">
+    <input name="event_types" placeholder="event types (csv)">
+    <button>Create</button>
+  </form>
+</div>
+
+<table>
+  <tr><th>Name</th><th>Channel</th><th>Target / feed</th><th>Filters</th><th>Active</th><th></th></tr>
+  {% for w in watchlists %}
+  <tr>
+    <td>{{ w.name }}</td>
+    <td><span class="pill">{{ w.channel }}</span></td>
+    <td>{% if w.feed_url %}<a href="{{ w.feed_url }}">{{ w.feed_url }}</a>{% else %}{{ w.target or '—' }}{% endif %}</td>
+    <td><code style="white-space:pre-wrap">{{ w.filters | tojson }}</code></td>
+    <td>{{ 'yes' if w.active else 'no' }}</td>
+    <td>{% if w.active %}
+      <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline">
+        <button>disable</button>
+      </form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

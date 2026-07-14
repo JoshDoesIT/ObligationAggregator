@@ -44,6 +44,19 @@ def _get(dates: CurrentDateMap, dt: DateType) -> date | None:
     return dates.get((dt, None))
 
 
+@register_statemap("nist_csrc")
+def nist_csrc_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status == "final":
+        return ItemState.effective
+    cc = _get(dates, DateType.comment_close)
+    if cc is None:
+        # the feed lists only drafts open for comment; "No Due Date" means open-ended
+        return ItemState.comment_open
+    return ItemState.comment_open if cc >= today else ItemState.comment_closed
+
+
 @register_statemap("federal_register")
 def federal_register_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
