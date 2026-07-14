@@ -10,8 +10,10 @@ _REGISTRY: dict[str, type[SourceAdapter]] = {}
 _BUILTIN_MODULES: list[str] = [
     "cellar",
     "federal_register",
+    "iso_catalog",
     "nist_csrc",
     "oeil",
+    "pci_ssc",
     "regulations_gov",
 ]
 

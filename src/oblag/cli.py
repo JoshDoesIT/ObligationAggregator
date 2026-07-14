@@ -130,6 +130,61 @@ def seed() -> None:
     typer.echo(f"{n} obligations upserted")
 
 
+byol_app = typer.Typer(help="BYOL: local analysis of licensed standards you own.")
+app.add_typer(byol_app, name="byol")
+
+
+@byol_app.command("add")
+def byol_add(
+    obligation: str,
+    version: str,
+    file: str,
+    attest_license: bool = typer.Option(
+        False,
+        "--attest-license",
+        help="attest that you hold a license for this document",
+    ),
+) -> None:
+    """Add a licensed document to the private store (never shared, never attested)."""
+    from pathlib import Path
+
+    from oblag.byol import ByolError, add_document
+
+    init_db()
+    try:
+        with session_scope() as session:
+            doc = add_document(
+                session, obligation, version, Path(file), license_attested=attest_license
+            )
+            typer.echo(f"stored {obligation} {version} sha256={doc.sha256[:16]}… (private)")
+    except ByolError as exc:
+        typer.secho(str(exc), fg="red")
+        raise typer.Exit(1) from None
+
+
+@byol_app.command("diff")
+def byol_diff(obligation: str, from_version: str, to_version: str) -> None:
+    """Identifier-level diff between two BYOL versions, gated by display_policy."""
+    import json
+
+    from oblag.byol import ByolError, diff_versions
+
+    init_db()
+    try:
+        with session_scope() as session:
+            diff = diff_versions(session, obligation, from_version, to_version)
+    except ByolError as exc:
+        typer.secho(str(exc), fg="red")
+        raise typer.Exit(1) from None
+    typer.echo(f"display_policy: {diff.policy.value}")
+    typer.echo(f"counts: {diff.counts}")
+    if diff.added is not None:
+        typer.echo("added:   " + json.dumps(diff.added))
+        typer.echo("removed: " + json.dumps(diff.removed))
+    else:
+        typer.echo("(identifier lists withheld by display_policy=events_only)")
+
+
 @app.command()
 def keygen() -> None:
     """Generate the instance Ed25519 signing key (enables snapshot attestations)."""

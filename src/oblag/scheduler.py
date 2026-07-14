@@ -26,7 +26,8 @@ DAILY_ADAPTERS = {
 WEEKLY_ADAPTERS = {
     "pci_ssc": "08:10",
     "iso_catalog": "08:30",
-    "aicpa": "08:50",
+    # aicpa: intentionally absent — exposure-drafts page is client-side rendered with
+    # no static payload (spec 06); track SOC 2 TSC via curated assertions instead.
 }
 
 

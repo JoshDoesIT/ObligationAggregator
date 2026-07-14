@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from datetime import date
 
@@ -84,6 +85,40 @@ def oeil_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
 ) -> ItemState | None:
     return OEIL_STAGE_MAP.get(native_status.strip().lower())
+
+
+@register_statemap("pci_ssc")
+def pci_ssc_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status != "rfc":
+        return None
+    cc = _get(dates, DateType.comment_close)
+    if cc is None:
+        return ItemState.comment_open
+    return ItemState.comment_open if cc >= today else ItemState.comment_closed
+
+
+@register_statemap("iso_catalog")
+def iso_catalog_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """ISO harmonized stage codes (ISO Guide 69). Open map: unknown → anomaly."""
+    if not re.fullmatch(r"\d{2}\.\d{2}", native_status):
+        return None
+    stage, sub = native_status.split(".")
+    major = int(stage)
+    if major < 40:
+        return ItemState.proposed
+    if major == 40:
+        return ItemState.comment_open if sub == "20" else ItemState.comment_closed
+    if major == 50:
+        return ItemState.final_pending_effective
+    if major in (60, 90):
+        return ItemState.effective
+    if major == 95:
+        return ItemState.withdrawn
+    return None
 
 
 @register_statemap("regulations_gov")
