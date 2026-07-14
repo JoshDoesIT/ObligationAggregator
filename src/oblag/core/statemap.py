@@ -44,6 +44,26 @@ def _get(dates: CurrentDateMap, dt: DateType) -> date | None:
     return dates.get((dt, None))
 
 
+@register_statemap("regulations_gov")
+def regulations_gov_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    # Same date semantics as Federal Register, evaluated over MERGED current dates, so
+    # enrichment records lacking dates never regress an item's state. No withdrawal
+    # mapping: regs.gov `withdrawn` flags a removed *document*, not the rulemaking.
+    if native_status == "PRORULE":
+        cc = _get(dates, DateType.comment_close)
+        if cc is None:
+            return ItemState.proposed
+        return ItemState.comment_open if cc >= today else ItemState.comment_closed
+    if native_status == "RULE":
+        eff = _get(dates, DateType.effective)
+        if eff is not None and eff > today:
+            return ItemState.final_pending_effective
+        return ItemState.effective
+    return None
+
+
 @register_statemap("nist_csrc")
 def nist_csrc_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

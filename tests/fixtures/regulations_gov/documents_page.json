@@ -1,0 +1,156 @@
+{
+  "data" : [ {
+    "type" : "documents",
+    "id" : "CISA-2022-0010-0220",
+    "attributes" : {
+      "agencyId" : "CISA",
+      "objectId" : "0900006486592656",
+      "frDocNum" : "2024-12084",
+      "documentType" : "Proposed Rule",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-06-03T14:21:54Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-06-03T04:00:00Z",
+      "title" : "Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Reporting Requirements; Correction",
+      "docketId" : "CISA-2022-0010",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "CISA-2022-0010-0480",
+    "attributes" : {
+      "agencyId" : "CISA",
+      "objectId" : "09000064b92ecdc5",
+      "frDocNum" : "2026-10417",
+      "documentType" : "Proposed Rule",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2026-05-27T20:26:06Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2026-05-26T04:00:00Z",
+      "title" : "Town Hall Meetings To Provide Input on Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Rulemaking",
+      "docketId" : "CISA-2022-0010",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "CISA-2022-0010-0469",
+    "attributes" : {
+      "agencyId" : "CISA",
+      "objectId" : "09000064b91aa854",
+      "frDocNum" : "2026-02948",
+      "documentType" : "Proposed Rule",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2026-02-24T01:03:41Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2026-02-13T05:00:00Z",
+      "title" : "Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Rulemaking; Town Hall Meetings",
+      "docketId" : "CISA-2022-0010",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "CISA-2022-0010-0163",
+    "attributes" : {
+      "agencyId" : "CISA",
+      "objectId" : "09000064864b97e9",
+      "frDocNum" : "2024-06526",
+      "documentType" : "Proposed Rule",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : "2024-07-04T03:59:59Z",
+      "commentStartDate" : "2024-04-04T04:00:00Z",
+      "lastModifiedDate" : "2024-07-12T01:00:56Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-04-04T04:00:00Z",
+      "title" : "Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Reporting Requirements",
+      "docketId" : "CISA-2022-0010",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "CISA-2022-0010-0198",
+    "attributes" : {
+      "agencyId" : "CISA",
+      "objectId" : "09000064865425b5",
+      "frDocNum" : "2024-09505",
+      "documentType" : "Proposed Rule",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-05-06T14:33:29Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-05-06T04:00:00Z",
+      "title" : "Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Reporting Requirements; Extension of Comment Period",
+      "docketId" : "CISA-2022-0010",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  } ],
+  "meta" : {
+    "aggregations" : {
+      "documentType" : [ {
+        "docCount" : 40,
+        "label" : "Supporting & Related Material"
+      }, {
+        "docCount" : 5,
+        "label" : "Proposed Rule"
+      }, {
+        "docCount" : 4,
+        "label" : "Notice"
+      } ],
+      "subtype" : [ ],
+      "withinCommentPeriod" : [ {
+        "docCount" : 0,
+        "label" : "true"
+      }, {
+        "docCount" : 5,
+        "label" : "false"
+      } ],
+      "agencyId" : [ {
+        "docCount" : 5,
+        "value" : "CISA"
+      } ],
+      "commentEndDate" : [ ],
+      "postedDate" : [ {
+        "label" : "Last 90 Days",
+        "fromDate" : "2026-04-15 00:00:00",
+        "toDate" : "2026-07-13 23:59:59",
+        "docCount" : 1
+      } ]
+    },
+    "filters" : {
+      "documentType" : [ {
+        "label" : "Proposed Rule",
+        "value" : "Proposed Rule"
+      } ]
+    },
+    "hasNextPage" : false,
+    "hasPreviousPage" : false,
+    "numberOfElements" : 5,
+    "pageNumber" : 1,
+    "pageSize" : 25,
+    "totalElements" : 5,
+    "totalPages" : 1,
+    "lastPage" : true,
+    "firstPage" : true
+  }
+}

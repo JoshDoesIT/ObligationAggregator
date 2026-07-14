@@ -131,6 +131,60 @@ def seed() -> None:
 
 
 @app.command()
+def keygen() -> None:
+    """Generate the instance Ed25519 signing key (enables snapshot attestations)."""
+    from oblag.config import get_settings
+    from oblag.provenance import generate_keypair
+
+    settings = get_settings()
+    key_path = settings.signing_key_path or settings.data_dir / "keys" / "signing.pem"
+    if key_path.exists():
+        typer.secho(f"refusing to overwrite existing key at {key_path}", fg="red")
+        raise typer.Exit(1)
+    pub = generate_keypair(key_path)
+    typer.echo(f"private key: {key_path}\npublic key:  {pub}")
+    typer.echo("snapshot attestations are now enabled for future fetches")
+
+
+@app.command("verify-snapshot")
+def verify_snapshot(sha256: str) -> None:
+    """Verify a snapshot's content hash and DSSE attestation."""
+    import hashlib
+    import json
+
+    from oblag.config import get_settings
+    from oblag.db.models import Snapshot
+    from oblag.provenance import verify_envelope
+    from oblag.snapshots import SnapshotStore
+
+    init_db()
+    settings = get_settings()
+    store = SnapshotStore(settings.snapshot_dir)
+    with session_scope() as session:
+        snap = session.query(Snapshot).filter_by(sha256=sha256).one_or_none()
+        if snap is None:
+            typer.secho("no snapshot with that digest", fg="red")
+            raise typer.Exit(1)
+        content = store.read(sha256)
+        actual = hashlib.sha256(content).hexdigest()
+        if actual != sha256:
+            typer.secho(f"CONTENT MISMATCH: stored file hashes to {actual}", fg="red")
+            raise typer.Exit(2)
+        typer.echo(f"content hash OK ({len(content)} bytes from {snap.source_url})")
+        if not snap.attestation_ref:
+            typer.echo("no attestation recorded (snapshot pre-dates keygen)")
+            return
+        envelope = json.loads((store.root / snap.attestation_ref).read_text())
+        key_path = settings.signing_key_path or settings.data_dir / "keys" / "signing.pem"
+        statement = verify_envelope(envelope, key_path.with_suffix(".pub").read_bytes())
+        subject = statement["subject"][0]
+        if subject["digest"]["sha256"] != sha256:
+            typer.secho("ATTESTATION MISMATCH: subject digest differs", fg="red")
+            raise typer.Exit(2)
+        typer.echo(f"attestation OK: signed statement for {subject['name']}")
+
+
+@app.command()
 def serve(
     host: str = "127.0.0.1",
     port: int = 8000,

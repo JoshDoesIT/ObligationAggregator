@@ -309,7 +309,11 @@ def reduce_item(
     target = compute_state(
         ni.source_system, ni.native_status, item.native_meta or {}, _date_values(live), today
     )
-    _apply_state(session, item, target, snapshot_id, events)
+    if item.state is ItemState.superseded and item.resolved_change_id is not None:
+        # linker-resolved items legitimately reappear in fetch windows; not an anomaly
+        pass
+    else:
+        _apply_state(session, item, target, snapshot_id, events)
 
     # 4. content change
     if item.content_fingerprint != ni.content_fingerprint:

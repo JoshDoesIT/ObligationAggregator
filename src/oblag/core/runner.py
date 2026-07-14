@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from oblag.adapters import get_adapter
 from oblag.adapters.base import FetchContext, make_client
-from oblag.config import get_settings
 from oblag.core.linker import link_resolved_items
 from oblag.core.reducer import reduce_item
 from oblag.db.models import AdapterHealth, Event
@@ -55,7 +54,7 @@ def run_adapter(
         stats.skipped = True
         return stats
 
-    store = SnapshotStore(get_settings().snapshot_dir)
+    store = SnapshotStore.from_settings()
     health = _health(session, name)
     health.last_run_at = datetime.now(UTC)
     try:
