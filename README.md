@@ -80,6 +80,19 @@ uv run oblag serve         # UI + API on http://localhost:8000
 - **Event severity** — every event carries a derived severity
   (`new_obligation | substantive | editorial | operational`) in the API.
 
+## Roadmap (not yet built, and why)
+
+- **ESA (EBA/ESMA) / EDPB / AICPA / CPPA consultation scrapers** — all four are
+  client-side-rendered sites with no static payload or feed (probed live; see
+  `docs/specs/06`). Formal EU feedback periods are largely covered via Have Your Say;
+  the rest flows through the curated `assert-date` workflow. Community adapters welcome
+  if these bodies ship parseable pages.
+- **OSCAL control-level crosswalk** (set-theory relations) — deliberately curated-only
+  until mappings can carry human review; the OSCAL catalog export ships today.
+- **Multi-tenant workspaces / SSO / hosted SaaS** — self-host single-workspace first.
+- **Public-Rekor keyless attestation** — opt-in later for public sources only; local
+  DSSE/in-toto signing ships today (see `docs/specs/04` for the privacy rationale).
+
 ## Development
 
 ```bash

@@ -23,6 +23,12 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   with no static payload (probed 2026-07-14); a headless-browser scraper fails the
   maintenance-budget rule. SOC 2 TSC changes are rare — track via curated
   `assert-date` / manual items until AICPA ships a parseable page.
+- **ESA (EBA/ESMA) and EDPB consultations: same verdict** (probed 2026-07-14: EBA
+  listing is JS-rendered with no static links/dates; EDPB filtered listing 404s).
+  DORA RTS/ITS and delegated/implementing-act feedback periods are largely covered by
+  the Have Your Say adapter (brpapi JSON); the remainder is the curated
+  `assert-date` workflow. Revisit if either body ships a feed/API — headless-browser
+  scrapers are below the maintenance-budget line.
 
 ## 3. Identifier-level structure (facts, not expression)
 
