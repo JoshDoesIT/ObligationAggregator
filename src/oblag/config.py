@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Scope boundary: include pre-rule/ANPRM weak signals? (spec 00 — default off)
     include_prerule: bool = False
 
+    # OEIL watched procedure references, csv (e.g. "2021/0106(COD),2020/0359(COD)")
+    oeil_procedures: str = ""
+
     # AI assist (M6): entirely optional; off unless a provider is configured.
     ai_provider: str | None = None  # "anthropic" | "openai-compatible" | None
     ai_api_key: str | None = None

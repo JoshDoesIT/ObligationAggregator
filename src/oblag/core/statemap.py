@@ -44,6 +44,48 @@ def _get(dates: CurrentDateMap, dt: DateType) -> date | None:
     return dates.get((dt, None))
 
 
+@register_statemap("cellar")
+def cellar_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status.startswith("PROP_"):
+        return ItemState.proposed
+    if native_status in {t for t in ("REG", "DIR", "DEC")} or native_status.endswith(
+        ("_IMPL", "_DEL")
+    ):
+        eif = _get(dates, DateType.entry_into_force)
+        if eif is not None and eif > today:
+            return ItemState.final_pending_effective
+        return ItemState.effective
+    return None
+
+
+# OEIL "Stage reached" values → canonical states (open map: unknown → anomaly).
+OEIL_STAGE_MAP: dict[str, ItemState] = {
+    "preparatory phase in parliament": ItemState.proposed,
+    "awaiting committee decision": ItemState.proposed,
+    "awaiting parliament's position in 1st reading": ItemState.proposed,
+    "awaiting parliament 1st reading / single reading / budget 1st stage": ItemState.proposed,
+    "awaiting council's 1st reading position": ItemState.proposed,
+    "awaiting council decision": ItemState.proposed,
+    "awaiting final decision": ItemState.proposed,
+    "awaiting signature of act": ItemState.final_pending_effective,
+    "procedure completed, awaiting publication in official journal": (
+        ItemState.final_pending_effective
+    ),
+    "procedure completed": ItemState.effective,
+    "procedure lapsed or withdrawn": ItemState.withdrawn,
+    "procedure rejected": ItemState.withdrawn,
+}
+
+
+@register_statemap("oeil")
+def oeil_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    return OEIL_STAGE_MAP.get(native_status.strip().lower())
+
+
 @register_statemap("regulations_gov")
 def regulations_gov_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
