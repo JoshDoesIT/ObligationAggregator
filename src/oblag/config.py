@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     # OEIL watched procedure references, csv (e.g. "2021/0106(COD),2020/0359(COD)")
     oeil_procedures: str = ""
 
+    # LegiScan (US state laws): monitored states csv (e.g. "CA,NY,TX") + search query
+    legiscan_states: str = ""
+    legiscan_query: str = "comprehensive data privacy"
+
+    # EU Have Your Say topics to monitor (csv of portal topic codes)
+    hys_topics: str = "DIGITAL"
+
     # AI assist (M6): entirely optional; off unless a provider is configured.
     ai_provider: str | None = None  # "anthropic" | "openai-compatible" | None
     ai_api_key: str | None = None

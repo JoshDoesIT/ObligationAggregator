@@ -1,0 +1,15 @@
+{
+  "status": "OK",
+  "bill": {
+    "bill_id": 1234567,
+    "change_hash": "aa11bb22cc33",
+    "state": "RI",
+    "bill_number": "H7787",
+    "title": "Rhode Island Data Transparency And Privacy Protection Act",
+    "description": "Creates comprehensive consumer data privacy protections for Rhode Island residents effective January 1, 2026.",
+    "status": 4,
+    "status_date": "2024-06-28",
+    "url": "https://legiscan.com/RI/bill/H7787/2024",
+    "state_link": "https://status.rilegislature.gov/"
+  }
+}

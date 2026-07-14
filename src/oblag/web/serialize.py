@@ -38,11 +38,28 @@ def key_date_to_dict(session: Session, kd: KeyDate, *, provenance: bool = False)
     return d
 
 
+# Change-severity classification (research doc 2, feature 3): what kind of attention
+# an event deserves. Derived, not stored — the event stream stays the source of truth.
+_SEVERITY = {
+    "item_created": "new_obligation",
+    "state_changed": "substantive",
+    "date_changed": "substantive",
+    "item_resolved": "substantive",
+    "content_changed": "editorial",
+    "anomaly": "operational",
+}
+
+
+def event_severity(ev: Event) -> str:
+    return _SEVERITY.get(ev.type.value, "substantive")
+
+
 def event_to_dict(session: Session, ev: Event, *, provenance: bool = False) -> dict[str, Any]:
     d: dict[str, Any] = {
         "id": ev.id,
         "item_id": ev.pipeline_item_id,
         "type": ev.type.value,
+        "severity": event_severity(ev),
         "payload": ev.payload,
         "occurred_at": ev.occurred_at.isoformat() if ev.occurred_at else None,
     }

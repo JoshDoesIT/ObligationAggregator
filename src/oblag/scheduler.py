@@ -21,6 +21,7 @@ DAILY_ADAPTERS = {
     "nist_csrc": "06:10",
     "cellar": "06:40",
     "oeil": "07:10",
+    "have_your_say": "07:25",
     "legiscan": "07:40",
 }
 WEEKLY_ADAPTERS = {

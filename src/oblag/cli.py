@@ -130,6 +130,44 @@ def seed() -> None:
     typer.echo(f"{n} obligations upserted")
 
 
+@app.command("export-oscal")
+def export_oscal(
+    obligation: str = typer.Option(None, help="limit to one obligation slug"),
+    output: str = typer.Option("-", help="output file, or - for stdout"),
+) -> None:
+    """Export tracked items as an OSCAL 1.1.2 catalog (back-matter resources)."""
+    import json
+
+    from oblag.oscal import export_catalog
+
+    init_db()
+    with session_scope() as session:
+        catalog = export_catalog(session, obligation)
+    text = json.dumps(catalog, indent=1)
+    if output == "-":
+        typer.echo(text)
+    else:
+        from pathlib import Path
+
+        Path(output).write_text(text)
+        typer.echo(f"wrote {output}")
+
+
+@app.command("ai-summarize")
+def ai_summarize(item_id: int) -> None:
+    """Assistive AI draft summary of an item (requires OBLAG_AI_PROVIDER; never stored)."""
+    from oblag.ai import AiNotConfigured, summarize_item
+
+    init_db()
+    try:
+        with session_scope() as session:
+            draft = summarize_item(session, item_id)
+    except AiNotConfigured as exc:
+        typer.secho(str(exc), fg="yellow")
+        raise typer.Exit(1) from None
+    typer.echo(draft.render())
+
+
 byol_app = typer.Typer(help="BYOL: local analysis of licensed standards you own.")
 app.add_typer(byol_app, name="byol")
 

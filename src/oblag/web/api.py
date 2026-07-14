@@ -199,6 +199,16 @@ def list_obligations(db: Session = Depends(get_db)):
     }
 
 
+@router.get("/export/oscal")
+def export_oscal(obligation: str | None = None, db: Session = Depends(get_db)):
+    from oblag.oscal import export_catalog
+
+    try:
+        return export_catalog(db, obligation)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from None
+
+
 @router.get("/items/by-key/{key_type}/{key_value:path}")
 def get_item_by_join_key(key_type: str, key_value: str, db: Session = Depends(get_db)):
     rows = db.query(JoinKey).filter_by(type=key_type, value=key_value).all()

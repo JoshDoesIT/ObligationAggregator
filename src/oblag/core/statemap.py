@@ -87,6 +87,30 @@ def oeil_statemap(
     return OEIL_STAGE_MAP.get(native_status.strip().lower())
 
 
+@register_statemap("have_your_say")
+def have_your_say_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    cc = _get(dates, DateType.comment_close)
+    if cc is None:
+        return ItemState.proposed
+    return ItemState.comment_open if cc >= today else ItemState.comment_closed
+
+
+@register_statemap("legiscan")
+def legiscan_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status == "vetoed":
+        return ItemState.withdrawn
+    if native_status in ("enrolled", "passed"):
+        eff = _get(dates, DateType.effective)
+        if eff is not None and eff <= today:
+            return ItemState.effective
+        return ItemState.final_pending_effective
+    return None
+
+
 @register_statemap("pci_ssc")
 def pci_ssc_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
