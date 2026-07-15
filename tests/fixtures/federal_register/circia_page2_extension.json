@@ -1,0 +1,36 @@
+{
+ "count": 1,
+ "total_pages": 1,
+ "next_page_url": null,
+ "results": [
+  {
+   "document_number": "2024-09505",
+   "title": "Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Reporting Requirements; Extension of Comment Period",
+   "type": "Proposed Rule",
+   "abstract": "On April 4, 2024, the Cybersecurity and Infrastructure Security Agency (CISA) published a proposed rule in the Federal Register, the Cyber Incident Reporting for Critical Infrastructure Act of 2022 (CIRCIA), which proposes regulations implementing the statute's covered cyber incident and ransom payment reporting requirements for covered entities. CISA is extending the public comment period for the proposed rulemaking for an additional 30 days through July 3, 2024, in response to comments received from the public requesting additional time.",
+   "action": "Proposed rule; extension of comment period.",
+   "publication_date": "2024-05-06",
+   "comments_close_on": "2024-07-03",
+   "effective_on": null,
+   "regulation_id_numbers": [
+    "1670-AA04"
+   ],
+   "docket_ids": [
+    "Docket No. CISA-2022-0010"
+   ],
+   "html_url": "https://www.federalregister.gov/documents/2024/05/06/2024-09505/cyber-incident-reporting-for-critical-infrastructure-act-circia-reporting-requirements-extension-of",
+   "agencies": [
+    {
+     "raw_name": "DEPARTMENT OF HOMELAND SECURITY",
+     "name": "Homeland Security Department",
+     "id": 227,
+     "url": "https://www.federalregister.gov/agencies/homeland-security-department",
+     "json_url": "https://www.federalregister.gov/api/v1/agencies/227",
+     "parent_id": null,
+     "slug": "homeland-security-department"
+    }
+   ],
+   "significant": true
+  }
+ ]
+}

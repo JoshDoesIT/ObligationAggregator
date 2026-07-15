@@ -1,0 +1,135 @@
+{
+ "count": 4,
+ "total_pages": 1,
+ "next_page_url": null,
+ "results": [
+  {
+   "document_number": "2024-06526",
+   "title": "Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Reporting Requirements",
+   "type": "Proposed Rule",
+   "abstract": "The Cyber Incident Reporting for Critical Infrastructure Act of 2022 (CIRCIA), as amended, requires the Cybersecurity and Infrastructure Security Agency (CISA) to promulgate regulations implementing the statute's covered cyber incident and ransom payment reporting requirements for covered entities. CISA seeks comment on the proposed rule to implement CIRCIA's requirements and on several practical and policy issues related to the implementation of these new reporting requirements.",
+   "action": "Proposed rule.",
+   "publication_date": "2024-04-04",
+   "comments_close_on": "2024-06-03",
+   "effective_on": null,
+   "regulation_id_numbers": [
+    "1670-AA04"
+   ],
+   "docket_ids": [
+    "Docket No. CISA-2022-0010"
+   ],
+   "html_url": "https://www.federalregister.gov/documents/2024/04/04/2024-06526/cyber-incident-reporting-for-critical-infrastructure-act-circia-reporting-requirements",
+   "agencies": [
+    {
+     "raw_name": "DEPARTMENT OF HOMELAND SECURITY",
+     "name": "Homeland Security Department",
+     "id": 227,
+     "url": "https://www.federalregister.gov/agencies/homeland-security-department",
+     "json_url": "https://www.federalregister.gov/api/v1/agencies/227",
+     "parent_id": null,
+     "slug": "homeland-security-department"
+    }
+   ],
+   "significant": true
+  },
+  {
+   "document_number": "2026-14090",
+   "title": "Airworthiness Directives; The Boeing Company Airplanes",
+   "type": "Rule",
+   "abstract": "The FAA is superseding Airworthiness Directive (AD) 2026-13- 05, which applied to all The Boeing Company Model 737-8, 737-9, and 737-8200 airplanes. AD 2026-13-05 required revising the existing airplane flight manual (AFM) to provide the flightcrew with operating procedures (non-normal checklists) if a certain circuit breaker in the standby power control unit (SPCU) trips or certain environmental control system (ECS) circuit breakers downstream of the SPCU trip. Since the FAA issued AD 2026-13-05, a formatting error that omitted part of a certain appendix from AD 2026-13-05 was discovered. This AD retains the certain requirements of AD 2026-13-05 and requires revising the existing AFM to include the corrected appendix. The FAA is issuing this AD to address the unsafe condition on these products.",
+   "action": "Final rule; request for comments.",
+   "publication_date": "2026-07-13",
+   "comments_close_on": "2026-08-27",
+   "effective_on": "2026-07-13",
+   "regulation_id_numbers": [
+    "2120-AA64"
+   ],
+   "docket_ids": [
+    "Docket No. FAA-2026-7218",
+    "Project Identifier AD-2026-00702-T",
+    "Amendment 39-23412",
+    "AD 2026-14-11"
+   ],
+   "html_url": "https://www.federalregister.gov/documents/2026/07/13/2026-14090/airworthiness-directives-the-boeing-company-airplanes",
+   "agencies": [
+    {
+     "raw_name": "DEPARTMENT OF TRANSPORTATION",
+     "name": "Transportation Department",
+     "id": 492,
+     "url": "https://www.federalregister.gov/agencies/transportation-department",
+     "json_url": "https://www.federalregister.gov/api/v1/agencies/492",
+     "parent_id": null,
+     "slug": "transportation-department"
+    },
+    {
+     "raw_name": "Federal Aviation Administration",
+     "name": "Federal Aviation Administration",
+     "id": 159,
+     "url": "https://www.federalregister.gov/agencies/federal-aviation-administration",
+     "json_url": "https://www.federalregister.gov/api/v1/agencies/159",
+     "parent_id": 492,
+     "slug": "federal-aviation-administration"
+    }
+   ],
+   "significant": false
+  },
+  {
+   "document_number": "2099-00001",
+   "title": "Synthetic ANPRM",
+   "type": "Proposed Rule",
+   "abstract": "The Cyber Incident Reporting for Critical Infrastructure Act of 2022 (CIRCIA), as amended, requires the Cybersecurity and Infrastructure Security Agency (CISA) to promulgate regulations implementing the statute's covered cyber incident and ransom payment reporting requirements for covered entities. CISA seeks comment on the proposed rule to implement CIRCIA's requirements and on several practical and policy issues related to the implementation of these new reporting requirements.",
+   "action": "Advance notice of proposed rulemaking.",
+   "publication_date": "2024-04-04",
+   "comments_close_on": "2099-06-01",
+   "effective_on": null,
+   "regulation_id_numbers": [
+    "1670-AA04"
+   ],
+   "docket_ids": [
+    "Docket No. CISA-2022-0010"
+   ],
+   "html_url": "https://www.federalregister.gov/documents/2024/04/04/2024-06526/cyber-incident-reporting-for-critical-infrastructure-act-circia-reporting-requirements",
+   "agencies": [
+    {
+     "raw_name": "DEPARTMENT OF HOMELAND SECURITY",
+     "name": "Homeland Security Department",
+     "id": 227,
+     "url": "https://www.federalregister.gov/agencies/homeland-security-department",
+     "json_url": "https://www.federalregister.gov/api/v1/agencies/227",
+     "parent_id": null,
+     "slug": "homeland-security-department"
+    }
+   ],
+   "significant": true
+  },
+  {
+   "document_number": "2099-00002",
+   "title": "Synthetic Withdrawal",
+   "type": "Proposed Rule",
+   "abstract": "The Cyber Incident Reporting for Critical Infrastructure Act of 2022 (CIRCIA), as amended, requires the Cybersecurity and Infrastructure Security Agency (CISA) to promulgate regulations implementing the statute's covered cyber incident and ransom payment reporting requirements for covered entities. CISA seeks comment on the proposed rule to implement CIRCIA's requirements and on several practical and policy issues related to the implementation of these new reporting requirements.",
+   "action": "Proposed rule; withdrawal.",
+   "publication_date": "2024-04-04",
+   "comments_close_on": null,
+   "effective_on": null,
+   "regulation_id_numbers": [
+    "1670-AA04"
+   ],
+   "docket_ids": [
+    "Docket No. CISA-2022-0010"
+   ],
+   "html_url": "https://www.federalregister.gov/documents/2024/04/04/2024-06526/cyber-incident-reporting-for-critical-infrastructure-act-circia-reporting-requirements",
+   "agencies": [
+    {
+     "raw_name": "DEPARTMENT OF HOMELAND SECURITY",
+     "name": "Homeland Security Department",
+     "id": 227,
+     "url": "https://www.federalregister.gov/agencies/homeland-security-department",
+     "json_url": "https://www.federalregister.gov/api/v1/agencies/227",
+     "parent_id": null,
+     "slug": "homeland-security-department"
+    }
+   ],
+   "significant": true
+  }
+ ]
+}

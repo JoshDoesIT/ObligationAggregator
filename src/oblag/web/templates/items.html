@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Items — ObligationAggregator{% endblock %}
+{% block content %}
+<form class="filters" method="get" action="/">
+  <input type="search" name="q" placeholder="search title/abstract" value="{{ q or '' }}">
+  <select name="state">
+    <option value="">any state</option>
+    {% for s in states %}
+    <option value="{{ s }}" {{ 'selected' if s == state }}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="source">
+    <option value="">any source</option>
+    {% for s in sources %}
+    <option value="{{ s }}" {{ 'selected' if s == source }}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button>Filter</button>
+  <span class="muted" style="align-self:center">{{ total }} item(s)</span>
+</form>
+<table>
+  <tr><th>Title</th><th>State</th><th>Source</th><th>Key dates</th><th>Last seen</th></tr>
+  {% for item in items %}
+  <tr>
+    <td><a href="/items/{{ item.id }}">{{ item.title }}</a>
+        <div class="muted" style="font-size:.8rem">
+          {% for k in item.join_keys %}<code>{{ k.type }}:{{ k.value }}</code> {% endfor %}
+        </div></td>
+    <td><span class="pill state-{{ item.state }}">{{ item.state }}</span></td>
+    <td class="muted">{{ item.source_system }}<br>{{ item.jurisdiction }}</td>
+    <td>
+      {% for d in item.current_dates %}
+      <div><span class="conf-{{ d.confidence }}" title="confidence: {{ d.confidence }}">
+        {{ d.date_type }}{% if d.label %} ({{ d.label }}){% endif %}: {{ d.value }}</span></div>
+      {% endfor %}
+    </td>
+    <td class="muted">{{ item.last_seen_at[:10] if item.last_seen_at }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

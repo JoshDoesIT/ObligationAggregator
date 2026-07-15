@@ -1,0 +1,14 @@
+{
+  "status": "OK",
+  "bill": {
+    "bill_id": 7654321,
+    "change_hash": "dd44ee55",
+    "state": "NY",
+    "bill_number": "S365",
+    "title": "New York Privacy Act",
+    "description": "Introduced bill; weak signal that must not enter the pipeline.",
+    "status": 1,
+    "status_date": "2026-01-08",
+    "url": "https://legiscan.com/NY/bill/S365/2026"
+  }
+}

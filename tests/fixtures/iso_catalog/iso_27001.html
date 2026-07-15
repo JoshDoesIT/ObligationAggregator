@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><link rel="canonical" href="https://www.iso.org/standard/27001" /><link rel="alternate" hreflang="en" href="https://www.iso.org/standard/27001" />
+<link rel="alternate" hreflang="x-default" href="https://www.iso.org/standard/27001" />
+<link rel="alternate" hreflang="fr" href="https://www.iso.org/fr/standard/27001" />
+    <!-- *** 1. charset, viewport, title *** -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ISO/IEC 27001:2022 - Information security management systems</title>
+
+    <!-- *** 2. Preconnect *** -->
+
+    <!-- *** 3. Synchronous JS *** -->
+    <!-- Usercentrics loader FIRST -->
+<script id="usercentrics-cmp" src="https://web.cmp.usercentrics.eu/ui/loader.js" data-settings-id="Ap6i4qiUU-LDx1" async></script>
+        
+<!-- Consent Mode: dataLayer + gtag + defaults BEFORE any Google tag -->
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){ dataLayer.push(arguments); }
+
+// Advanced mode defaults: deny until user acts
+gtag('consent','default',{
+  ad_storage:             'denied',
+  analytics_storage:      'denied',
+  ad_user_data:           'denied',
+  ad_personalization:     'denied',
+  functionality_storage:  'denied',
+  personalization_storage:'denied',
+  security_storage:       'granted'  
+});
+</script>
+
+<!-- Bridge: Usercentrics consent_status -> Google Consent Mode + Matomo TM -->
+<script>
+(function() {
+  if (!window.dataLayer || typeof gtag !== 'function') return;
+
+  var UC_PERFORMANCE_KEY = 'customcategory-1695b4b3-ec23-4984-bf6a-ff0df7575dfe';
+
+  function updateGcmFromConsent(obj) {
+    if (!obj) return;
+
+    var services = obj;
+    var categories = obj.ucCategory || {};
+
+    // Marketing controls Google Ads / remarketing
+    var remarketingOK =
+      services["Google Ads Remarketing"] === true ||
+      categories.marketing === true;
+
+    // Performance controls analytics
+    var analyticsOK =
+      categories[UC_PERFORMANCE_KEY] === true;
+
+    var functionalOK =
+      categories.functional === true;
+
+    var personalizationOK =
+      categories.functional === true;
+
+    gtag('consent', 'update', {
+      ad_storage:              remarketingOK ? 'granted' : 'denied',
+      ad_user_data:            remarketingOK ? 'granted' : 'denied',
+      ad_personalization:      remarketingOK ? 'granted' : 'denied',
+      analytics_storage:       analyticsOK   ? 'granted' : 'denied',
+      functionality_storage:   functionalOK  ? 'granted' : 'denied',
+      personalization_storage: personalizationOK ? 'granted' : 'denied',
+      security_storage:        'granted'
+    });
+  }
+
+  var origPush = window.dataLayer.push.bind(window.dataLayer);
+
+  window.dataLayer.push = function() {
+    var args = Array.prototype.slice.call(arguments);
+    var e = args[0];
+
+    if (e && e.event === 'consent_status') {
+      updateGcmFromConsent(e);
+
+      if (window._mtm && typeof window._mtm.push === 'function') {
+        window._mtm.push(e);
+      }
+    }
+
+    return origPush.apply(window.dataLayer, args);
+  };
+
+  for (var i = 0; i < window.dataLayer.length; i++) {
+    var item = window.dataLayer[i];
+    if (item && item.event === 'consent_status') {
+      updateGcmFromConsent(item);
+
+      if (window._mtm && typeof window._mtm.push === 'function') {
+        window._mtm.push(item);
+      }
+    }
+  }
+})();
+</script>
+
+<!-- Matomo Tag Manager (UC Manager container) -->
+<script>
+  var _mtm = window._mtm = window._mtm || [];
+  _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
+  (function() {
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.async=true;
+    g.src='https://cdn.matomo.cloud/iso.matomo.cloud/container_MFgeJvRK.js';
+    s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<meta name="google-site-verification" content="mQuqWPbWruZdQgZR8QwbxOWnjjxkcFiyJLHWY-cOOHk" />
+<meta name="msvalidate.01" content="8C0706261A9DDF7F705A77F04A07FF74" /><!-- dataLayer for Tag Manager -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        'pageType': 'its:standard',
+        'pageLanguage': 'en',
+        'pageMode': 'live',
+        'pageServer': 'prod'
+      });
+    </script>
+
+    <!-- *** 4. Synchronous CSS *** -->
+    <link id="woodCss" rel="stylesheet" href="/modules/isoorg-template/css/wood.jahia.min.css?v4.7.1" media="screen,print,handheld" type="text/css"/>
+
+    <!-- *** 5. Preload *** -->
+    <!-- *** 6. Asynchronous JS (async, defer, type=module JS) *** -->
+<script id="woodJs" src="/modules/isoorg-template/javascript/wood.jahia.min.js?v4.7.1" defer></script>
+    <script id="customJs" src="/modules/isoorg-template/javascript/custom.js?v1" defer></script>
+
+    <script type="module">
+      let basketWidgetLoaderScript = document.createElement('script');
+      basketWidgetLoaderScript.src = '/webstore/basket-widget/assets/js/basket-widget-loader.js';
+      document.head.appendChild(basketWidgetLoaderScript);
+      basketWidgetLoaderScript.onload = () => {
+        const cartElem = document.getElementById('shoppingCart');
+        if (cartElem) {
+          cartElem.onclick = function(event) {
+            return loadWebComponentsLoaderAndWidget(this, event);
+          };
+        }
+      }
+    </script>
+
+    <!-- *** 7. Social, SEO, Open Graph, meta, etc. *** -->
+
+    <meta name="theme-color" content="#333">
+
+    <!-- favicons -->
+    <link rel="apple-touch-icon-precomposed" href="/modules/isoorg-template/img/iso/favicon/red/apple-touch-icon-152x152-precomposed.png">
+    <link rel="shortcut icon" href="/modules/isoorg-template/img/iso/favicon/red/favicon.ico">
+    <meta name="msapplication-TileColor" content="#eee">
+    <meta name="msapplication-TileImage" content="/modules/isoorg-template/img/iso/favicon/red/mstile-144x144.png">
+
+    
+<script type="application/json" id="jahia-data-ctx">{"contextPath":"","lang":"en","uilang":"en","siteUuid":"8841cb1a-0fbd-44bc-aa69-060036cc40f1","wcag":false,"ckeCfg":""}</script>
+<script type="application/json" id="jahia-data-ck">{"path":"/modules/ckeditor/javascript/","lng":"en_US"}</script>
+<link id="staticAssetCSS0" rel="stylesheet" href="/generated-resources/dfc2783ac7807d41fe940a1bd15c686.min.css" media="screen" type="text/css"/>
+<script id="staticAssetJavascript0" src="/generated-resources/49bc3a2a3b20bb43cd952ea1cf76fd25-defer.min.js"  defer></script>
+<meta name="category" content="p" />
+  <meta name="pubdate" content="20221025" />
+  
+<!-- Twitter Card data -->
+  <meta name="twitter:site" content="@isostandards" />
+
+  <!-- Open Graph data -->
+  <meta property="og:site_name" content="ISO" />
+  <meta property="og:url" content="https://www.iso.org/standard/27001" />
+  <meta property="og:type" content="website" />
+  <!-- Thumbnail image (for twitter and Open Graph) -->
+    <meta name="thumbnail" content="https://www.iso.org/modules/isoorg-template/img/iso/iso-logo-og.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="https://www.iso.org/modules/isoorg-template/img/iso/iso-logo-og.png" />
+    <meta property="og:image" content="https://www.iso.org/modules/isoorg-template/img/iso/iso-logo-og.png" />
+    <meta property="og:image:alt" content="ISO logo" />
+  <!-- Title (for twitter and Open Graph) -->
+    <meta name="twitter:title" content="ISO/IEC 27001:2022" />
+    <meta property="og:title" content="ISO/IEC 27001:2022" />
+  <!-- Description (for google, twitter and Open Graph) -->
+    <meta name="twitter:description" content="Information security, cybersecurity and privacy protection — Information security management systems — Requirements" />
+    <meta property="og:description" content="Information security, cybersecurity and privacy protection — Information security management systems — Requirements" />
+    <meta name="description" content="Information security, cybersecurity and privacy protection — Information security management systems — Requirements" />
+  <!-- Facebook admins -->
+  <meta property="fb:admins" content="100001440003305" />
+
+  
+
+<style>
+      .card-footer:has(.shippingCost.d-none):not(:has(#priceConverter)) {
+          display: none;
+      }
+      input[data-format="paper"]:checked + label::after {
+          content: " *";
+          color: #c79332;
+      }
+  </style>
+
+<script src="https://www.google.com/recaptcha/api.js?render=6Lfvyx8qAAAAAHOXkwbvVobjfLbVzBEnEVRuLtNA" defer></script>
+
+<script type="text/plain" data-usercentrics="Vimeo" src="/modules/fwk-module/javascript/lite-vimeo-embed.js"></script>
+  <script type="module">
+   // Display a consent required notice on click
+   // Targets `figure.figure-video .cmp-notice`
+   document.addEventListener('DOMContentLoaded', function () {
+     document.querySelectorAll('figure.figure-video').forEach(function (figure) {
+       // figure.addEventListener('click', function () {
+       figure.addEventListener('mouseenter', function () {
+           const notice = figure.querySelector('.cmp-notice');
+           if (notice) {
+             notice.style.display = 'block';
+           }
+         }, { once: true }
+       ) // optional: show only on first click
+     });
+   });
+  </script>
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+        "@type": "Question",
+        "name": "Who needs ISO/IEC 27001?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nowadays, data theft, cybercrime and liability for privacy leaks are risks that all organizations need to factor in. Any business needs to think strategically about its information security needs, and how they relate to its own objectives, processes, size and structure. The ISO/IEC 27001 standard enables organizations to establish an information security management system and apply a risk management process that is adapted to their size and needs, and scale it as necessary as these factors evolve. While information technology (IT) is the industry with the largest number of ISO/IEC 27001- certified enterprises (almost a fifth of all valid certificates to ISO/IEC 27001 as per the ISO Survey 2021), the benefits of this standard have convinced companies across all economic sectors (all kinds of services and manufacturing as well as the primary sector; private, public and non-profit organizations). Companies that adopt the holistic approach described in ISO/IEC 27001 will make sure information security is built into organizational processes, information systems and management controls. They gain efficiency and often emerge as leaders within their industries."
+        }
+      },{
+        "@type": "Question",
+        "name": "How will ISO/IEC 27001 benefit my organization?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Implementing the information security framework specified in the ISO/IEC 27001 standard helps you: Reduce your vulnerability to the growing threat of cyber-attacks Respond to evolving security risks Ensure that assets such as financial statements, intellectual property, employee data and information entrusted by third parties remain undamaged, confidential, and available as needed Provide a centrally managed framework that secures all information in one place Prepare people, processes and technology throughout your organization to face technology-based risks and other threats Secure information in all forms, including paper-based, cloud-based and digital data Save money by increasing efficiency and reducing expenses for ineffective defence technology"
+        }
+      },{
+        "@type": "Question",
+        "name": "What are the three principles of information security in ISO/IEC 27001, also known as the CIA triad?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Confidentiality → Meaning: Only the right people can access the information held by the organization. ⚠ Risk example: Criminals get hold of your clients’ login details and sell them on the Darknet. Information integrity → Meaning: Data that the organization uses to pursue its business or keeps safe for others is reliably stored and not erased or damaged. ⚠ Risk example: A staff member accidentally deletes a row in a file during processing. Availability of data: → Meaning: The organization and its clients can access the information whenever it is necessary so that business purposes and customer expectations are satisfied. ⚠ Risk example: Your enterprise database goes offline because of server problems and insufficient backup. An information security management system that meets the requirements of ISO/IEC 27001 preserves the confidentiality, integrity and availability of information by applying a risk management process and gives confidence to interested parties that risks are adequately managed."
+        }
+      },{
+        "@type": "Question",
+        "name": "Is ISO 27001 the same as ISO/IEC 27001?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Even though it is sometimes referred to as ISO 27001, the official abbreviation for the International Standard on requirements for information security management is ISO/IEC 27001. That is because it has been jointly published by ISO and the International Electrotechnical Commission (IEC). The number indicates that it was published under the responsibility of Subcommittee 27 (on Information Security, Cybersecurity and Privacy Protection) of ISO’s and IEC’s Joint Technical Committee on Information Technology (ISO/IEC JTC 1)."
+        }
+      },{
+        "@type": "Question",
+        "name": "What is ISO/IEC 27001 certification and what does it mean to be certified to ISO 27001?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Certification to ISO/IEC 27001 is one way to demonstrate to stakeholders and customers that you are committed and able to manage information securely and safely. Holding a certificate from an accredited conformity assessment body may bring an additional layer of confidence, as an accreditation body has provided independent confirmation of the certification body’s competence. If you wish to use a logo to demonstrate certification, contact the certification body that issued the certificate. As in other contexts, standards should always be referred to with their full reference, for example “certified to ISO/IEC 27001:2022” (not just “certified to ISO 27001”). See full details about use of the ISO logo. As with other ISO management system standards, companies implementing ISO/IEC 27001 can decide whether they want to go through a certification process. Some organizations choose to implement the standard in order to benefit from the best practice it contains, while others also want to get certified to reassure customers and clients. ISO/IEC 27001 is widely used around the world. As per the ISO Survey 2022, over 70 000 certificates were reported in 150 countries and from all economic sectors, ranging from agriculture through manufacturing to social services."
+        }
+      }
+    ]
+}
+</script>
+
+<script>
+/*
+  2026-04-22 : added utm fragment
+  2026-04-15 : deployed to PROD
+*/
+(function () {
+    function getPageLanguage() {
+        const lang = (document.documentElement.getAttribute('lang') || 'en')
+            .toLowerCase()
+            .split('-')[0];
+        return ['en', 'fr', 'es', 'ru'].includes(lang) ? lang : 'en';
+    }
+
+    const PAGE_LANG = getPageLanguage();
+    // ref and id are required for product mapping (eg AFNOR)
+    const endpoint =
+        `https://www.iso.org/bootiful-services/opt-out/ip/check?type=std&id=63787&ref=63787&lang=${PAGE_LANG}&guilang=${PAGE_LANG}`;
+
+    const LS_KEY = 'iso_buybox_country_dismissed_at';
+    const DISMISS_TTL_MS = 24 * 60 * 60 * 1000;
+    // const OPTOUT_COUNTRIES = ['GB', 'FR', 'ES', 'NO'];
+    const OPTOUT_COUNTRIES = ['GB'];
+
+    const HIDDEN_CLASS = 'js-buybox-hidden';
+    const INSERTED_CLASS = 'js-country-buybox-banner';
+
+    const TRANSLATIONS = {
+        en: {
+            body: 'You are visiting from {country}. Customers with a billing address in {country} must purchase this item from the {member} store.',
+            button: 'Buy from {member}',
+            remove: 'Remove this notice',
+            removeSuffix: " as my billing address isn't in {country}.",
+            fallbackItem: 'Webstore notice'
+        },
+        fr: {
+            body: 'Si votre requête provient de {country}, veuillez vous rendre sur la boutique {member} pour acheter cet article.',
+            button: 'Acheter chez {member}',
+            remove: 'Supprimer cet avertissement',
+            removeSuffix: " car ma requête ne provient pas de {country}.",
+            fallbackItem: 'Avertissement'
+        },
+        es: {
+            body: 'Parece que se está conectando desde {country}. Visite la tienda de {member} para comprar este artículo.',
+            button: 'Comprar en {member}',
+            remove: 'Eliminar este aviso',
+            removeSuffix: ' porque no me estoy conectando desde {country}.',
+            fallbackItem: 'Aviso de la tienda en línea'
+        },
+        ru: {
+            body: 'Похоже, что вы подключаетесь из {country}. Пожалуйста, посетите магазин {member}, чтобы приобрести эту публикацию.',
+            button: 'Купить в {member}',
+            remove: 'Убрать это уведомление',
+            removeSuffix: ', так как я не подключаюсь из {country}.',
+            fallbackItem: 'Уведомление интернет-магазина'
+        }
+    };
+
+    function t() {
+        return TRANSLATIONS[PAGE_LANG] || TRANSLATIONS.en;
+    }
+
+    function addUtmParams(url) {
+        try {
+            //const u = new URL(url, window.location.origin);
+            const u = new URL(url);
+            u.searchParams.set('utm_source', 'iso');
+            u.searchParams.set('utm_medium', 'referral');
+            u.searchParams.set('utm_campaign', 'iso_redirect');
+            return u.toString();
+        } catch (e) {
+            return url;
+        }
+    }
+
+    function formatTemplate(template, values) {
+        return template.replace(/\{(\w+)\}/g, function (_, key) {
+            return values[key] != null ? values[key] : '';
+        });
+    }
+
+    function dismissedRecently() {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (!raw) return false;
+            const ts = Number(raw);
+            if (!Number.isFinite(ts)) return false;
+            return (Date.now() - ts) < DISMISS_TTL_MS;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function setDismissedNow() {
+        try {
+            localStorage.setItem(LS_KEY, String(Date.now()));
+        } catch (e) {}
+    }
+
+    function unhideAllBuyboxes() {
+        document.querySelectorAll('.card.buybox.' + HIDDEN_CLASS).forEach(function (el) {
+            el.classList.remove(HIDDEN_CLASS);
+            el.style.display = '';
+            el.removeAttribute('aria-hidden');
+        });
+    }
+
+    function removeAllInsertedBanners() {
+        document.querySelectorAll('.' + INSERTED_CLASS).forEach(function (el) {
+            el.remove();
+        });
+    }
+
+    function resetToDefault() {
+        removeAllInsertedBanners();
+        unhideAllBuyboxes();
+    }
+
+    function createBannerCard(itemNumber, country, member, externalLink, countryIso) {
+        const strings = t();
+
+        const card = document.createElement('div');
+        card.className = 'card ' + INSERTED_CLASS;
+
+        const header = document.createElement('div');
+        header.className = 'card-header text-center--OFF';
+
+        const h4 = document.createElement('h4');
+        h4.textContent = itemNumber;
+        header.appendChild(h4);
+
+        const body = document.createElement('div');
+        body.className = 'card-body';
+
+        const p = document.createElement('p');
+        p.textContent = formatTemplate(strings.body, {
+            country: country,
+            member: member
+        });
+
+        const a = document.createElement('a');
+        a.setAttribute('role', 'button');
+        a.href = addUtmParams(externalLink);
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.className = 'btn btn-info btn-md';
+        a.textContent = formatTemplate(strings.button, {
+            member: member
+        });
+
+        // add dynamic country code
+        if (countryIso) {
+            a.dataset.storeloc = countryIso.toUpperCase();
+        }
+
+        body.appendChild(p);
+        body.appendChild(a);
+
+        const footer = document.createElement('div');
+        footer.className = 'card-footer';
+
+        const p2 = document.createElement('p');
+        p2.className = 'text-xs';
+
+        const removeLink = document.createElement('a');
+        removeLink.className = 'removeBanner';
+        removeLink.href = '#';
+        removeLink.textContent = strings.remove;
+
+        p2.appendChild(removeLink);
+        p2.appendChild(document.createTextNode(formatTemplate(strings.removeSuffix, {
+            country: country
+        })));
+
+        footer.appendChild(p2);
+
+        card.appendChild(header);
+        card.appendChild(body);
+        card.appendChild(footer);
+
+        return card;
+    }
+
+    function applyCountryBehavior(data) {
+        if (dismissedRecently()) {
+            resetToDefault();
+            return;
+        }
+
+        const buyboxes = Array.from(document.querySelectorAll('.card.buybox'));
+        if (!buyboxes.length) return;
+
+        removeAllInsertedBanners();
+
+        const strings = t();
+
+        buyboxes.forEach(function (buybox) {
+            buybox.classList.add(HIDDEN_CLASS);
+            buybox.style.display = 'none';
+            buybox.setAttribute('aria-hidden', 'true');
+
+            const h4 = buybox.querySelector('.card-header > h4');
+            const itemNumber = ((h4 && h4.textContent) || '').trim() || strings.fallbackItem;
+
+            const banner = createBannerCard(
+                itemNumber,
+                data.country,
+                data.member,
+                data.redirectionUrl,
+                data.country_iso
+            );
+            buybox.insertAdjacentElement('afterend', banner);
+        });
+    }
+
+    function fetchAndApply() {
+        if (dismissedRecently()) {
+            resetToDefault();
+            return;
+        }
+
+        fetch(endpoint)
+            .then(function (res) {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
+            .then(function (data) {
+                const countryIso = ((data && data.country_iso) || '').toUpperCase();
+                const shouldShowBanner = (
+                    OPTOUT_COUNTRIES.includes(countryIso) &&
+                    data &&
+                    data.country &&
+                    data.member &&
+                    data.redirectionUrl
+                );
+
+                if (shouldShowBanner) {
+                    applyCountryBehavior(data);
+                    return;
+                }
+
+                resetToDefault();
+            })
+            .catch(function (err) {
+                console.error('IP check failed:', err);
+                resetToDefault();
+            });
+    }
+
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('.removeBanner');
+        if (!link) return;
+
+        e.preventDefault();
+        setDismissedNow();
+        resetToDefault();
+    });
+
+    function init() {
+        fetchAndApply();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+<style>
+        nav[role="navigation"]:has(.ticker--live) { background-color: var(--bs-brand)!important; }
+nav[role="navigation"]:has(.ticker--live)  > .container { gap: 1rem; }
+nav[role="navigation"]:has(.ticker--live) #utilities > li:not(#lang-switcher) { display: none!important; }
+.card-footer:has(.ticker--live) { background-color: var(--bs-dark)!important; color: white; }
+.card-footer:has(.ticker--live) a { color: white; }
+.ticker:has(.ticker--live) { white-space: normal; }
+.ticker--live .ticker__icon { animation: live 1s infinite; }
+@keyframes live { 0% { color: transparent; } 50% { color: white; } 100% { color: transparent; } }
+.its-standard [data-status] {display: none; }
+.row-sticky .col-lg-4>*, .row-sticky .col-md-4>*, .row-sticky .col-sm-4>*, .row-sticky .col-xs-4>* {
+    top: calc(1.9375rem + 5.25rem);
+}</style>
+    
+<script type="application/json" id="jahia-data-aggregatedjs">{"scripts":["/modules/iso-jahia-service-module/javascript/catalog.js"]}</script>
+
+</head>
+
+  <!-- Topbar utility -->
+
+  <body class="theme-red lang-en its-standard is-prod is-live" id="page-998a2a67-beff-4e32-b0f9-16781dff7ad7">
+    <a id="page-top" class="skip-navigation btn btn-info visually-hidden visually-hidden-focusable" href="#content">Skip to main content</a>
+    <nav role="navigation" aria-label="Utility Navigation" class="nav-utility navbar-expand-lg text-sm navbar-dark bg-darkergray text-light" elementtiming="utilityNav">
+      <div class="container d-flex justify-content-between">
+        <div class="ticker text-truncate float-start"></div>
+        <ul class="nav d-flex justify-content-end justify-content-sm-around justify-content-md-end" id="utilities">
+          <li class="nav-item d-none d-sm-block">
+            <a href="https://login.iso.org" class="nav-link d-flex align-items-center" title="ISO's applications portal"><i class="bi-grid-3x3-gap-fill"></i>&nbsp;Applications</a>
+          </li>
+          <li class="nav-item d-none d-sm-block">
+            <a href="https://www.iso.org/obp/ui/en/" class="nav-link d-flex align-items-center" title="Online Browsing Platform"><i class="bi-journal-text"></i>&nbsp;OBP</a>
+          </li>
+          <li class="nav-item dropdown" id="lang-switcher">
+  <a id="lang-dropdown" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" aria-expanded="false">English</a>
+  <ul class="dropdown-menu dropdown-menu-end" role="menu" aria-labelledby="lang-dropdown">
+    <li class="lang-es "><a class="dropdown-item " href="/es/norma/27001">español</a></li><li class="lang-fr "><a class="dropdown-item " href="/fr/standard/27001">français</a></li><li class="lang-ru "><a class="dropdown-item " href="/ru/standard/27001">русский</a></li></ul>
+</li></ul>
+      </div>
+    </nav>
+
+    <!-- Header ISO.ORG -->
+    <header class="header-bootstrap sticky-top">
+      <!-- Main navigation -->
+      <nav class="navbar nav-iso navbar-expand-lg navbar-light shadow-md bg-white text-dark" elementtiming="mainNav">
+        <div class="container">
+          <a class="logo logo-square isologo logo-sm" href="/home.html" title="International Organization for Standardization" alt="ISO logo"></a>
+          <div class="isologo-print"><img loading="lazy" fetchpriority="low" src="/modules/isoorg-template/img/iso/iso-logo-print.gif" alt="ISO logo for print" width="50" height="50" elementtiming="logoPrint"/></div>
+          <button class="btn btn-light navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+            <div class="navbar-toggler-icon-animated"><span></span><span></span><span></span><span></span></div><span class="visually-hidden-xs">&nbsp;Menu</span>
+          </button>
+          <!-- TOP LEVEL1 NAVIGATION -->
+          <nav role="navigation" aria-label="Main Navigation" class="nav-megamenu collapse navbar-collapse flex-lg-grow-0 flex-xxl-grow-1" id="mainNav"><ul role='menubar' class='navbar-nav me-auto mb-lg-0 ps-2 pe-2 nav-level1' ><li role='menuitem' class='nav-item dropdown position-static noChildren firstInLevel' ><a class='nav-link dropdown-toggle megamenu-toggle  '   title="Covering almost every product, process or service imaginable, ISO makes standards used everywhere."  href='/standards.html'>Standards</a></li><!-- close of list item level 1 --><li role='menuitem' class='nav-item dropdown position-static hasChildren' ><a class='nav-link dropdown-toggle megamenu-toggle  ' data-bs-toggle="dropdown" aria-expanded="true"   href=''>Sectors</a><div role='menubar' class='dropdown-menu megamenu w-100 mt-0 border-0 rounded-0 megamenu-shadow-md nav-level2' aria-labelledby="navbarDropdown" data-bs-popper="none"><div class="container"><div class="row mb-xs-4 my-md-4 megamenu-animate slideUp"><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren firstInLevel' ><a class='nav-link section-head ps-0  '   title="(including medicine and laboratory equipment)"  href='/sectors/health'>Health</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '   title="(including communication technology, graphics and photography)"  href='/sectors/it-technologies'>IT & related technologies</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '   title="(Business management, financial and professional services)"  href='/sectors/management-services'>Management & services</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '    href='/sectors/security-safety-risk'>Security, safety & risk</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '   title="(including vehicles, parts and infrastructure, freight, packaging and distribution)"  href='/sectors/transport'>Transport</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '   title="(including power generation and transport, fuels)"  href='/sectors/energy'>Energy</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '    href='/sectors/diversity-inclusion'>Diversity & inclusion</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '   title="Explore our Environmental sustainability sector."  href='/sectors/environment'>Environmental sustainability</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '    href='/sectors/food-agriculture'>Food & agriculture</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '   title="(Ores and metals, non-metallic materials, chemicals)"  href='/sectors/materials'>Materials</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '    href='/sectors/building-construction'>Building & construction</a></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 noChildren' ><a class='nav-link section-head ps-0  '   title="(Mechanical engineering and special technologies such as robotics, optics, biotechnology, etc)"  href='/sectors/engineering'>Engineering</a></div><!-- close of list item level 2 --></div></div></div><!-- close of container level 2 --></li><!-- close of list item level 1 --><li role='menuitem' class='nav-item dropdown position-static noChildren' ><a class='nav-link dropdown-toggle megamenu-toggle  '   title="ISO brings together global experts to develop International Standards that help solve problems and drive innovation."  href='/about'>About ISO</a></li><!-- close of list item level 1 --><li role='menuitem' class='nav-item dropdown position-static hasChildren' ><a class='nav-link dropdown-toggle megamenu-toggle  ' data-bs-toggle="dropdown" aria-expanded="true"   href=''>Insights & news</a><div role='menubar' class='dropdown-menu megamenu w-100 mt-0 border-0 rounded-0 megamenu-shadow-md nav-level2' aria-labelledby="navbarDropdown" data-bs-popper="none"><div class="container"><div class="row mb-xs-4 my-md-4 megamenu-animate slideUp"><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 hasChildren firstInLevel' ><a class='nav-link section-head ps-0   disabled'    href=''>Insights</a><div role='menubar' class='list-group list-group-flush mt-0 nav-level3' ><div role='menuitem' class='nav-item position-static ms-0 noChildren firstInLevel' ><a class='nav-link ps-0  '    href='/insights'>All insights</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/insights/filtered-list-healthcare'>Healthcare</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/insights/filtered-list-artificial-intelligence'>Artificial intelligence</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/insights/filtered-list-climate-change'>Climate change</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren lastInLevel' ><a class='nav-link ps-0  '    href='/insights/filtered-list-transport'>Transport</a></div><!-- close of list item level 3 (and more) --></div><!-- close of container level 3 (and more) --></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 hasChildren' ><a class='nav-link section-head ps-0   disabled'    href=''> </a><div role='menubar' class='list-group list-group-flush mt-0 nav-level3' ><div role='menuitem' class='nav-item position-static ms-0 noChildren firstInLevel' ><a class='nav-link ps-0  '    href='/insights/filtered-list-information-security'>Cybersecurity</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/insights/filtered-list-quality-management'>Quality management</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/insights/filtered-list-renewable-energy'>Renewable energy</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/insights/filtered-list-occupational-health-and-safety'>Occupational health and safety</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren lastInLevel' ><a class='nav-link ps-0  '    href='/insights/filtered-list-quantum-computing'>Quantum computing</a></div><!-- close of list item level 3 (and more) --></div><!-- close of container level 3 (and more) --></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 hasChildren' ><a class='nav-link section-head ps-0   disabled'    href=''>News</a><div role='menubar' class='list-group list-group-flush mt-0 nav-level3' ><div role='menuitem' class='nav-item position-static ms-0 noChildren firstInLevel' ><a class='nav-link ps-0  '    href='/insights/thought-leadership'>Expert talk</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/insights/standards-world'>Standards world</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '    href='/home/insights-news/news/dossier-medias.html'>Media kit</a></div><!-- close of list item level 3 (and more) --></div><!-- close of container level 3 (and more) --></div><!-- close of list item level 2 --><div role='menuitem' class='col-xs-6 col-lg-3 mt-0 hasChildren lastInLevel' ><a class='nav-link section-head ps-0   disabled'    href=''>Resources</a><div role='menubar' class='list-group list-group-flush mt-0 nav-level3' ><div role='menuitem' class='nav-item position-static ms-0 noChildren firstInLevel' ><a class='nav-link ps-0  '   title="ISO 22000 is the International Standard for food safety management systems. It helps organizations identify hazards, manage risks and demonstrate their ability to provide safe food consistently."  href='/home/insights-news/resources/iso-22000-explained.html'>ISO 22000 explained</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '   title="ISO 9001:2015 is the International Standard for quality management systems. It provides a framework that helps organizations deliver consistent products and services, improve efficiency and meet customer and regulatory expectations."  href='/home/insights-news/resources/iso-9001-explained.html'>ISO 9001 explained</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '   title="ISO 14001:2015 is the International Standard for environmental management systems. It helps organizations manage their environmental impacts, comply with applicable legal requirements, prevent pollution and improve environmental performance over time."  href='/home/insights-news/resources/iso-14001-explained.html'>ISO 14001 explained</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren' ><a class='nav-link ps-0  '   title="ISO/IEC 42001 is the International Standard for AI management systems. It provides requirements and guidance for organizations that develop, provide or use AI systems. "  href='/home/insights-news/resources/iso-42001-explained-what-it-is.html'>ISO 42001 explained</a></div><!-- close of list item level 3 (and more) --><div role='menuitem' class='nav-item position-static ms-0 noChildren lastInLevel' ><a class='nav-link ps-0  '   title="ISO 45001:2018 is the International Standard for occupational health and safety management systems. It helps organizations provide safe and healthy workplaces by preventing work-related injury and ill health, managing risks, and continually improving OHS performance."  href='/home/insights-news/resources/iso-45001-explained-what-it-is.html'>ISO 45001 explained</a></div><!-- close of list item level 3 (and more) --></div><!-- close of container level 3 (and more) --></div><!-- close of list item level 2 --></div></div></div><!-- close of container level 2 --></li><!-- close of list item level 1 --><li role='menuitem' class='nav-item dropdown position-static noChildren' ><a class='nav-link dropdown-toggle megamenu-toggle  '   title="Find out how the ISO process bring together global experts to create standards that are chosen the world over."  href='/developing-standards.html'>Taking part</a></li><!-- close of list item level 1 --><li role='menuitem' class='nav-item dropdown position-static noChildren inPath  lastInLevel' ><a class='nav-link dropdown-toggle megamenu-toggle  '   title="Are you looking to buy International Standards, guidelines, collections and checklists? They're all right here, in the ISO Store."  href='/store.html'>Store</a></li><!-- close of list item level 1 --></ul><!-- close of container level 1 --></nav><form class="navbar-form d-flex isosearch ms-sm-2" role="search" id="siteSearch" elementtiming="search">
+            <span class="hidden" data-searchpageurl="/search.html"></span>
+            <div class="input-group">
+              <input type="search" class="form-control" placeholder="Search" aria-labelledby="input-search">
+              <button id="input-search" class="btn btn-primary" type="submit"><i class="bi-search text-muted"></i><span class="visually-hidden">Search</span></button>
+            </div>
+          </form>
+<a role="button" id="shoppingCart" class="btn btn-light shopping-cart-link bg-white border-0 text-muted d-none d-lg-block" href="/webstore/checkout?memberId=ISO&guilang=en" title="Shopping cart" aria-label="Shopping cart" style-="display:none;">
+            <i class="bi-cart"></i><span id="cartText" class="visually-hidden-xs ms-1" style="display: none;"> Cart</span>
+          </a>
+        </div>
+      </nav>
+      </header>
+
+    <!-- MAIN CONTENT -->
+    <main role="main" id="content" class="acer" aria-label="Content" tabindex="-1">
+      
+
+
+<div itemscope itemtype="https://schema.org/Product" class="its-standard-container" id="its-standard-82875">
+  <section class="section-navigation bg-lightgray" id="section-navigation">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-7">
+          <div class="row">
+            <div class="col-8 col-xs-3 order-2 order-xs-1 d-none d-xs-block">
+
+              <figure class="standard">
+                <div class="standard-cover shadow-sm  standard-cover-old" id="standard-poster" elementtiming="standardImg">
+      <div class="cell-top-left ">
+        <div class="standard-logo grayscale">
+            <img src="/modules/iso-jahia-service-module/img/iso-iec-logo.png"/></div>
+        <div class="d-flex flex-column justify-content-between text-end">
+            <div class="standard-reference">
+              Reference number<br/>
+                ISO/IEC 27001:2022</div>
+            <div class="standard-copyright">&copy; ISO 2026</div>
+          </div>
+        </div>
+      <div class="cell-top-right ">
+        <div class="standard-type">
+          International Standard</div>
+        <div class="standard-number ">ISO/IEC 27001:2022</div>
+        </div>
+      <div class="cell-bottom-left ">
+        <div class="standard-title">Information security, cybersecurity and privacy protection — Information security management systems — Requirements</div>
+        </div>
+      <div class="cell-bottom-right ">
+        <div class="standard-edition">
+              Edition&nbsp;3<br/>2022-10</div>
+          </div>
+      <div class="standard-label  d-none">
+          </div>
+    </div>
+  <img src="/modules/iso-jahia-service-module/img/iso-standard-cover-thumbnail.png" class="d-none" itemprop="image" id="standard-image"/>
+  <figcaption class="text-center">
+    <a class="btn btn-sm btn-light" href="https://www.iso.org/obp/ui/en/#!iso:std:82875:en">Read sample</a>
+  </figcaption>
+</figure>
+            </div>
+            <div class="col-12 col-xs-9 order-1 order-xs-2">
+              <div class="visually-hidden" itemprop="category"></div>
+              <div class="visually-hidden" itemprop="name">ISO/IEC 27001:2022</div>
+              <div class="visually-hidden" itemprop="productID">82875</div>
+              <div class="visually-hidden" itemprop="brand" itemscope itemtype="https://schema.org/Brand">
+                <div itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+                  <meta itemprop="url" content="/modules/isoorg-template/img/iso/iso-logo-print.gif"/>
+                  <meta itemprop="width" content="350">
+                  <meta itemprop="height" content="350">
+                </div>
+                <meta itemprop="name" content="ISO - International Organization for Standardization">
+              </div>
+
+              <nav role="navigation" aria-label="Children Navigation" class="heading-condensed nav-relatives">
+  <div class="section-head "></div>
+
+  <h1 class="stdTitle" elementtiming="standardH1">
+    <span class="d-flex align-items-start gap-2">
+      <span class="d-block mb-2" elementtiming="standardDocRef">ISO/IEC 27001:2022</span>
+      </span>
+    <span class="display-5 fw-normal d-block mb-2" elementtiming="standardTitle1">Information security, cybersecurity and privacy protection — Information security management systems — Requirements</span></h1>
+</nav>
+<div class="mt-3 callout callout-success callout-top">
+                  <div class="mb-1" elementtiming="standardStatus"><a href="#lifecycle" class="text-success" title="Life cycle"><strong>Published</strong></a>
+                    (Edition 3, 2022)</div>
+
+                  <div class="amd" role="alert" data-alert="amendment" elementtiming="standardAmd">
+                      <i class="bi bi-arrow-return-right text-success"></i>
+                      This standard has&nbsp;<a href="#amendment" class="page-scroll">1&nbsp;amendment</a>.
+                    </div>
+                  </div>
+              </div>
+          </div>
+        </div>
+        <div class="col-md-4 col-md-offset-1">
+
+          <div class="card store-box buy-box buybox" id="cs82875" elementtiming="standardStorebox">
+              <div class="card-header text-center"><h3>ISO/IEC 27001:2022</h3></div>
+              
+<div class="card-body">
+
+  <span class="visually-hidden" id="indexReference_cs82875" data-index="82875 - ISO/IEC 27001:2022 - Information security, cybersecurity and privacy protection — Information security management systems — Requirements"></span>
+    <span class="visually-hidden" id="itemReference_cs82875">ISO/IEC 27001:2022</span>
+    <div class="visually-hidden" id="csNumber_cs82875">82875</div>
+  <form class="box-option" id="form_cs82875" elementtiming="productOptions">
+    <div class="mb-3">
+      <div class="section-head mb-1 text-sm">
+        Language</div>
+      <div class="form-group">
+        <select class="form-select form-select-sm bkilang" id="bkilang_cs82875">
+
+            <option value="en"  selected>English</option>
+
+            <option value="fr" >French</option>
+
+            </select>
+      </div>
+    </div>
+    <div class="section-head mb-1 text-sm">
+      Format</div>
+      <div class="formats formats_cs82875" id="bkifmt_cs82875_en" style="display: none;"><div class="form-check text-sm" id="bkifmt_cs82875_en_1">
+                  <input class="form-check-input" data-format="pdf_epub" data-type="std" data-price="155"  checked="checked" type="radio" name="format_en" id="format_cs82875_en_1" value="01ub000000288OJAAY~a05Vj000005yc4NIAQ~a0fb0000000eNEZAA2~a0c6700000bmFKAAA2"/>
+                  <label class="form-check-label" for="format_cs82875_en_1">PDF + ePub</label>
+                </div><div class="form-check text-sm" id="bkifmt_cs82875_en_2">
+                  <input class="form-check-input" data-format="pdf_epub_redline" data-type="std" data-price="186"  type="radio" name="format_en" id="format_cs82875_en_2" value="01ub000000288OJAAY~a05Vj000005yc4LIAQ~a0fb0000001wPQfAAM~a0c6700000bmFLoAAM"/>
+                  <label class="form-check-label" for="format_cs82875_en_2">PDF + ePub + Redline</label>
+                </div><div class="form-check text-sm" id="bkifmt_cs82875_en_3">
+                  <input class="form-check-input" data-format="paper" data-type="std" data-price="155"  type="radio" name="format_en" id="format_cs82875_en_3" value="01ub000000288OJAAY~a05Vj000005yc4RIAQ~a0fb0000000eNJaAAM~a0c6700000bmFKzAAM"/>
+                  <label class="form-check-label" for="format_cs82875_en_3">Paper</label>
+                </div></div><div class="formats formats_cs82875" id="bkifmt_cs82875_fr" style="display: none;"><div class="form-check text-sm" id="bkifmt_cs82875_fr_1">
+                  <input class="form-check-input" data-format="pdf_epub" data-type="std" data-price="155"  checked="checked" type="radio" name="format_fr" id="format_cs82875_fr_1" value="01ub000000288OJAAY~a05Vj000005yc4NIAQ~a0fb0000000eNJhAAM~a0c6700000bmQwXAAU"/>
+                  <label class="form-check-label" for="format_cs82875_fr_1">PDF + ePub</label>
+                </div><div class="form-check text-sm" id="bkifmt_cs82875_fr_2">
+                  <input class="form-check-input" data-format="pdf_epub_redline" data-type="std" data-price="186"  type="radio" name="format_fr" id="format_cs82875_fr_2" value="01ub000000288OJAAY~a05Vj000005yc4LIAQ~a0f6700000evQqIAAU~a0c6700000bmQxMAAU"/>
+                  <label class="form-check-label" for="format_cs82875_fr_2">PDF + ePub + Redline</label>
+                </div><div class="form-check text-sm" id="bkifmt_cs82875_fr_3">
+                  <input class="form-check-input" data-format="paper" data-type="std" data-price="155"  type="radio" name="format_fr" id="format_cs82875_fr_3" value="01ub000000288OJAAY~a05Vj000005yc4RIAQ~a0fb0000000eNJbAAM~a0c6700000bmQskAAE"/>
+                  <label class="form-check-label" for="format_cs82875_fr_3">Paper</label>
+                </div></div></form>
+
+  <div class="align-items-baseline box-price pb-0" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+    <div class="d-flex justify-content-center align-items-baseline gap-2">
+      <link itemprop="url" href="https://www.iso.org:-1/standard/27001" />
+      <meta itemprop="availability" content="https://schema.org/InStock" />
+      <span class="currency"><abbr title="Swiss francs" itemprop="priceCurrency">CHF</abbr></span>
+      <span class="price d-flex align-items-baseline gap-2">
+      <span class="amount" id="productPrice_cs82875" itemprop="price">155</span>
+    </span>
+    </div>
+  </div>
+
+  <div class="d-grid orderBasket box-action pt-0">
+    <button id="add_cs82875" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#iso-optout" onclick="javascript:addToBasket('cs82875', '1', 'en', 'cs')">
+      Add to cart</button>
+  </div>
+</div>
+<div class="card-footer text-xs text-center">
+  <div class="shippingCost d-none text-warning">* Shipping costs not included</div>
+  <div id="priceConverter">Convert Swiss francs (CHF) to <a id="convertLink_cs82875" target="_blank" href="https://www.xe.com/en/currencyconverter/convert/?Amount=155&From=CHF&To=EUR">your currency</a></div>
+  </div>
+
+
+</div>
+          </div>
+      </div>
+    </div>
+  </section>
+  <svg class="wave" preserveAspectRatio="none" viewBox="0 0 1440 96" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="m0 96 80-5.3C160 85 320 75 480 64s320-21 480-21.3c160 .3 320 10.3 400 16l80 5.3V0H0v96Z"></path></svg>
+
+<section id="product-details" elementtiming="standardDetail">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-7">
+          <h2>What is ISO/IEC 27001?</h2>
+
+<p>ISO/IEC 27001 is&nbsp;the world&#39;s best-known standard for <strong>information security management systems (ISMS)</strong>. It defines requirements an ISMS must meet.</p>
+
+<p>The ISO/IEC 27001 standard provides companies of any size and from all sectors of activity with guidance for establishing, implementing, maintaining and continually improving an information security management system.</p>
+
+<p>Conformity with ISO/IEC 27001 means that an organization or business has put in place a system to manage risks related to the security of data owned or handled by the company, and that this system respects all the best practices and principles enshrined in this International Standard.</p>
+
+<h2>Why is ISO/IEC 27001 important?</h2>
+
+<p>With cyber-crime on the rise and <strong>new threats</strong> <strong>constantly emerging</strong>, it can seem difficult or even impossible to manage cyber-risks. ISO/IEC 27001 helps organizations become risk-aware and proactively identify and address weaknesses.</p>
+
+<p>ISO/IEC 27001 promotes a holistic approach to information security: vetting people, policies and technology. An information security management system implemented according to this standard is a tool for <strong>risk management, cyber-resilience </strong>and<strong> operational excellence.</strong></p>
+
+<p>&nbsp;</p><div class="emphasis emphasis-gray clearfix">
+  <div class="" id="subscribe">
+     <h3>Get extra value in your mailbox</h3>
+
+<p>Register for related resources and updates, starting with an <b>information security maturity checklist</b>.</p><form method="POST" id="_form_19_" class="_form _form_19 _inline-form  _dark" novalidate>
+  <input type="hidden" name="u" value="19" />
+  <input type="hidden" name="f" value="19" />
+  <input type="hidden" name="s" />
+  <input type="hidden" name="c" value="0" />
+  <input type="hidden" name="m" value="0" />
+  <input type="hidden" name="act" value="sub" />
+  <input type="hidden" name="v" value="2" />
+  <input type="hidden" name="or" value="9417b9cd52ff6c742e176a370ed5442a" />
+
+  <style>
+      ._error {
+          width: 100%;
+          padding: 0.5em 1.25em;
+          text-align: left;
+      }
+      .grecaptcha-badge {
+          visibility: hidden;
+      }
+  </style>
+  <div class="_form-content">
+    <div class="input-group input-group-round mb-3">
+      <input type="text" id="email" class="form-control" name="email" placeholder="Email" aria-label="Email" aria-describedby="_form_19_submit" required/>
+      <input type="hidden" id="recaptchaResponse" name="recaptcha_response">
+      <div style="position:absolute; left:-5000px;">
+        <label for="website">Website</label>
+        <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+      </div>
+      <button id="_form_19_submit" class="_submit btn btn-primary" type="submit" class="g-recaptcha" data-sitekey="6Lfvyx8qAAAAAHOXkwbvVobjfLbVzBEnEVRuLtNA" data-callback='onSubmit' data-action='submit'>
+        Subscribe</button>
+    </div>
+  </div>
+
+    <div class="_form-thank-you mb-3" style="display:none;">
+          <p><strong>Almost done!&nbsp;</strong><br />
+You are only one step away from joining the ISO subscriber list. Please confirm your subscription by clicking on the email we&#39;ve just sent to you. You will not be registered until you confirm your subscription. If you can&#39;t find the email, kindly check your spam folder and/or the promotions tab (if you use Gmail).</p></div>
+      </form>
+
+
+<script type="text/javascript">
+  if (document.getElementsByClassName("is-prod is-live")[0]) { console.debug = function () {} }; // redefine console.debug on PROD+LIVE
+
+  
+  window._check_reCaptcha_19 = function() {
+    grecaptcha.ready(function() {
+      grecaptcha.execute('6Lfvyx8qAAAAAHOXkwbvVobjfLbVzBEnEVRuLtNA', {action: 'submit'}).then(function (token) {
+        document.getElementById('recaptchaResponse').value = token;
+        // console.debug('token = ' + token);
+
+        let urlRestApi = "https://recaptchaenterprise.googleapis.com/v1/projects/iso-website-1722850679238/assessments?key=AIzaSyBzn_mnNayynzq0NemiOop0b9eLKaoiViE";
+        let jsonRequest = {
+          event: {
+            token: token,
+            expectedAction: "submit",
+            siteKey: "6Lfvyx8qAAAAAHOXkwbvVobjfLbVzBEnEVRuLtNA"
+          }
+        }
+        // Verify the token and get the score
+        fetch(urlRestApi, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jsonRequest)
+        }).then(response => response.json()).then(data => {
+          console.debug("data = " + JSON.stringify(data));
+          const website = document.getElementById('website');
+          if ( (data.tokenProperties.valid && data.riskAnalysis.score >= 0.5) && (website.value.trim() === ''))  {
+            // If the score is good, submit the form
+            // console.debug("reCaptcha validation: " + data.tokenProperties.valid);
+            console.debug("reCaptcha score: " + data.riskAnalysis.score);
+            var _form_serialize_19 = function(form){if(!form||form.nodeName!=="FORM"){return }var i,j,q=[];for(i=0;i<form.elements.length;i++){if(form.elements[i].name===""){continue}switch(form.elements[i].nodeName){case"INPUT":switch(form.elements[i].type){case"tel":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].previousSibling.querySelector('div.iti__selected-dial-code').innerText)+encodeURIComponent(" ")+encodeURIComponent(form.elements[i].value));break;case"text":case"number":case"date":case"time":case"hidden":case"password":case"button":case"reset":case"submit":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break;case"checkbox":case"radio":if(form.elements[i].checked){q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value))}break;case"file":break}break;case"TEXTAREA":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break;case"SELECT":switch(form.elements[i].type){case"select-one":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break;case"select-multiple":for(j=0;j<form.elements[i].options.length;j++){if(form.elements[i].options[j].selected){q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].options[j].value))}}break}break;case"BUTTON":switch(form.elements[i].type){case"reset":case"submit":case"button":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break}break}}return q.join("&")};
+            let serialized_19 = _form_serialize_19(document.getElementById('_form_19_')).replace(/%0A/g, '\\n');
+            _load_script('https://iso272.activehosted.com/proc.php?' + serialized_19 + '&jsonp=true');
+            console.debug("serialized_ID = " + 19);
+          } else {
+            // Handle the case where the score is too low
+            console.debug('reCAPTCHA verification failed. Please try again.');
+            console.debug('reCaptcha invalid reason: ' + data.tokenProperties.invalidReason);
+          }
+        }).catch(error => {
+          console.debug('An error occurred. Please try again.');
+          console.error('Error: ', error);
+        });
+      });
+    });
+  }
+
+
+  window._show_thank_you = function(id, message, trackcmp_url, email) {
+    var form = document.getElementById('_form_' + id + '_'), thank_you = form.querySelector('._form-thank-you');
+    form.querySelector('._form-content').style.display = 'none';
+    // thank_you.innerHTML = message;
+    thank_you.style.display = 'block';
+    const vgoAlias = typeof visitorGlobalObjectAlias === 'undefined' ? 'vgo' : visitorGlobalObjectAlias;
+    var visitorObject = window[vgoAlias];
+    if (email && typeof visitorObject !== 'undefined') {
+      visitorObject('setEmail', email);
+      visitorObject('update');
+    } else if (typeof(trackcmp_url) != 'undefined' && trackcmp_url) {
+      // Site tracking URL to use after inline form submission.
+      _load_script(trackcmp_url, 'text/plain', 'ActiveCampaign');
+    }
+    if (typeof window._form_callback !== 'undefined') window._form_callback(id);
+  };
+  window._show_error = function(id, message, html) {
+    var form = document.getElementById('_form_' + id + '_'), err = document.createElement('div'), button = form.querySelector('button'), old_error = form.querySelector('._form_error');
+    if (old_error) old_error.parentNode.removeChild(old_error);
+    err.innerHTML = message;
+    err.className = '_error-inner _form_error _no_arrow';
+    var wrapper = document.createElement('div');
+    wrapper.className = '_form-inner';
+    wrapper.appendChild(err);
+    button.parentNode.insertBefore(wrapper, button);
+    document.querySelector('[id^="_form"][id$="_submit"]').disabled = false;
+    if (html) {
+      var div = document.createElement('div');
+      div.className = '_error-html';
+      div.innerHTML = html;
+      err.appendChild(div);
+    }
+  };
+  window._load_script = function(url, scriptType, ucDPS, callback) {
+    var head = document.querySelector('head'), script = document.createElement('script'), r = false;
+    if (typeof(scriptType) != 'undefined' && scriptType) {
+      script.type = scriptType;
+    }
+    else {
+      script.type = 'application/javascript';
+    }
+    if (typeof(ucDPS) != 'undefined' && ucDPS) {
+      script.dataset.usercentrics = ucDPS;
+    }
+    script.charset = 'utf-8';
+    script.src = url;
+    if (callback) {
+      script.onload = script.onreadystatechange = function() {
+        if (!r && (!this.readyState || this.readyState == 'complete')) {
+          r = true;
+          callback();
+        }
+      };
+    }
+    head.appendChild(script);
+  };
+  (function() {
+    if (window.location.search.search("excludeform") !== -1) return false;
+    var getCookie = function(name) {
+      var match = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
+    }
+    var setCookie = function(name, value) {
+      var now = new Date();
+      var time = now.getTime();
+      var expireTime = time + 1000 * 60 * 60 * 24 * 365;
+      now.setTime(expireTime);
+      document.cookie = name + '=' + value + '; expires=' + now + ';path=/; Secure; SameSite=Lax;';// cannot be HttpOnly
+    }
+    var addEvent = function(element, event, func) {
+      if (element.addEventListener) {
+        element.addEventListener(event, func);
+      } else {
+        var oldFunc = element['on' + event];
+        element['on' + event] = function() {
+          oldFunc.apply(this, arguments);
+          func.apply(this, arguments);
+        };
+      }
+    }
+    var _removed = false;
+    var form_to_submit = document.getElementById('_form_19_');
+    var allInputs = form_to_submit.querySelectorAll('input, select, textarea'), tooltips = [], submitted = false;
+
+    var getUrlParam = function(name) {
+      var params = new URLSearchParams(window.location.search);
+      return params.get(name) || false;
+    };
+
+    for (var i = 0; i < allInputs.length; i++) {
+      var regexStr = "field\\[(\\d+)\\]";
+      var results = new RegExp(regexStr).exec(allInputs[i].name);
+      if (results != undefined) {
+        allInputs[i].dataset.name = window.cfields[results[1]];
+      } else {
+        allInputs[i].dataset.name = allInputs[i].name;
+      }
+      var fieldVal = getUrlParam(allInputs[i].dataset.name);
+
+      if (fieldVal) {
+        if (allInputs[i].dataset.autofill === "false") {
+          continue;
+        }
+        if (allInputs[i].type == "radio" || allInputs[i].type == "checkbox") {
+          if (allInputs[i].value == fieldVal) {
+            allInputs[i].checked = true;
+          }
+        } else {
+          allInputs[i].value = fieldVal;
+        }
+      }
+    }
+
+    var remove_tooltips = function() {
+      for (var i = 0; i < tooltips.length; i++) {
+        tooltips[i].tip.parentNode.removeChild(tooltips[i].tip);
+      }
+      tooltips = [];
+    };
+    var remove_tooltip = function(elem) {
+      for (var i = 0; i < tooltips.length; i++) {
+        if (tooltips[i].elem === elem) {
+          tooltips[i].tip.parentNode.removeChild(tooltips[i].tip);
+          tooltips.splice(i, 1);
+          return;
+        }
+      }
+    };
+    var create_tooltip = function(elem, text) {
+      var tooltip = document.createElement('div'), arrow = document.createElement('div'), inner = document.createElement('div'), new_tooltip = {};
+      if (elem.type != 'radio' && elem.type != 'checkbox') {
+        tooltip.className = '_error text-sm text-muted text-start';
+        arrow.className = '_error-arrow';
+        inner.className = '_error-inner';
+        inner.innerHTML = text;
+        tooltip.appendChild(arrow);
+        tooltip.appendChild(inner);
+        elem.parentNode.appendChild(tooltip);
+      } else {
+        tooltip.className = '_error-inner _no_arrow';
+        tooltip.innerHTML = text;
+        elem.parentNode.insertBefore(tooltip, elem);
+        new_tooltip.no_arrow = true;
+      }
+      new_tooltip.tip = tooltip;
+      new_tooltip.elem = elem;
+      tooltips.push(new_tooltip);
+      return new_tooltip;
+    };
+    var resize_tooltip = function(tooltip) {
+      var rect = tooltip.elem.getBoundingClientRect();
+      var doc = document.documentElement, scrollPosition = rect.top - ((window.pageYOffset || doc.scrollTop)  - (doc.clientTop || 0));
+      if (scrollPosition < 40) {
+        tooltip.tip.className = tooltip.tip.className.replace(/ ?(_above|_below) ?/g, '') + ' _below';
+      } else {
+        tooltip.tip.className = tooltip.tip.className.replace(/ ?(_above|_below) ?/g, '') + ' _above';
+      }
+    };
+    var resize_tooltips = function() {
+      if (_removed) return;
+      for (var i = 0; i < tooltips.length; i++) {
+        if (!tooltips[i].no_arrow) resize_tooltip(tooltips[i]);
+      }
+    };
+    var validate_field = function(elem, remove) {
+      var tooltip = null, value = elem.value, no_error = true;
+      remove ? remove_tooltip(elem) : false;
+      if (elem.type != 'checkbox') elem.className = elem.className.replace(/ ?_has_error ?/g, '');
+      if (elem.getAttribute('required') !== null) {
+        if (elem.type == 'radio' || (elem.type == 'checkbox' && /any/.test(elem.className))) {
+          var elems = form_to_submit.elements[elem.name];
+          if (!(elems instanceof NodeList || elems instanceof HTMLCollection) || elems.length <= 1) {
+            no_error = elem.checked;
+          }
+          else {
+            no_error = false;
+            for (var i = 0; i < elems.length; i++) {
+              if (elems[i].checked) no_error = true;
+            }
+          }
+          if (!no_error) {
+            tooltip = create_tooltip(elem, "Please select an option.");
+          }
+        } else if (elem.type =='checkbox') {
+          var elems = form_to_submit.elements[elem.name], found = false, err = [];
+          no_error = true;
+          for (var i = 0; i < elems.length; i++) {
+            if (elems[i].getAttribute('required') === null) continue;
+            if (!found && elems[i] !== elem) return true;
+            found = true;
+            elems[i].className = elems[i].className.replace(/ ?_has_error ?/g, '');
+            if (!elems[i].checked) {
+              no_error = false;
+              elems[i].className = elems[i].className + ' _has_error';
+              err.push("Checking %s is required".replace("%s", elems[i].value));
+            }
+          }
+          if (!no_error) {
+            tooltip = create_tooltip(elem, err.join('<br/>'));
+          }
+        } else if (elem.tagName == 'SELECT') {
+          var selected = true;
+          if (elem.multiple) {
+            selected = false;
+            for (var i = 0; i < elem.options.length; i++) {
+              if (elem.options[i].selected) {
+                selected = true;
+                break;
+              }
+            }
+          } else {
+            for (var i = 0; i < elem.options.length; i++) {
+              if (elem.options[i].selected && (!elem.options[i].value || (elem.options[i].value.match(/\n/g)))) {
+                selected = false;
+              }
+            }
+          }
+          if (!selected) {
+            elem.className = elem.className + ' _has_error';
+            no_error = false;
+            tooltip = create_tooltip(elem, "Please select an option.");
+          }
+        } else if (value === undefined || value === null || value === '') {
+          elem.className = elem.className + ' _has_error';
+          no_error = false;
+          tooltip = create_tooltip(elem, "This field is required");
+        }
+      }
+      if (no_error && (elem.id == 'field[]' || elem.id == 'ca[11][v]')) {
+        if (elem.className.includes('phone-input-error')) {
+          elem.className = elem.className + ' _has_error';
+          no_error = false;
+        }
+      }
+      if (no_error && elem.name == 'email') {
+        if (!value.match(/^[\+_a-z0-9-'&=]+(\.[\+_a-z0-9-']+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/i)) {
+          elem.className = elem.className + ' _has_error';
+          no_error = false;
+          tooltip = create_tooltip(elem, 'Please enter a valid email address');
+        }
+      }
+      if (no_error && /date_field/.test(elem.className)) {
+        if (!value.match(/^\d\d\d\d-\d\d-\d\d$/)) {
+          elem.className = elem.className + ' _has_error';
+          no_error = false;
+          tooltip = create_tooltip(elem, "Enter a valid date.");
+        }
+      }
+      tooltip ? resize_tooltip(tooltip) : false;
+      return no_error;
+    };
+    var needs_validate = function(el) {
+      if(el.getAttribute('required') !== null){
+        return true
+      }
+      if(el.name === 'email' && el.value !== ""){
+        return true
+      }
+
+      if((el.id == 'field[]' || el.id == 'ca[11][v]') && el.className.includes('phone-input-error')){
+        return true
+      }
+
+      return false
+    };
+    var validate_form = function(e) {
+      var err = form_to_submit.querySelector('._form_error'), no_error = true;
+      if (!submitted) {
+        submitted = true;
+        for (var i = 0, len = allInputs.length; i < len; i++) {
+          var input = allInputs[i];
+          if (needs_validate(input)) {
+            if (input.type == 'tel') {
+              addEvent(input, 'blur', function() {
+                this.value = this.value.trim();
+                validate_field(this, true);
+              });
+            }
+            if (input.type == 'text' || input.type == 'number' || input.type == 'time') {
+              addEvent(input, 'blur', function() {
+                this.value = this.value.trim();
+                validate_field(this, true);
+              });
+              addEvent(input, 'input', function() {
+                validate_field(this, true);
+              });
+            } else if (input.type == 'radio' || input.type == 'checkbox') {
+              (function(el) {
+                var radios = form_to_submit.elements[el.name];
+                for (var i = 0; i < radios.length; i++) {
+                  addEvent(radios[i], 'click', function() {
+                    validate_field(el, true);
+                  });
+                }
+              })(input);
+            } else if (input.tagName == 'SELECT') {
+              addEvent(input, 'change', function() {
+                validate_field(this, true);
+              });
+            } else if (input.type == 'textarea'){
+              addEvent(input, 'input', function() {
+                validate_field(this, true);
+              });
+            }
+          }
+        }
+      }
+      remove_tooltips();
+      for (var i = 0, len = allInputs.length; i < len; i++) {
+        var elem = allInputs[i];
+        if (needs_validate(elem)) {
+          if (elem.tagName.toLowerCase() !== "select") {
+            elem.value = elem.value.trim();
+          }
+          validate_field(elem) ? true : no_error = false;
+        }
+      }
+      if (!no_error && e) {
+        e.preventDefault();
+      }
+      resize_tooltips();
+      return no_error;
+    };
+    addEvent(window, 'resize', resize_tooltips);
+    addEvent(window, 'scroll', resize_tooltips);
+
+    var hidePhoneInputError = function(inputId) {
+      var errorMessage =  document.getElementById("error-msg-" + inputId);
+      var input = document.getElementById(inputId);
+      errorMessage.classList.remove("phone-error");
+      errorMessage.classList.add("phone-error-hidden");
+      input.classList.remove("phone-input-error");
+    };
+
+    var initializePhoneInput = function(input, defaultCountry) {
+      return window.intlTelInput(input, {
+        utilsScript: "https://unpkg.com/intl-tel-input@17.0.18/build/js/utils.js",
+        autoHideDialCode: false,
+        separateDialCode: true,
+        initialCountry: defaultCountry,
+        preferredCountries: []
+      });
+    }
+
+    var setPhoneInputEventListeners = function(inputId, input, iti) {
+      input.addEventListener('blur', function() {
+        var errorMessage = document.getElementById("error-msg-" + inputId);
+        if (input.value.trim()) {
+          if (iti.isValidNumber()) {
+            iti.setNumber(iti.getNumber());
+            if (errorMessage.classList.contains("phone-error")){
+              hidePhoneInputError(inputId);
+            }
+          } else {
+            showPhoneInputError(inputId)
+          }
+        } else {
+          if (errorMessage.classList.contains("phone-error")){
+            hidePhoneInputError(inputId);
+          }
+        }
+      });
+
+      input.addEventListener("countrychange", function() {
+        iti.setNumber('');
+      });
+
+      input.addEventListener("keydown", function(e) {
+        var charCode = (e.which) ? e.which : e.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57) && charCode !== 8) {
+          e.preventDefault();
+        }
+      });
+    };
+
+    var showPhoneInputError = function(inputId) {
+      var errorMessage =  document.getElementById("error-msg-" + inputId);
+      var input = document.getElementById(inputId);
+      errorMessage.classList.add("phone-error");
+      errorMessage.classList.remove("phone-error-hidden");
+      input.classList.add("phone-input-error");
+    };
+
+
+    var form_submit = function(e) {
+      e.preventDefault();
+      if (validate_form()) {
+        // use this trick to get the submit button & disable it using plain javascript
+        document.querySelector('#_form_19_submit').disabled = true;
+        var _form_serialize_19 = function(form){if(!form||form.nodeName!=="FORM"){return }var i,j,q=[];for(i=0;i<form.elements.length;i++){if(form.elements[i].name===""){continue}switch(form.elements[i].nodeName){case"INPUT":switch(form.elements[i].type){case"tel":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].previousSibling.querySelector('div.iti__selected-dial-code').innerText)+encodeURIComponent(" ")+encodeURIComponent(form.elements[i].value));break;case"text":case"number":case"date":case"time":case"hidden":case"password":case"button":case"reset":case"submit":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break;case"checkbox":case"radio":if(form.elements[i].checked){q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value))}break;case"file":break}break;case"TEXTAREA":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break;case"SELECT":switch(form.elements[i].type){case"select-one":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break;case"select-multiple":for(j=0;j<form.elements[i].options.length;j++){if(form.elements[i].options[j].selected){q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].options[j].value))}}break}break;case"BUTTON":switch(form.elements[i].type){case"reset":case"submit":case"button":q.push(form.elements[i].name+"="+encodeURIComponent(form.elements[i].value));break}break}}return q.join("&")};
+        let serialized_19 = _form_serialize_19(document.getElementById('_form_19_')).replace(/%0A/g, '\\n');
+        var err = form_to_submit.querySelector('._form_error');
+        err ? err.parentNode.removeChild(err) : false;
+        // We don't check the Google reCaptcha if projectId is null
+        
+            // Site properties: ProjectId is defined => we check the captcha before sending the form
+            _check_reCaptcha_19();
+          
+      }
+      return false;
+    };
+    addEvent(form_to_submit, 'submit', form_submit);
+  })();
+
+</script><!-- p class="text-xs">To learn how your data will be used, please see our <a href="https://www.iso.org/privacy.html" title="privacy-and-copyright">privacy notice</a>. This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy">Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a> apply.</p -->
+<details class="text-xs"><summary style="color:inherit">How your data will be used</summary>
+<p class="pt-2">Please see <a href="/privacy.html" title="privacy-and-copyright">ISO privacy notice</a>. This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy">Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a> apply.</p>
+</details></div></div><div class="" id="vimeo-879442758">
+     <figure class="width-100pct figure-video" elementtiming="vimeo">
+  <div class="vimeo-player">
+    <lite-vimeo videoid="879442758" style="aspect-ratio: 16/9; background: radial-gradient(lightgray, darkgray);">
+      <a href="https://vimeo.com/879442758" class="ltv-playbtn" title="View on Vimeo"></a>
+      <div class="cmp-notice bg-danger">
+        <strong>Cookie consent is required</strong>
+        <br/>
+        <a href="https://vimeo.com/879442758" title="View on Vimeo">Please view on Vimeo</a>
+        or<a id="uc-btn" class="" onClick="__ucCmp.showSecondLayer();"> adjust your privacy settings</a>.
+      </div>
+    </lite-vimeo>
+    <figcaption><p>What is ISO/IEC 27001: Guide to Information Security Management Systems</p>
+</figcaption>
+    </div>
+</figure>
+
+</div><h2>Benefits</h2>
+
+<ul class="list-unstyled" id="benefits" role="list">
+ <li><i class="bi bi-check-circle-fill text-success"></i><strong> Resilience</strong> to cyber-attacks</li>
+ <li><strong><i class="bi bi-check-circle-fill text-success"></i> Preparedness</strong>&nbsp;for new threats</li>
+ <li><strong><i class="bi bi-check-circle-fill text-success"></i> </strong>Data <strong>integrity</strong>, <strong>confidentiality </strong>and <strong>availability</strong></li>
+ <li><strong><i class="bi bi-check-circle-fill text-success"></i></strong> Security across<strong> all supports</strong></li>
+ <li><strong><i class="bi bi-check-circle-fill text-success"></i> Organization-wide </strong>protection</li>
+ <li><strong><i class="bi bi-check-circle-fill text-success"></i> Cost savings&nbsp;</strong></li>
+</ul>
+
+<p>&nbsp;</p><h3>FAQ</h3><div class="accordion  faqs" id="id-0a731b4b-defc-438e-a2bc-d690257f4eec">
+    <div class="accordion-item">
+    <h2 class="accordion-header" id="heading-118967ca-ef6f-4a25-b0c8-5aef498fade8"><button class="accordion-button  collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#id-118967ca-ef6f-4a25-b0c8-5aef498fade8" aria-expanded="true" aria-controls="id-118967ca-ef6f-4a25-b0c8-5aef498fade8">
+            Who needs ISO/IEC 27001?</button>
+        </h2><div id="id-118967ca-ef6f-4a25-b0c8-5aef498fade8" class="accordion-collapse collapse " aria-labelledby="heading-118967ca-ef6f-4a25-b0c8-5aef498fade8" data-bs-parent="#id-0a731b4b-defc-438e-a2bc-d690257f4eec">
+        <div class="accordion-body">
+            <p>Nowadays, data theft, cybercrime and liability for privacy leaks are risks that <strong>all organizations</strong> need to factor in. Any business needs to think strategically about its information security needs, and how they relate to its own objectives, processes, size and structure. The ISO/IEC 27001 standard enables organizations to establish an information security management system and apply a risk management process that is <strong>adapted to their size and needs</strong>, and scale it as necessary as these factors evolve.</p>
+
+<p>While information technology (IT) is the industry with the largest number of ISO/IEC 27001- certified enterprises&nbsp;(almost a fifth of all valid certificates to ISO/IEC 27001 as per the ISO Survey 2021), the benefits of this standard have convinced <strong>companies across all economic sectors</strong> (all kinds of services and manufacturing as well as the primary sector; private, public and non-profit organizations).</p>
+
+<p>Companies that adopt the holistic approach described in ISO/IEC 27001 will make sure information security is built into organizational processes, information systems and management controls. They gain efficiency and often <strong>emerge as leaders within their industries</strong>.</p>
+</div>
+    </div>
+</div><div class="accordion-item">
+    <h2 class="accordion-header" id="heading-e8fdebf4-68bd-4367-b8c4-08cd79b1d6c0"><button class="accordion-button  collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#id-e8fdebf4-68bd-4367-b8c4-08cd79b1d6c0" aria-expanded="true" aria-controls="id-e8fdebf4-68bd-4367-b8c4-08cd79b1d6c0">
+            How will ISO/IEC 27001 benefit my organization?</button>
+        </h2><div id="id-e8fdebf4-68bd-4367-b8c4-08cd79b1d6c0" class="accordion-collapse collapse " aria-labelledby="heading-e8fdebf4-68bd-4367-b8c4-08cd79b1d6c0" data-bs-parent="#id-0a731b4b-defc-438e-a2bc-d690257f4eec">
+        <div class="accordion-body">
+            <p>Implementing the information security framework specified in the ISO/IEC 27001 standard helps you:</p>
+
+<ul>
+ <li>Reduce your vulnerability to the growing threat of<strong> cyber-attacks</strong></li>
+ <li>Respond to <strong>evolving security risks</strong></li>
+ <li>Ensure that assets such as financial statements, intellectual property, employee data and information entrusted by third parties remain <strong>undamaged, confidential, and available</strong> as needed</li>
+ <li>Provide a <strong>centrally managed framework</strong> that secures all information in one place</li>
+ <li>Prepare <strong>people, processes and technology </strong>throughout your organization to face technology-based risks and other threats</li>
+ <li>Secure<strong> information in all forms</strong>, including paper-based, cloud-based and digital data</li>
+ <li><strong>Save</strong><strong> money</strong> by increasing efficiency and reducing expenses for ineffective defence technology</li>
+</ul>
+</div>
+    </div>
+</div><div class="accordion-item">
+    <h2 class="accordion-header" id="heading-96a35957-a46d-4ad0-9740-f00f9639d54c"><button class="accordion-button  collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#id-96a35957-a46d-4ad0-9740-f00f9639d54c" aria-expanded="true" aria-controls="id-96a35957-a46d-4ad0-9740-f00f9639d54c">
+            What are the three principles of information security in ISO/IEC 27001, also known as the CIA triad?</button>
+        </h2><div id="id-96a35957-a46d-4ad0-9740-f00f9639d54c" class="accordion-collapse collapse " aria-labelledby="heading-96a35957-a46d-4ad0-9740-f00f9639d54c" data-bs-parent="#id-0a731b4b-defc-438e-a2bc-d690257f4eec">
+        <div class="accordion-body">
+            <ol>
+<li><strong>Confidentiality<br /> </strong>&rarr; <em>Meaning:</em> Only the right people can access the information held by the organization.<br /> ⚠ <em>Risk example: </em>Criminals get hold of your clients&rsquo; login details and sell them on the Darknet.</li>
+<li><strong>Information integrity<br /></strong><strong>&rarr;</strong> <em>Meaning:</em> Data that the organization uses to pursue its business or keeps safe for others is reliably stored and not erased or damaged. <br /> ⚠ <em>Risk example: </em>A staff member accidentally deletes a row in a file during processing.</li>
+<li><strong>Availability of data:</strong><br /> &rarr; <em>Meaning:</em> The organization and its clients can access the information whenever it is necessary so that business purposes and customer expectations are satisfied.<br /> ⚠ <em>Risk example: </em>Your enterprise database goes offline because of server problems and insufficient backup.</li>
+</ol>
+<p>An information security management system that meets the requirements of ISO/IEC&nbsp;27001 preserves the confidentiality, integrity and availability of information by applying a risk management process and gives confidence to interested parties that risks are adequately managed.</p>
+<p></p></div>
+    </div>
+</div><div class="accordion-item">
+    <h2 class="accordion-header" id="heading-93f49b36-33d2-418c-afdf-72ffabb121d3"><button class="accordion-button  collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#id-93f49b36-33d2-418c-afdf-72ffabb121d3" aria-expanded="true" aria-controls="id-93f49b36-33d2-418c-afdf-72ffabb121d3">
+            Is ISO 27001 the same as ISO/IEC 27001?</button>
+        </h2><div id="id-93f49b36-33d2-418c-afdf-72ffabb121d3" class="accordion-collapse collapse " aria-labelledby="heading-93f49b36-33d2-418c-afdf-72ffabb121d3" data-bs-parent="#id-0a731b4b-defc-438e-a2bc-d690257f4eec">
+        <div class="accordion-body">
+            <p>Even though it is sometimes referred to as ISO 27001, the <strong>official abbreviation</strong> for the International Standard on requirements for information security management is ISO/IEC 27001. That is because it has been <strong>jointly published by ISO and the International Electrotechnical Commission (IEC)</strong>. The number indicates that it was published under the responsibility of Subcommittee 27 (on Information Security, Cybersecurity and Privacy Protection) of ISO&rsquo;s and IEC&rsquo;s Joint Technical Committee on Information Technology (ISO/IEC JTC 1).</p>
+</div>
+    </div>
+</div><div class="accordion-item">
+    <h2 class="accordion-header" id="heading-f18bdda9-72df-4634-8013-7c0c67080694"><button class="accordion-button  collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#id-f18bdda9-72df-4634-8013-7c0c67080694" aria-expanded="true" aria-controls="id-f18bdda9-72df-4634-8013-7c0c67080694">
+            What is ISO/IEC 27001 certification and what does it mean to be certified to ISO 27001?</button>
+        </h2><div id="id-f18bdda9-72df-4634-8013-7c0c67080694" class="accordion-collapse collapse " aria-labelledby="heading-f18bdda9-72df-4634-8013-7c0c67080694" data-bs-parent="#id-0a731b4b-defc-438e-a2bc-d690257f4eec">
+        <div class="accordion-body">
+            <p>Certification to ISO/IEC 27001 is one way to demonstrate to stakeholders and customers that you are <strong>committed and able </strong><strong>to manage information securely and safely</strong>. Holding a certificate from an accredited conformity assessment body may bring an additional layer of confidence, as an accreditation body has provided independent confirmation of the certification body&rsquo;s competence. If you wish to use a logo to demonstrate certification, contact the certification body that issued the certificate. As in other contexts, standards should always be referred to with their full reference, for example &ldquo;certified to ISO/IEC 27001:2022&rdquo; (not just &ldquo;certified to ISO 27001&rdquo;). See full details about <a href="https://www.iso.org/iso-name-and-logo.html">use of the ISO logo</a>.</p>
+
+<p>As with other ISO management system standards, companies implementing ISO/IEC 27001 can decide whether they want to go through a certification process. Some organizations choose to implement the standard in order to benefit from the best practice it contains, while others&nbsp;also want to get certified to <strong>reassure customers and clients</strong>.</p>
+
+<p>ISO/IEC 27001 is widely used around the world. As per the ISO Survey 2022, over 70&nbsp;000 certificates were reported in 150 countries and from all economic sectors, ranging from agriculture through manufacturing to social services.</p>
+</div>
+    </div>
+</div></div></div>
+
+        <div class="col-md-4 col-md-offset-1">
+
+          <div class="d-flex justify-content-between align-items-center">
+  <h2>General information</h2>
+</div>
+<ul class="refine mt-0">
+  <li>
+    <div class="" id="publicationStatus">
+      <div class="entry-label">Status</div>&nbsp;:&nbsp;<span>Published</span>
+      </div>
+    <div class="" id="publicationDate">
+      <div class="entry-label">Publication date</div>&nbsp;:&nbsp;<span itemprop="releaseDate">2022-10</span>
+      </div>
+
+    <div class="" id="stageId">
+        <div class="entry-label">Stage</div> : International Standard published [<a class="page-scroll" href="#lifecycle">60.60</a>]
+      </div>
+    </li>
+  <li>
+    <div class="">
+      <div class="entry-label">Edition</div>&nbsp;:&nbsp;3</div>
+    <div class="">
+      <div class="entry-label">Number of pages</div>&nbsp;:&nbsp;19</div>
+  </li>
+
+  <li>
+    <div>
+        <div class="entry-label">Technical Committee&nbsp;:</div>
+        <span class="entry-name entry-block">
+          <a title="Information security, cybersecurity and privacy protection" href="/committee/45306.html">ISO/IEC JTC 1/SC 27</a></span>
+      </div>
+    <div>
+      <div class="entry-label"><abbr class="popover-primary" tabindex="0" role="button" data-bs-toggle="popover" data-bs-custom-class="popover-light text-sm shadow-sm pt-2" data-bs-trigger="focus" data-bs-placement="bottom" data-bs-content="International Classification for Standards">ICS</abbr>&nbsp;:</div>
+        <span class="entry-name entry-block">
+            <a title="IT Security" href="/ics/35.030.html">
+                35.030</a>&nbsp;
+          </span>
+        <span class="entry-name entry-block">
+            <a title="Management systems" href="/ics/03.100.70.html">
+                03.100.70</a>&nbsp;
+          </span>
+        </div>
+  </li>
+  <li class="text-xs">
+    <i class="bi-rss-fill me-1 align-baseline text-sm" style="color: #F99000;"></i><a href="/contents/data/standard/08/28/82875.detail.rss">RSS</a>&nbsp;updates</li>
+</ul>
+</div>
+      </div>
+    </div>
+  </section>
+
+</div> <section id="promo" class="      bg-brand-mid">
+  <div class="container">
+<div class="row align-items-center       " >
+<div class="col-xs-4 col-md-2"><div class="tilt" >
+     <figure class="obp">
+  <div class="img-container">
+    <img loading="lazy" src="https://www.iso.org/obp/graphics/pub/5c32d731-45de-47ac-9887-34c3a7070087_dcd2304a361d0aebf097eac69420c5a6.jpg" class="img-fluid shadow" alt="" />
+  </div>
+</figure></div></div>
+        <div class="col-xs-8 col-md-5"><h3><a href="/publication/PUB100484.html" title="PUB100484">Information Security Management Systems: A practical guide for SMEs</a></h3>
+
+<p class="lead">This handbook focuses on guiding SMEs in developing and implementing an information security management system (ISMS) in accordance with ISO/IEC 27001, in order to help protect yourselves from cyber-risks.</p></div>
+        <div class="offset-md-1 col-md-4"><div class="card store-box buy-box buybox" id="pub100484">
+    <div class="card-header text-center"><h3>ISO/IEC 27001:2022 - Information Security Management Systems - A practical guide for SMEs</h3></div>
+    
+<div class="card-body">
+
+  <span class="visually-hidden" id="indexReference_pub100484" data-index="ISO/IEC 27001:2022 - Information Security Management Systems - A practical guide for SMEs"></span>
+    <span class="visually-hidden" id="itemReference_pub100484">ISO/IEC 27001:2022 - Information Security Management Systems - A practical guide for SMEs</span>
+    <div class="visually-hidden" id="pubNumber_pub100484">pub100484</div>
+  <form class="box-option" id="form_pub100484" elementtiming="productOptions">
+    <div class="mb-3">
+      <div class="section-head mb-1 text-sm">
+        Language</div>
+      <div class="form-group">
+        <select class="form-select form-select-sm bkilang" id="bkilang_pub100484">
+
+            <option value="en"  selected>English</option>
+
+            </select>
+      </div>
+    </div>
+    <div class="section-head mb-1 text-sm">
+      Format</div>
+      <div class="formats formats_pub100484" id="bkifmt_pub100484_en" style="display: none;"><div class="form-check text-sm" id="bkifmt_pub100484_en_1">
+                  <input class="form-check-input" data-format="pdf" data-type="pub" data-price="44"  checked="checked" type="radio" name="format_en" id="format_pub100484_en_1" value="01uVj00000IKW1OIAX~a05b0000005WV1uAAG~a0fVj000003ESNhIAO"/>
+                  <label class="form-check-label" for="format_pub100484_en_1">PDF</label>
+                </div><div class="form-check text-sm" id="bkifmt_pub100484_en_2">
+                  <input class="form-check-input" data-format="paper" data-type="pub" data-price="44"  type="radio" name="format_en" id="format_pub100484_en_2" value="01uVj00000IKW1OIAX~a05b0000005WV1zAAG~a0fVj000003ESPJIA4"/>
+                  <label class="form-check-label" for="format_pub100484_en_2">Paper</label>
+                </div></div></form>
+
+  <div class="align-items-baseline box-price pb-0" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+    <div class="d-flex justify-content-center align-items-baseline gap-2">
+      <link itemprop="url" href="https://www.iso.org:-1/publication/PUB100484.html" />
+      <meta itemprop="availability" content="https://schema.org/InStock" />
+      <span class="currency"><abbr title="Swiss francs" itemprop="priceCurrency">CHF</abbr></span>
+      <span class="price d-flex align-items-baseline gap-2">
+      <span class="amount" id="productPrice_pub100484" itemprop="price">44</span>
+    </span>
+    </div>
+  </div>
+
+  <div class="d-grid orderBasket box-action pt-0">
+    <button id="add_pub100484" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#iso-optout" onclick="javascript:addToBasket('pub100484', '1', 'en', 'pub')">
+      Add to cart</button>
+  </div>
+</div>
+<div class="card-footer text-xs text-center">
+  <div class="shippingCost d-none text-warning">* Shipping costs not included</div>
+  <div id="priceConverter">Convert Swiss francs (CHF) to <a id="convertLink_pub100484" target="_blank" href="https://www.xe.com/en/currencyconverter/convert/?Amount=44&From=CHF&To=EUR">your currency</a></div>
+  </div>
+
+
+</div></div></div></div>
+</section><section id="amendment" class="readable" elementtiming="StandardAmdDetail">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h2><i class="bi bi-arrow-return-right"></i>&nbsp;Amendments</h2>
+          <p>Amendments are issued when it is found that new material may need to be added to an existing standardization document. They may also include editorial or technical corrections to be applied to the existing document.</p><div class="d-sm-flex flex-wrap gap-4">
+              <div class="card store-box buy-box buybox store-box__product heading-condensed" id="cs88435">
+      <div class="card-header">
+        <div class="pt-2">
+
+          <h3><a href="/standard/88435.html">Amendment 1</a></h3>
+          <h4>Climate action changes</h4><p>Edition 2024</p>
+        </div>
+      </div>
+
+      
+<div class="card-body">
+
+  <span class="visually-hidden" id="indexReference_cs88435" data-index="88435 - ISO/IEC 27001:2022/Amd 1:2024 - Information security, cybersecurity and privacy protection — Information security management systems — Requirements — Amendment 1: Climate action changes"></span>
+    <span class="visually-hidden" id="itemReference_cs88435">ISO/IEC 27001:2022/Amd 1:2024</span>
+    <div class="visually-hidden" id="csNumber_cs88435">88435</div>
+  <form class="box-option" id="form_cs88435" elementtiming="productOptions">
+    <div class="mb-3">
+      <div class="section-head mb-1 text-sm">
+        Language</div>
+      <div class="form-group">
+        <select class="form-select form-select-sm bkilang" id="bkilang_cs88435">
+
+            <option value="en"  selected>English</option>
+
+            <option value="fr" >French</option>
+
+            </select>
+      </div>
+    </div>
+    <div class="section-head mb-1 text-sm">
+      Format</div>
+      <div class="formats formats_cs88435" id="bkifmt_cs88435_en" style="display: none;"><div class="form-check text-sm" id="bkifmt_cs88435_en_1">
+                  <input class="form-check-input" data-format="pdf_epub" data-type="std" data-price="0"  checked="checked" type="radio" name="format_en" id="format_cs88435_en_1" value="01uVj000009zurKIAQ~a05b0000005WV4MAAW~a0fVj0000022tC9IAI~a0cVj000000TS2XIAW"/>
+                  <label class="form-check-label" for="format_cs88435_en_1">PDF + ePub</label>
+                </div><div class="form-check text-sm" id="bkifmt_cs88435_en_2">
+                  <input class="form-check-input" data-format="paper" data-type="std" data-price="0"  type="radio" name="format_en" id="format_cs88435_en_2" value="01uVj000009zurKIAQ~a05b0000005WV4RAAW~a0fVj0000022AYPIA2~a0cVj000000TGfhIAG"/>
+                  <label class="form-check-label" for="format_cs88435_en_2">Paper</label>
+                </div></div><div class="formats formats_cs88435" id="bkifmt_cs88435_fr" style="display: none;"><div class="form-check text-sm" id="bkifmt_cs88435_fr_1">
+                  <input class="form-check-input" data-format="pdf_epub" data-type="std" data-price="0"  checked="checked" type="radio" name="format_fr" id="format_cs88435_fr_1" value="01uVj000009zurKIAQ~a05b0000005WV4MAAW~a0fVj0000022tDlIAI~a0cVj000000TS49IAG"/>
+                  <label class="form-check-label" for="format_cs88435_fr_1">PDF + ePub</label>
+                </div><div class="form-check text-sm" id="bkifmt_cs88435_fr_2">
+                  <input class="form-check-input" data-format="paper" data-type="std" data-price="0"  type="radio" name="format_fr" id="format_cs88435_fr_2" value="01uVj000009zurKIAQ~a05b0000005WV4RAAW~a0fVj0000022AWnIAM~a0cVj000000TGe5IAG"/>
+                  <label class="form-check-label" for="format_cs88435_fr_2">Paper</label>
+                </div></div></form>
+
+  <div class="align-items-baseline box-price pb-0" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+    <div class="d-flex justify-content-center align-items-baseline gap-2">
+      <link itemprop="url" href="https://www.iso.org:-1/standard/27001" />
+      <meta itemprop="availability" content="https://schema.org/InStock" />
+      <span class="currency"><abbr title="Swiss francs" itemprop="priceCurrency">CHF</abbr></span>
+      <span class="price d-flex align-items-baseline gap-2">
+      <span class="amount" id="productPrice_cs88435" itemprop="price">0</span>
+    </span>
+    </div>
+  </div>
+
+  <div class="d-grid orderBasket box-action pt-0">
+    <button id="add_cs88435" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#iso-optout" onclick="javascript:addToBasket('cs88435', '1', 'en', 'cs')">
+      Add to cart</button>
+  </div>
+</div>
+<div class="card-footer text-xs text-center">
+  <div class="shippingCost d-none text-warning">* Shipping costs not included</div>
+  </div>
+
+
+</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+<section id="lifecycle" class="z-2" elementtiming="standardLifecycle">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <h2>Life cycle</h2>
+        <div class="lifecycle">
+          <ul class="steps">
+            <li class="time-step">
+                <h3 class="ms-sm-3 text-muted">Previously</h3>
+                <div class="step step-dark">
+                  <div class="step-item">
+                    <div class="section-head">Withdrawn</div>
+                    <h4><a href="/contents/data/standard/05/45/54534.html">ISO/IEC 27001:2013</a></h4>
+                  </div>
+                <div class="step-item">
+                    <div class="section-head">Withdrawn</div>
+                    <h4><a href="/standard/66805.html">ISO/IEC 27001:2013/Cor 1:2014</a></h4>
+                  </div>
+                <div class="step-item">
+                    <div class="section-head">Withdrawn</div>
+                    <h4><a href="/standard/69378.html">ISO/IEC 27001:2013/Cor 2:2015</a></h4>
+                  </div>
+                </div>
+              </li>
+            <li class="time-step">
+              <h3 class="ms-sm-3 text-muted">Now</h3>
+
+              <div class="step step-success active">
+                    <div class="section-head">Published</div>
+                    <h4>ISO/IEC 27001:2022</h4>
+                  <a data-bs-toggle="collapse" role="button" aria-expanded="false" href="#stages" class="dropdown-toggle current-stage text-sm collapsed">Stage: <strong>60.60</strong></a>
+            </div>
+              <ul class="stages collapse" id="stages">
+                <li class="dropdown alert-info">
+
+                      <a href="javascript:void(0)"  role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">00</span>
+                        <div class="stage-title">Preliminary</div>
+                      </a>
+
+                      </li>
+                  <li class="dropdown alert-info">
+
+                      <a href="javascript:void(0)" class="dropdown-toggle" data-bs-display="static" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">10</span>
+                        <div class="stage-title">Proposal</div>
+                      </a>
+
+                      <ul class="dropdown-menu">
+                            <li >
+                            <a href="/stage-codes.html#10_99">
+                              <span class="stage-code">10.99</span>
+                              <span class="stage-date">2022-05-30</span>
+                              <div class="stage-title">
+                                New project approved</div>
+                            </a>
+                          </li></ul>
+                      </li>
+                  <li class="dropdown alert-info">
+
+                      <a href="javascript:void(0)"  role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">20</span>
+                        <div class="stage-title">Preparatory</div>
+                      </a>
+
+                      </li>
+                  <li class="dropdown alert-info">
+
+                      <a href="javascript:void(0)"  role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">30</span>
+                        <div class="stage-title">Committee</div>
+                      </a>
+
+                      </li>
+                  <li class="dropdown alert-info">
+
+                      <a href="javascript:void(0)" class="dropdown-toggle" data-bs-display="static" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">40</span>
+                        <div class="stage-title">Enquiry</div>
+                      </a>
+
+                      <ul class="dropdown-menu">
+                            <li >
+                            <a href="/stage-codes.html#40_99">
+                              <span class="stage-code">40.99</span>
+                              <span class="stage-date">2022-05-30</span>
+                              <div class="stage-title">
+                                Full report circulated: DIS approved for registration as FDIS</div>
+                            </a>
+                          </li></ul>
+                      </li>
+                  <li class="dropdown alert-info">
+
+                      <a href="javascript:void(0)" class="dropdown-toggle" data-bs-display="static" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">50</span>
+                        <div class="stage-title">Approval</div>
+                      </a>
+
+                      <ul class="dropdown-menu">
+                            <li >
+                            <a href="/stage-codes.html#50_00">
+                              <span class="stage-code">50.00</span>
+                              <span class="stage-date">2022-06-09</span>
+                              <div class="stage-title">
+                                Final text received or FDIS registered for formal approval</div>
+                            </a>
+                          </li><li >
+                            <a href="/stage-codes.html#50_20">
+                              <span class="stage-code">50.20</span>
+                              <span class="stage-date">2022-07-28</span>
+                              <div class="stage-title">
+                                Proof sent to secretariat or FDIS ballot initiated: 8 weeks</div>
+                            </a>
+                          </li><li >
+                            <a href="/stage-codes.html#50_60">
+                              <span class="stage-code">50.60</span>
+                              <span class="stage-date">2022-09-23</span>
+                              <div class="stage-title">
+                                Close of voting. Proof returned by secretariat</div>
+                            </a>
+                          </li></ul>
+                      </li>
+                  <li class="dropdown bg-success active">
+
+                      <a href="javascript:void(0)" class="dropdown-toggle" data-bs-display="static" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">60</span>
+                        <div class="stage-title">Publication</div>
+                      </a>
+
+                      <ul class="dropdown-menu">
+                            <li >
+                            <a href="/stage-codes.html#60_00">
+                              <span class="stage-code">60.00</span>
+                              <span class="stage-date">2022-09-23</span>
+                              <div class="stage-title">
+                                International Standard under publication</div>
+                            </a>
+                          </li><li class="active">
+                            <a href="/stage-codes.html#60_60">
+                              <span class="stage-code">60.60</span>
+                              <span class="stage-date">2022-10-25</span>
+                              <div class="stage-title">
+                                International Standard published</div>
+                            </a>
+                          </li></ul>
+                      </li>
+                  <li class="dropdown alert-muted">
+
+                      <a href="javascript:void(0)" class="dropdown-toggle" data-bs-display="static" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">90</span>
+                        <div class="stage-title">Review</div>
+                      </a>
+
+                      <ul class="dropdown-menu">
+                            <li  class='list-separation'>
+                            <a href="/stage-codes.html#90_20">
+                              <span class="stage-code">90.20</span>
+                              <span class="stage-date"></span>
+                              <div class="stage-title">
+                                International Standard under systematic review</div>
+                            </a>
+                          </li><li >
+                            <a href="/stage-codes.html#90_60">
+                              <span class="stage-code">90.60</span>
+                              <span class="stage-date"></span>
+                              <div class="stage-title">
+                                Close of review</div>
+                            </a>
+                          </li><li >
+                            <a href="/stage-codes.html#90_92">
+                              <span class="stage-code">90.92</span>
+                              <span class="stage-date"></span>
+                              <div class="stage-title">
+                                International Standard to be revised</div>
+                            </a>
+                          </li><li >
+                            <a href="/stage-codes.html#90_93">
+                              <span class="stage-code">90.93</span>
+                              <span class="stage-date"></span>
+                              <div class="stage-title">
+                                International Standard confirmed</div>
+                            </a>
+                          </li><li >
+                            <a href="/stage-codes.html#90_99">
+                              <span class="stage-code">90.99</span>
+                              <span class="stage-date"></span>
+                              <div class="stage-title">
+                                Withdrawal of International Standard proposed by TC or SC</div>
+                            </a>
+                          </li></ul>
+                      </li>
+                  <li class="dropdown alert-muted">
+
+                      <a href="javascript:void(0)" class="dropdown-toggle" data-bs-display="static" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="stage-code">95</span>
+                        <div class="stage-title">Withdrawal</div>
+                      </a>
+
+                      <ul class="dropdown-menu">
+                            <li >
+                            <a href="/stage-codes.html#95_99">
+                              <span class="stage-code">95.99</span>
+                              <span class="stage-date"></span>
+                              <div class="stage-title">
+                                Withdrawal of International Standard</div>
+                            </a>
+                          </li></ul>
+                      </li>
+                  </ul>
+
+            <div class="sub-step sub-step-amd">
+                <div class="step step-success">
+                  <h4>Amendments</h4>
+                  <div class="text-sm mb-2" style="max-width: 400px;">Provide additional content; available for purchase; not included in the text of the existing standard.</div>
+                    <div class="step-item bg-success-subtle">
+                        <div class="section-head">Published</div>
+                        <h4><a href="/standard/88435.html" class="text-success">ISO/IEC 27001:2022/Amd 1:2024</a></h4>
+                      </div></div>
+              </div>
+              </li>
+            </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="bg-lightgray" id="contact" elementtiming="productHelp">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <h4>Got a question?</h4>
+
+<p>Check out our <a href="/contact-iso.html" title="help-support">Help and Support</a></p></div>
+      <div class="col-md-4">
+        </div>
+      <div class="col-md-4">
+        </div>
+    </div>
+  </div>
+</section><div class="nav-breadcrumb print-footer bg-black">
+        <div class="container">
+          <div class="row">
+            <div class="col-sm-10 small" elementtiming="breadcrumb">
+              <!-- BREADCRUMB -->
+              <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/home.html" title="Home page"><i class="bi-house" aria-hidden="true"></i></a></li>
+    <li class="breadcrumb-item">
+          <a href="/store.html">Store</a>
+            </li>
+      <li class="breadcrumb-item">
+          <a href="/store.html" >Store</a>
+</li>
+      <li class="breadcrumb-item">
+          <a href="/standards-catalogue/browse-by-ics.html">ICS</a>
+            </li>
+      <li class="breadcrumb-item"><a href="/en/ics/35.html">35</a></li>
+    <li class="breadcrumb-item"><a href="/en/ics/35.030.html">35.030</a></li><li class="breadcrumb-item">ISO/IEC 27001:2022</li></ol></div>
+            <div class="col-sm-2 hidden-print text-end small mt-3 mt-sm-0">
+              <a role="button" class="dropdown-toggle text-white collapsed" data-bs-toggle="collapse" href="#collapseSitemap" target="_self" aria-expanded="false" aria-controls="collapseSitemap">Sitemap</a>
+            </div>
+          </div>
+
+          <div class="collapse border-top" id="collapseSitemap" elementtiming="sitemap">
+            <div class="row">
+              <!-- SITEMAP -->
+              <nav role="navigation" aria-label="Sitemap" class="sitemap-footer clearfix text-xs" id="nav-sitemap"><ul role='menubar' class='list-inline-6 clearfix nav-level1' ><li role='menuitem' class=' hasChildren firstInLevel' ><a class='nav-link   '   title="Covering almost every product, process or service imaginable, ISO makes standards used everywhere."  href='/standards.html'>Standards</a><ul role='menubar' class='list-unstyled nav-level2' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '   title="Whether you run a business, work for a company or government, or you are a consumer looking for goods and services that meet customer expectations: Find out what standards can do for you."  href='/benefits-of-standards.html'>Benefits</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="Here you can discover some of the best-known and most widely-used standards, as well as those that address recently emerged challenges affecting us all.
+
+"  href='/popular-standards.html'>Popular standards</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="A set of processes that show your product, service or system meets the requirements of a standard."  href='/conformity-assessment.html'>Conformity assessment</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren lastInLevel' ><a class='nav-link   '   title="Organizations and companies looking to contribute to the SDGs will find that International Standards provide effective tools to help them rise to the challenge."  href='/sdg'>SDGs</a></li><!-- close of list item level 2 --></ul><!-- close of container level 2 --></li><!-- close of list item level 1 --><li role='menuitem' class=' hasChildren' ><a class='nav-link    disabled' data-bs-toggle="dropdown" aria-expanded="true"   href=''>Sectors</a><ul role='menubar' class='list-unstyled nav-level2' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '   title="(including medicine and laboratory equipment)"  href='/sectors/health'>Health</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="(including communication technology, graphics and photography)"  href='/sectors/it-technologies'>IT & related technologies</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="(Business management, financial and professional services)"  href='/sectors/management-services'>Management & services</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/sectors/security-safety-risk'>Security, safety & risk</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="(including vehicles, parts and infrastructure, freight, packaging and distribution)"  href='/sectors/transport'>Transport</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="(including power generation and transport, fuels)"  href='/sectors/energy'>Energy</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="Explore our Environmental sustainability sector."  href='/sectors/environment'>Environmental sustainability</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="(Ores and metals, non-metallic materials, chemicals)"  href='/sectors/materials'>Materials</a></li><!-- close of list item level 2 --></ul><!-- close of container level 2 --></li><!-- close of list item level 1 --><li role='menuitem' class=' hasChildren' ><a class='nav-link   '   title="ISO brings together global experts to develop International Standards that help solve problems and drive innovation."  href='/about'>About ISO</a><ul role='menubar' class='list-unstyled nav-level2' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '   title="Find out how we develop and publish international standards by bringing together more than 160 members and more than 45,000 experts"  href='/what-we-do.html'>What we do</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/structure.html'>Structure</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="The members of the International Organization for Standardization are 176 national standards bodies, each representing ISO in their country."  href='/about/members'>Members</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="Find out what's coming up and what you might have missed."  href='/events.html'>Events</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="Making lives easier, safer and better. Our Strategy outlines our vision and our mission for the next 10 years and a set of goals and priorities to help us get there."  href='/strategy2030.html'>Strategy</a></li><!-- close of list item level 2 --></ul><!-- close of container level 2 --></li><!-- close of list item level 1 --><li role='menuitem' class=' hasChildren' ><a class='nav-link    disabled' data-bs-toggle="dropdown" aria-expanded="true"   href=''>Insights & news</a><ul role='menubar' class='list-unstyled nav-level2' ><li role='menuitem' class=' hasChildren firstInLevel' ><a class='nav-link    disabled'    href=''>Insights</a><ul role='menubar' class='list-unstyled nav-level3' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '    href='/insights'>All insights</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/insights/filtered-list-healthcare'>Healthcare</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/insights/filtered-list-artificial-intelligence'>Artificial intelligence</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/insights/filtered-list-climate-change'>Climate change</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren lastInLevel' ><a class='nav-link   '    href='/insights/filtered-list-transport'>Transport</a></li><!-- close of list item level 3 (and more) --></ul><!-- close of container level 3 (and more) --></li><!-- close of list item level 2 --><li role='menuitem' class=' hasChildren' ><a class='nav-link    disabled'    href=''>News</a><ul role='menubar' class='list-unstyled nav-level3' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '    href='/insights/thought-leadership'>Expert talk</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/insights/standards-world'>Standards world</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/home/insights-news/news/dossier-medias.html'>Media kit</a></li><!-- close of list item level 3 (and more) --></ul><!-- close of container level 3 (and more) --></li><!-- close of list item level 2 --><li role='menuitem' class=' hasChildren lastInLevel' ><a class='nav-link    disabled'    href=''>Resources</a><ul role='menubar' class='list-unstyled nav-level3' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '   title="ISO 22000 is the International Standard for food safety management systems. It helps organizations identify hazards, manage risks and demonstrate their ability to provide safe food consistently."  href='/home/insights-news/resources/iso-22000-explained.html'>ISO 22000 explained</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="ISO 9001:2015 is the International Standard for quality management systems. It provides a framework that helps organizations deliver consistent products and services, improve efficiency and meet customer and regulatory expectations."  href='/home/insights-news/resources/iso-9001-explained.html'>ISO 9001 explained</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="ISO 14001:2015 is the International Standard for environmental management systems. It helps organizations manage their environmental impacts, comply with applicable legal requirements, prevent pollution and improve environmental performance over time."  href='/home/insights-news/resources/iso-14001-explained.html'>ISO 14001 explained</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="ISO/IEC 42001 is the International Standard for AI management systems. It provides requirements and guidance for organizations that develop, provide or use AI systems. "  href='/home/insights-news/resources/iso-42001-explained-what-it-is.html'>ISO 42001 explained</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren lastInLevel' ><a class='nav-link   '   title="ISO 45001:2018 is the International Standard for occupational health and safety management systems. It helps organizations provide safe and healthy workplaces by preventing work-related injury and ill health, managing risks, and continually improving OHS performance."  href='/home/insights-news/resources/iso-45001-explained-what-it-is.html'>ISO 45001 explained</a></li><!-- close of list item level 3 (and more) --></ul><!-- close of container level 3 (and more) --></li><!-- close of list item level 2 --></ul><!-- close of container level 2 --></li><!-- close of list item level 1 --><li role='menuitem' class=' hasChildren' ><a class='nav-link   '   title="Find out how the ISO process bring together global experts to create standards that are chosen the world over."  href='/developing-standards.html'>Taking part</a><ul role='menubar' class='list-unstyled nav-level2' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '   title="ISO has put together groups of experts that represent every sector imaginable from soaps to spacecraft, MP3 to coffee. In fact there are more than 250 technical committees. You can find out what they do here."  href='/who-develops-standards.html'>Who develops standards</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="The different types of ISO publications."  href='/deliverables-all.html'>Deliverables</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/get-involved.html'>Get involved</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="The ISO Climate Action Kit is a collection of case studies from around the world on how standards can be effectively used as a tool for sustainability."  href='/ClimateAction.html'>Collaborating to accelerate effective climate action</a></li><!-- close of list item level 2 --><li role='menuitem' class=' hasChildren lastInLevel' ><a class='nav-link   '   title="Resources to support the work of individuals involved in standards development. "  href='/resources.html'>Resources</a><ul role='menubar' class='list-unstyled nav-level3' ><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/directives-and-policies.html'>Directives and Policies</a></li><!-- close of list item level 3 (and more) --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/drafting-standards.html'>Drafting standards</a></li><!-- close of list item level 3 (and more) --></ul><!-- close of container level 3 (and more) --></li><!-- close of list item level 2 --></ul><!-- close of container level 2 --></li><!-- close of list item level 1 --><li role='menuitem' class=' hasChildren inPath  lastInLevel' ><a class='nav-link   '   title="Are you looking to buy International Standards, guidelines, collections and checklists? They're all right here, in the ISO Store."  href='/store.html'>Store</a><ul role='menubar' class='list-unstyled nav-level2' ><li role='menuitem' class=' noChildren inPath  firstInLevel' ><a class='nav-link   '    href='/store.html'>Store</a></li><!-- close of list item level 2 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '   title="ISO publications give insights and guidance into specific applications and show how standards add value."  href='/publication-list.html'>Publications and products</a></li><!-- close of list item level 2 --></ul><!-- close of container level 2 --></li><!-- close of list item level 1 --></ul><!-- close of container level 1 --></nav></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer id="footer" class="      bg-darkergray">
+  <div class="container">
+<div class="row text-center pt-3       " >
+<div class="col-md-12"><nav role="navigation" aria-label="Inline Navigation" class="" id=""><ul role='menubar' class='list-inline clearfix text-sm nav-level1' ><li role='menuitem' class=' noChildren firstInLevel' ><a class='nav-link   '    href='/iso-name-and-logo.html'>ISO name and logo</a></li><!-- close of list item level 1 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/privacy.html'>Privacy Notice</a></li><!-- close of list item level 1 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/copyright.html'>Copyright</a></li><!-- close of list item level 1 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/cookies.html'>Cookie policy</a></li><!-- close of list item level 1 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/media-kit.html'>Media kit</a></li><!-- close of list item level 1 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/working-with-iso.html'>Jobs</a></li><!-- close of list item level 1 --><li role='menuitem' class=' noChildren' ><a class='nav-link   '    href='/contact-iso.html'>Help and support</a></li><!-- close of list item level 1 --></ul><!-- close of container level 1 --></nav></div></div><div class="row text-center row-middle-sm      " >
+<div class="col-md-12"><p class="lead opacity-100">Making lives&nbsp;<strong><em>easier</em></strong>,&nbsp;<strong><em>safer</em></strong>&nbsp;and&nbsp;<strong><em>better</em></strong>.</p></div></div><div id="newsletter" class="text-center sign-up d-flex gap-1 align-items-center justify-content-center text-sm opacity-75 mb-2     ">
+  <!-- Comment for testing purposes (branch: master) -->
+
+<a role="button" href="/insights/subscribe" class="btn btn-outline-light btn-sm ">Sign up</a>&nbsp;<div>for email updates</div></div><div itemscope="" itemtype="https://schema.org/Organization">&nbsp;</div>
+<link href="https://www.iso.org/" itemprop="url" />
+<ul class="list-inline social-links text-center">
+	<li><a href="https://www.linkedin.com/company/isostandards" itemprop="sameAs" rel="noopener" target="_blank" title="Linkedin"><i class="bi-linkedin"></i></a></li>
+	<!-- li><a href="https://twitter.com/isostandards" itemprop="sameAs" rel="noopener" target="_blank" title="Twitter"><i class="bi-twitter"></i></a></li -->
+	<li><a href="https://www.facebook.com/isostandards" itemprop="sameAs" rel="noopener" target="_blank" title="Facebook"><i class="bi-facebook"></i></a></li>
+	<li><a href="https://www.instagram.com/isostandards" itemprop="sameAs" rel="noopener" target="_blank" title="Instagram"><i class="bi-instagram"></i></a></li>
+	<li><a href="https://www.youtube.com/ISO" itemprop="sameAs" rel="noopener" target="_blank" title="YouTube"><i class="bi-youtube"></i></a></li>
+	<li><a href="https://www.vimeo.com/isostandards" itemprop="sameAs" rel="noopener" target="_blank" title="Vimeo"><i class="bi-vimeo"></i></a></li>
+	<li><a href="https://www.flickr.com/photos/isostandards" itemprop="sameAs" rel="noopener" target="_blank" title="Flickr"><i class="bi-flickr"></i></a></li>
+</ul><div id="copyright-notice" class="row pb-3 row-bottom-sm      " >
+<div class="col-md-12"><details class="text-xs text-muted"><summary class="text-muted">&copy; All Rights Reserved</summary>
+<p class="pt-2">All ISO publications and materials are protected by copyright and are subject to the user&rsquo;s acceptance of ISO&rsquo;s conditions of copyright. Any use, including reproduction requires our written permission. All copyright requests should be addressed to <a href="mailto:copyright@iso.org">copyright@iso.org</a>.</p>
+<p>With the exception of the content available through the <a href="/open-data.html" title="open-data">ISO Open data</a>&nbsp;page and subject to the terms contained therein, no ISO content may be used for any machine learning and/or artificial intelligence and/or similar technologies, including but not limited to accessing or using it to (i) train data for large language or similar models, or (ii) prompt or otherwise enable artificial intelligence or similar tools to generate responses.</p>
+<p>We are committed to ensuring that our website is accessible to everyone. If you have any questions or suggestions regarding the accessibility of this site, please <a href="mailto:webmaster@iso.org?subject=Accessibility" style="white-space: nowrap">contact us</a>.</p>
+</details></div></div></div>
+</footer><!-- START OF MODAL (Buy ISO.ORG with OPTOUT) -->
+    <div class="modal fade" tabindex="-1" role="dialog" id="iso-optout" aria-hidden="true" aria-labelledby="modalLabel">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="modalLabel">
+              Add to cart</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-body clearfix">
+              <div id="modalOptOut"></div>
+              <div id="modalNoOptOut"></div>
+              <span id="proceedToCheckout" class="visually-hidden" data-label="Checkout"></span>
+              <span id="continueShopping" class="visually-hidden" data-label="Continue shopping"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- END OF MODAL -->
+
+  </body>
+</html>

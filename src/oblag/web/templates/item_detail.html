@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} — ObligationAggregator{% endblock %}
+{% block content %}
+<p><a href="/">&larr; items</a></p>
+<h2>{{ item.title }}</h2>
+<p>
+  <span class="pill state-{{ item.state }}">{{ item.state }}</span>
+  <span class="pill">{{ item.source_system }}</span>
+  <span class="pill">{{ item.jurisdiction }}</span>
+  <span class="pill">track: {{ item.track }}</span>
+  {% if item.url %}<a href="{{ item.url }}" rel="noopener">source ↗</a>{% endif %}
+</p>
+{% if item.abstract %}<p class="muted">{{ item.abstract }}</p>{% endif %}
+{% if item.resolved_change_id %}
+<p class="card">Resolved to final document:
+  <a href="/items/{{ item.resolved_change_id }}">item #{{ item.resolved_change_id }}</a></p>
+{% endif %}
+
+<div class="card">
+  <strong>Current dates</strong>
+  <table>
+    <tr><th>Type</th><th>Date</th><th>Confidence</th><th>Provenance</th></tr>
+    {% for d in item.current_dates %}
+    <tr>
+      <td>{{ d.date_type }}{% if d.label %} <span class="muted">({{ d.label }})</span>{% endif %}</td>
+      <td>{{ d.value }}</td>
+      <td><span class="conf-{{ d.confidence }}">{{ d.confidence }}</span></td>
+      <td class="muted">
+        {% if d.snapshot %}
+        <details><summary>snapshot</summary>
+          sha256 <code>{{ d.snapshot.sha256[:16] }}…</code><br>
+          fetched {{ d.snapshot.fetched_at }}<br>
+          <a href="{{ d.snapshot.source_url }}" rel="noopener">source URL</a>
+          {% if d.snapshot.attestation_ref %}<br>attestation: <code>{{ d.snapshot.attestation_ref }}</code>{% endif %}
+        </details>
+        {% else %}curated assertion{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <strong>Date history</strong> <span class="muted">(append-only; superseded values struck through)</span>
+  <table>
+    <tr><th>Type</th><th>Date</th><th>Confidence</th><th>Asserted</th></tr>
+    {% for d in item.date_history %}
+    <tr class="{{ 'ghost' if d.id in superseded_ids }}">
+      <td>{{ d.date_type }}{% if d.label %} ({{ d.label }}){% endif %}</td>
+      <td>{{ d.value }}</td>
+      <td><span class="conf-{{ d.confidence }}">{{ d.confidence }}</span></td>
+      <td class="muted">{{ d.asserted_at[:19] if d.asserted_at }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <strong>Lifecycle events</strong>
+  <table>
+    <tr><th>When</th><th>Type</th><th>Detail</th></tr>
+    {% for e in item.events %}
+    <tr>
+      <td class="muted">{{ e.occurred_at[:19] if e.occurred_at }}</td>
+      <td><span class="pill">{{ e.type }}</span></td>
+      <td><code style="white-space:pre-wrap">{{ e.payload | tojson }}</code></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <strong>Join keys</strong>:
+  {% for k in item.join_keys %}<code>{{ k.type }}:{{ k.value }}</code> {% endfor %}
+</div>
+{% endblock %}

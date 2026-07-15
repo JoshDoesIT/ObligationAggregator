@@ -1,0 +1,32 @@
+{
+  "data" : {
+    "id" : "CISA-2022-0010",
+    "type" : "dockets",
+    "attributes" : {
+      "displayProperties" : [ ],
+      "keywords" : null,
+      "modifyDate" : "2026-05-27T16:26:06Z",
+      "dkAbstract" : "The Cyber Incident Reporting for Critical Infrastructure Act of 2022 (CIRCIA), as amended, requires the Cybersecurity and Infrastructure Security Agency (CISA) to promulgate regulations implementing the statute’s covered cyber incident and ransom payment reporting requirements for covered entities. CISA seeks comment on the proposed rule to implement CIRCIA’s requirements and on several practical and policy issues related to the implementation of these new reporting requirements.",
+      "agencyId" : "CISA",
+      "program" : null,
+      "shortTitle" : null,
+      "subType2" : null,
+      "title" : "Cyber Incident Reporting for Critical Infrastructure Act (CIRCIA) Reporting Requirements",
+      "generic" : null,
+      "field1" : null,
+      "docketType" : "Rulemaking",
+      "petitionNbr" : null,
+      "rin" : "Not Assigned",
+      "organization" : null,
+      "legacyId" : null,
+      "subType" : null,
+      "category" : null,
+      "field2" : null,
+      "effectiveDate" : null,
+      "objectId" : "0b0000648529c454"
+    },
+    "links" : {
+      "self" : "https://api.regulations.gov/v4/dockets/CISA-2022-0010"
+    }
+  }
+}

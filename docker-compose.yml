@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      OBLAG_DATABASE_URL: postgresql+psycopg://oblag:oblag@db:5432/oblag
+    volumes:
+      - oblag-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: oblag
+      POSTGRES_PASSWORD: oblag
+      POSTGRES_DB: oblag
+    volumes:
+      - oblag-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oblag"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  oblag-data:
+  oblag-pg:
