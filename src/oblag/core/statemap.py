@@ -87,6 +87,67 @@ def oeil_statemap(
     return OEIL_STAGE_MAP.get(native_status.strip().lower())
 
 
+def _comment_window_state(dates: CurrentDateMap, today: date) -> ItemState:
+    cc = _get(dates, DateType.comment_close)
+    if cc is None:
+        return ItemState.comment_open  # window announced, close date unknown/unparsed
+    return ItemState.comment_open if cc >= today else ItemState.comment_closed
+
+
+@register_statemap("edpb")
+def edpb_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status == "consultation":
+        return _comment_window_state(dates, today)
+    if native_status == "adopted":
+        return ItemState.effective
+    return None
+
+
+@register_statemap("esma")
+def esma_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status == "consultation":
+        return _comment_window_state(dates, today)
+    return None
+
+
+@register_statemap("eba")
+def eba_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status == "consultation":
+        return _comment_window_state(dates, today)
+    return None
+
+
+@register_statemap("cppa")
+def cppa_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    if native_status == "proposed":
+        return _comment_window_state(dates, today)
+    if native_status == "completed":
+        return ItemState.effective
+    return None
+
+
+@register_statemap("cis")
+def cis_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    return ItemState.effective if native_status == "release" else None
+
+
+@register_statemap("nerc")
+def nerc_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    return ItemState.proposed if native_status == "under_development" else None
+
+
 @register_statemap("have_your_say")
 def have_your_say_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

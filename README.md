@@ -57,7 +57,13 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | LegiScan (US state laws, passed/enrolled only) | JSON API | `OBLAG_LEGISCAN_API_KEY` + `OBLAG_LEGISCAN_STATES="CA,RI,…"` |
 | PCI SSC RFC announcements | blog RSS, formal signals only | on by default (weekly) |
 | ISO catalog stage codes | HTML (defensive) | on by default (weekly, watched standards) |
-| AICPA exposure drafts | — | intentionally not built: page is client-side rendered (spec 06); use curated `assert-date` |
+| EDPB consultations & adopted guidance | news RSS, formal signals only | on by default |
+| ESMA consultations (incl. DORA RTS/ITS) | site RSS, "consults" filter | on by default |
+| EBA consultations | **headless-browser rendered** | `uv sync --extra browser` (self-disables without it) |
+| CPPA (California) rulemaking packages | static HTML | on by default (weekly) |
+| NERC standards under development | static HTML | on by default (weekly) |
+| CIS Controls version releases | blog RSS, strict release filter | on by default (weekly) |
+| AICPA exposure drafts | — | still curated: the SPA never hydrates content even in a real browser (spec 06); use `assert-date` |
 | Unified Agenda / OIRA projected dates | — | no API; curated `oblag assert-date … --confidence agency_estimate --note "<citation>"` |
 
 ## Beyond the feed
@@ -82,11 +88,11 @@ uv run oblag serve         # UI + API on http://localhost:8000
 
 ## Roadmap (not yet built, and why)
 
-- **ESA (EBA/ESMA) / EDPB / AICPA / CPPA consultation scrapers** — all four are
-  client-side-rendered sites with no static payload or feed (probed live; see
-  `docs/specs/06`). Formal EU feedback periods are largely covered via Have Your Say;
-  the rest flows through the curated `assert-date` workflow. Community adapters welcome
-  if these bodies ship parseable pages.
+- **AICPA / HITRUST adapters** — AICPA's exposure-drafts SPA never hydrates content
+  even in headless Chromium (bot/geo-gated content API); HITRUST publishes no feed.
+  Both tracked via curated `assert-date` + BYOL (see `docs/specs/06`). Everything else
+  from the original "unparseable" list (EBA, ESMA, EDPB, CPPA, NERC, CIS) now has an
+  adapter — feed-first, headless-browser tier where genuinely needed.
 - **OSCAL control-level crosswalk** (set-theory relations) — deliberately curated-only
   until mappings can carry human review; the OSCAL catalog export ships today.
 - **Multi-tenant workspaces / SSO / hosted SaaS** — self-host single-workspace first.

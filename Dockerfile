@@ -8,6 +8,14 @@ COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
 RUN uv pip install --system ".[postgres,pdf]"
 
+# Optional headless-browser tier for JS-rendered sources (EBA):
+#   docker build --build-arg WITH_BROWSER=true .
+ARG WITH_BROWSER=false
+RUN if [ "$WITH_BROWSER" = "true" ]; then \
+      uv pip install --system ".[browser]" && \
+      python -m playwright install --with-deps chromium; \
+    fi
+
 ENV OBLAG_DATA_DIR=/data
 VOLUME /data
 EXPOSE 8000

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from oblag.db.models import Snapshot
 
-_KEPT_HEADERS = {"etag", "last-modified", "content-type"}
+_KEPT_HEADERS = {"etag", "last-modified", "content-type", "x-oblag-rendered"}
 
 
 class SnapshotStore:

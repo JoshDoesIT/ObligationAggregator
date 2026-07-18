@@ -25,6 +25,7 @@ dependencies = [
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.1"]
 pdf = ["pypdf>=4.2"]
+browser = ["playwright>=1.45"]
 
 [project.scripts]
 oblag = "oblag.cli:app"

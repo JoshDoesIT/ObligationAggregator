@@ -62,13 +62,18 @@ def run_adapter(
             ctx = FetchContext(client=client, since=since, window=window, params=params or {})
             for raw in adapter.fetch_raw(ctx):
                 stats.pages += 1
+                headers = dict(raw.http_headers)
+                if raw.meta.get("rendered"):
+                    # browser-tier fetch: snapshot is a DOM serialization, not raw
+                    # response bytes — recorded in provenance (spec 06 addendum)
+                    headers["x-oblag-rendered"] = "true"
                 snap = store.record(
                     session,
                     content=raw.content,
                     source_url=raw.url,
                     adapter=name,
                     http_status=raw.http_status,
-                    http_headers=raw.http_headers,
+                    http_headers=headers,
                     fetched_at=raw.fetched_at,
                 )
                 for ni in adapter.normalize(raw):
