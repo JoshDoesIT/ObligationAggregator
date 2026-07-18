@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 300,
+      "memory": 1024
+    }
+  },
+  "crons": [
+    { "path": "/api/internal/run-group/daily", "schedule": "10 5 * * *" },
+    { "path": "/api/internal/run-group/weekly", "schedule": "10 8 * * 1" },
+    { "path": "/api/internal/tick", "schedule": "15 0 * * *" },
+    { "path": "/api/internal/dispatch", "schedule": "30 */6 * * *" }
+  ]
+}

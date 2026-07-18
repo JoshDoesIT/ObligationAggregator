@@ -1,0 +1,4 @@
+# Vercel deployment manifest (self-hosters: use `uv sync` / pip install .[...]).
+# Installs the package itself plus the serverless extras.
+.
+psycopg[binary]>=3.1

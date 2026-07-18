@@ -8,8 +8,10 @@ _REGISTRY: dict[str, type[SourceAdapter]] = {}
 
 # Adapter modules ship incrementally; each module calls register() at import time.
 _BUILTIN_MODULES: list[str] = [
+    "aicpa",
     "cellar",
     "cis",
+    "hitrust",
     "cppa",
     "eba",
     "edpb",

@@ -64,10 +64,25 @@ class Signer:
     def load(cls, path: Path) -> Signer | None:
         if not path.exists():
             return None
-        key = serialization.load_pem_private_key(path.read_bytes(), password=None)
+        return cls.from_pem(path.read_bytes())
+
+    @classmethod
+    def from_pem(cls, pem: bytes) -> Signer:
+        key = serialization.load_pem_private_key(pem, password=None)
         if not isinstance(key, Ed25519PrivateKey):
-            raise ValueError(f"{path} is not an Ed25519 private key")
+            raise ValueError("not an Ed25519 private key")
         return cls(key)
+
+    @classmethod
+    def from_settings(cls) -> Signer | None:
+        """Env-var PEM takes precedence (serverless); falls back to the key file."""
+        from oblag.config import get_settings
+
+        settings = get_settings()
+        if settings.signing_key_pem:
+            return cls.from_pem(settings.signing_key_pem.encode())
+        key_path = settings.signing_key_path or settings.data_dir / "keys" / "signing.pem"
+        return cls.load(key_path)
 
     def build_statement(
         self, *, sha256: str, source_url: str, adapter: str, fetch_meta: dict[str, Any]

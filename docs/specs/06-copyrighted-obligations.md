@@ -34,11 +34,19 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
     projects ingested conservatively; ballot/comment dates via curated assertions.
   - **CIS** — blog RSS with a strict "CIS Controls vX" release filter (zero-noise by
     design; community posts and vulnerability advisories never match).
-- **AICPA: still curated.** Even rendered in headless Chromium the exposure-drafts
-  SPA never hydrates content (probed 2026-07-18: only tracking scripts + empty app
-  state after selector waits) — the content API is bot/geo-gated. Track SOC 2 TSC
-  via curated `assert-date` until AICPA ships a parseable page.
-- **HITRUST: still curated** — no feed, no parseable page, `events_only` posture.
+- **AICPA: resolved via sitemap (M9).** Root cause established by intercepting the
+  SPA's GraphQL traffic: its `getStaticLandingPage(slug:"exposure-drafts")` query
+  **500s server-side** ("Cannot read properties of null") — the landing page is broken
+  upstream, and the GraphQL API needs a browser session. The sitemap, however, lists
+  every exposure-draft page; the adapter ingests slug-anchored `…exposure-draft…`
+  URLs (44 live). Comment deadlines arrive via curated `assert-date`, which upgrades
+  items into the comment-window lifecycle. Caveat: AICPA's sitemap is malformed XML
+  (raw `&` in a slug) — `sitemap_base` degrades to tolerant regex extraction.
+- **HITRUST: resolved via sitemap (M9).** No feed and WP REST disabled (probed), but
+  the sitemap carries formal signals in slugs: CSF version releases
+  (`…csf-v11.3.0-launch`, `…release-of-version-11.4.0…`) and version-tied HAA
+  advisories. Marketing/case-study slugs never match. `events_only` display posture
+  unchanged — these items are metadata-only by construction.
 
 ## Headless-browser tier (addendum)
 

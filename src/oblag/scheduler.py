@@ -26,15 +26,21 @@ DAILY_ADAPTERS = {
     "edpb": "07:50",
     "esma": "08:00",
 }
-WEEKLY_ADAPTERS = {
+WEEKLY_ADAPTERS: dict[str, str] = {
     "pci_ssc": "08:10",
     "iso_catalog": "08:30",
     "cppa": "08:45",
     "eba": "09:00",  # browser-rendered; self-disables without playwright
     "nerc": "09:15",
     "cis": "09:30",
-    # aicpa: intentionally absent — exposure-drafts page is client-side rendered with
-    # no static payload (spec 06); track SOC 2 TSC via curated assertions instead.
+    "aicpa": "09:45",  # sitemap-based (the landing SPA is broken upstream — spec 06)
+    "hitrust": "09:55",  # sitemap-based (no feed, WP REST disabled)
+}
+
+# Groups reused by the serverless cron endpoints (web/internal.py)
+ADAPTER_GROUPS: dict[str, list[str]] = {
+    "daily": list(DAILY_ADAPTERS),
+    "weekly": list(WEEKLY_ADAPTERS),
 }
 
 

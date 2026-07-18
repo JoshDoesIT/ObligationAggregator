@@ -252,22 +252,22 @@ def verify_snapshot(sha256: str) -> None:
 
     init_db()
     settings = get_settings()
-    store = SnapshotStore(settings.snapshot_dir)
+    store = SnapshotStore.from_settings()
     with session_scope() as session:
         snap = session.query(Snapshot).filter_by(sha256=sha256).one_or_none()
         if snap is None:
             typer.secho("no snapshot with that digest", fg="red")
             raise typer.Exit(1)
-        content = store.read(sha256)
+        content = store.read_ref(snap.storage_ref)
         actual = hashlib.sha256(content).hexdigest()
         if actual != sha256:
-            typer.secho(f"CONTENT MISMATCH: stored file hashes to {actual}", fg="red")
+            typer.secho(f"CONTENT MISMATCH: stored content hashes to {actual}", fg="red")
             raise typer.Exit(2)
         typer.echo(f"content hash OK ({len(content)} bytes from {snap.source_url})")
         if not snap.attestation_ref:
             typer.echo("no attestation recorded (snapshot pre-dates keygen)")
             return
-        envelope = json.loads((store.root / snap.attestation_ref).read_text())
+        envelope = json.loads(store.read_ref(snap.attestation_ref))
         key_path = settings.signing_key_path or settings.data_dir / "keys" / "signing.pem"
         statement = verify_envelope(envelope, key_path.with_suffix(".pub").read_bytes())
         subject = statement["subject"][0]

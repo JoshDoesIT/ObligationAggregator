@@ -134,6 +134,26 @@ def cppa_statemap(
     return None
 
 
+@register_statemap("aicpa")
+def aicpa_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    # exposure drafts have no machine-readable comment window (sitemap-only source):
+    # `proposed` until a curated comment_close assertion arrives, then window logic
+    if native_status != "exposure_draft":
+        return None
+    if _get(dates, DateType.comment_close) is not None:
+        return _comment_window_state(dates, today)
+    return ItemState.proposed
+
+
+@register_statemap("hitrust")
+def hitrust_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    return ItemState.effective if native_status in ("release", "advisory") else None
+
+
 @register_statemap("cis")
 def cis_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

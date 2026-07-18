@@ -36,6 +36,12 @@ def browser_available() -> bool:
     return True
 
 
+def _cdp_url() -> str | None:
+    from oblag.config import get_settings
+
+    return get_settings().browser_cdp_url
+
+
 def _chromium_executable() -> str | None:
     """Explicit executable when playwright's registry lacks a download (e.g. the
     pre-provisioned /opt/pw-browsers layout)."""
@@ -65,6 +71,35 @@ def render_page(
     from playwright.sync_api import sync_playwright
 
     timeout_ms = timeout_s * 1000
+    cdp = _cdp_url()
+    if cdp:
+        # Remote browser (serverless platforms): the remote side owns egress/TLS.
+        with sync_playwright() as pw:
+            browser = pw.chromium.connect_over_cdp(cdp, timeout=timeout_ms)
+            try:
+                context = browser.new_context()
+                page = context.new_page()
+                response = page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
+                if wait_selector:
+                    page.wait_for_selector(wait_selector, timeout=timeout_ms)
+                else:
+                    import contextlib
+
+                    with contextlib.suppress(Exception):  # busy pages never go idle
+                        page.wait_for_load_state("networkidle", timeout=timeout_ms)
+                content = page.content()
+                status = response.status if response else None
+            finally:
+                browser.close()
+        return RawDocument(
+            url=url,
+            content=content.encode("utf-8"),
+            content_type="text/html",
+            fetched_at=datetime.now(UTC),
+            http_status=status,
+            http_headers={},
+            meta={"rendered": "true", "via": "cdp"},
+        )
     with sync_playwright() as pw:
         args: list[str] = []
         if os.geteuid() == 0:  # containers commonly run as root; sandbox needs userns

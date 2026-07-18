@@ -24,8 +24,20 @@ class Settings(BaseSettings):
     smtp_from: str = "oblag@localhost"
     base_url: str = "http://localhost:8000"
 
-    # Provenance (M3): path to an Ed25519 private key (PEM). Generated via `oblag keygen`.
+    # Provenance (M3): Ed25519 private key — a PEM string (serverless: set
+    # OBLAG_SIGNING_KEY_PEM from `oblag keygen` output) or a file path.
+    signing_key_pem: str | None = None
     signing_key_path: Path | None = None
+
+    # Deployment (M9): "local" filesystem or "vercel-blob" object storage for
+    # snapshots/attestations; cron endpoints are enabled by setting a secret
+    # (Vercel injects CRON_SECRET as the Authorization bearer on cron invocations).
+    storage_backend: str = "local"
+    cron_secret: str | None = None
+
+    # Browser tier: remote Chromium over CDP (e.g. wss://…browserless…?token=…) for
+    # serverless platforms that cannot run a local browser.
+    browser_cdp_url: str | None = None
 
     # Scope boundary: include pre-rule/ANPRM weak signals? (spec 00 — default off)
     include_prerule: bool = False
