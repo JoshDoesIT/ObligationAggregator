@@ -89,7 +89,7 @@ class Obligation(Base):
     name: Mapped[str] = mapped_column(String(255))
     issuing_body: Mapped[str] = mapped_column(String(255))
     jurisdiction: Mapped[str] = mapped_column(String(64))
-    canonical_url: Mapped[str | None] = mapped_column(String(1024))
+    canonical_url: Mapped[str | None] = mapped_column(Text)
     copyright_status: Mapped[CopyrightStatus] = mapped_column(
         Enum(CopyrightStatus), default=CopyrightStatus.public_domain
     )
@@ -109,7 +109,7 @@ class PipelineItem(Base):
     jurisdiction: Mapped[str] = mapped_column(String(64), index=True)
     title: Mapped[str] = mapped_column(Text)
     abstract: Mapped[str | None] = mapped_column(Text)
-    url: Mapped[str | None] = mapped_column(String(1024))
+    url: Mapped[str | None] = mapped_column(Text)
     state: Mapped[ItemState] = mapped_column(Enum(ItemState), index=True)
     native_status: Mapped[str | None] = mapped_column(String(255))
     track: Mapped[str] = mapped_column(String(16), default="default")
@@ -139,7 +139,7 @@ class JoinKey(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     pipeline_item_id: Mapped[int] = mapped_column(ForeignKey("pipeline_item.id"), index=True)
     type: Mapped[str] = mapped_column(String(32))
-    value: Mapped[str] = mapped_column(String(255))
+    value: Mapped[str] = mapped_column(Text)
 
     item: Mapped[PipelineItem] = relationship(back_populates="join_keys")
 
@@ -149,13 +149,13 @@ class Snapshot(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     sha256: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    source_url: Mapped[str] = mapped_column(String(1024))
+    source_url: Mapped[str] = mapped_column(Text)
     adapter: Mapped[str] = mapped_column(String(64))
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     http_status: Mapped[int | None] = mapped_column(Integer)
     http_headers: Mapped[dict[str, Any] | None] = mapped_column(JSON)
-    storage_ref: Mapped[str] = mapped_column(String(255))
-    attestation_ref: Mapped[str | None] = mapped_column(String(255))
+    storage_ref: Mapped[str] = mapped_column(Text)
+    attestation_ref: Mapped[str | None] = mapped_column(Text)
 
 
 class KeyDate(Base):
@@ -199,7 +199,7 @@ class Watchlist(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
     channel: Mapped[str] = mapped_column(String(16))  # rss | email | webhook
-    target: Mapped[str | None] = mapped_column(String(1024))
+    target: Mapped[str | None] = mapped_column(Text)
     filters: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

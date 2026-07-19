@@ -19,8 +19,10 @@ def link_resolved_items(session: Session) -> list[Event]:
     prop_item = aliased(PipelineItem)
     final_item = aliased(PipelineItem)
 
-    pairs = (
-        session.query(prop_item, final_item)
+    # DISTINCT over ids only: selecting whole entities would make Postgres compare
+    # JSON columns, which have no equality operator (observed live on Neon)
+    id_pairs = (
+        session.query(prop_item.id, final_item.id)
         .join(jk_prop, jk_prop.pipeline_item_id == prop_item.id)
         .join(
             jk_final,
@@ -37,7 +39,11 @@ def link_resolved_items(session: Session) -> list[Event]:
         .distinct()
         .all()
     )
-    for proposed, final in pairs:
+    for prop_id, final_id in id_pairs:
+        proposed = session.get(PipelineItem, prop_id)
+        final = session.get(PipelineItem, final_id)
+        if proposed is None or final is None or proposed.resolved_change_id is not None:
+            continue
         proposed.resolved_change_id = final.id
         old_state = proposed.state
         proposed.state = ItemState.superseded
