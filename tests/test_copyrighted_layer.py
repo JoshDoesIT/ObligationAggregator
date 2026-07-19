@@ -29,10 +29,53 @@ def test_pci_rfc_extraction_from_live_feed():
     assert rfc.obligation_slug == "pci-dss"
     assert rfc.native_status == "rfc"
     dates = {d.date_type: d for d in rfc.dates}
+    # the announcement body states the real window: "From 3 June to 20 July"
+    opened = dates[DateType.comment_open]
+    assert opened.value == date(2026, 6, 3)
+    assert opened.confidence is Confidence.published_firm
+    close = dates[DateType.comment_close]
+    assert close.value == date(2026, 7, 20)
+    assert close.confidence is Confidence.published_firm
+
+
+def _rfc_feed(pub_date: str, description: str) -> bytes:
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>t</title>
+<item>
+<title>Request for Comments: PCI Key Management Operations (KMO) v1.0 Standard</title>
+<link>https://blog.pcisecuritystandards.org/x</link>
+<pubDate>{pub_date}</pubDate>
+<description>{description}</description>
+</item>
+</channel></rss>""".encode()
+
+
+def test_pci_rfc_window_year_rollover():
+    # "From 24 November to 9 January" announced in November closes the NEXT year
+    raw = RawDocument(
+        url="https://test",
+        content=_rfc_feed(
+            "Mon, 24 Nov 2025 12:00:00 GMT",
+            "From 24 November to 9 January, eligible stakeholders are invited…",
+        ),
+    )
+    (rfc,) = PciSscAdapter().normalize(raw)
+    dates = {d.date_type: d for d in rfc.dates}
+    assert dates[DateType.comment_open].value == date(2025, 11, 24)
+    assert dates[DateType.comment_close].value == date(2026, 1, 9)
+
+
+def test_pci_rfc_without_window_falls_back_to_derived_floor():
+    raw = RawDocument(
+        url="https://test",
+        content=_rfc_feed("Tue, 3 Jun 2026 12:00:00 GMT", "no window stated here"),
+    )
+    (rfc,) = PciSscAdapter().normalize(raw)
+    dates = {d.date_type: d for d in rfc.dates}
     assert dates[DateType.comment_open].value == date(2026, 6, 3)
     close = dates[DateType.comment_close]
     assert close.value == date(2026, 6, 3) + timedelta(days=30)
-    assert close.confidence is Confidence.derived  # never presented as firm
+    assert close.confidence is Confidence.derived  # floor only — never presented as firm
 
 
 def test_pci_rfc_lifecycle(db):
@@ -43,7 +86,9 @@ def test_pci_rfc_lifecycle(db):
     assert res.item.state is ItemState.comment_open
     from oblag.core.reducer import tick
 
-    events = tick(db, today=date(2026, 7, 10))
+    # still open on 10 July (real window runs to 20 July), closes on the 21st
+    assert tick(db, today=date(2026, 7, 10)) == []
+    events = tick(db, today=date(2026, 7, 21))
     assert [e.payload["to"] for e in events] == ["comment_closed"]
 
 
