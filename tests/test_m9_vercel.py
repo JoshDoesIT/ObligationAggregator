@@ -99,9 +99,12 @@ def test_vercel_blob_backend(monkeypatch):
         sent = put.calls[0].request
         assert sent.headers["authorization"] == "Bearer vercel_blob_test_token"
         assert sent.headers["x-add-random-suffix"] == "0"
+        assert sent.headers["x-vercel-blob-access"] == "private"  # new-store default
 
-        mock.get(ref).mock(return_value=Response(200, content=b"snapshot bytes"))
+        get = mock.get(ref).mock(return_value=Response(200, content=b"snapshot bytes"))
         assert backend.read(ref) == b"snapshot bytes"
+        # private stores require bearer auth on reads
+        assert get.calls[0].request.headers["authorization"] == "Bearer vercel_blob_test_token"
 
 
 def test_vercel_blob_requires_token(monkeypatch):

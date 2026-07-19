@@ -74,6 +74,9 @@ class VercelBlobBackend(StorageBackend):
             )
         self.prefix = prefix.strip("/")
         self.api_version = os.environ.get("OBLAG_BLOB_API_VERSION", "7")
+        # New Vercel Blob stores default to private access (public URLs disabled);
+        # must match the store's configured mode or uploads 400.
+        self.access = os.environ.get("OBLAG_BLOB_ACCESS", "private")
 
     def write(
         self, path: str, content: bytes, content_type: str = "application/octet-stream"
@@ -85,6 +88,7 @@ class VercelBlobBackend(StorageBackend):
             headers={
                 "authorization": f"Bearer {self.token}",
                 "x-api-version": self.api_version,
+                "x-vercel-blob-access": self.access,
                 "x-content-type": content_type,
                 "x-add-random-suffix": "0",
                 # snapshots are immutable; identical re-uploads may overwrite in place
@@ -100,7 +104,8 @@ class VercelBlobBackend(StorageBackend):
         return url
 
     def read(self, ref: str) -> bytes:
-        resp = httpx.get(ref, timeout=60.0)
+        # bearer auth is required for private stores and harmless for public ones
+        resp = httpx.get(ref, headers={"authorization": f"Bearer {self.token}"}, timeout=60.0)
         if resp.status_code >= 300:
             raise StorageError(f"blob read failed ({resp.status_code}) for {ref}")
         return resp.content
