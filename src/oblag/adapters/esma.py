@@ -64,6 +64,10 @@ class EsmaAdapter(SourceAdapter):
                 )
             else:
                 anomalies.append(f"consultation item without parseable date: {title!r}")
+            # the feed never states the response deadline (it lives on the consultation
+            # page); surface that so the close date gets a curated assertion — without
+            # one the item would sit in comment_open forever
+            anomalies.append(f"consultation without stated deadline: {title!r}")
 
             yield NormalizedItem(
                 source_system=self.name,

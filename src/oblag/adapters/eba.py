@@ -91,7 +91,15 @@ class EbaAdapter(SourceAdapter):
         dates: list[NormalizedDate] = []
         anomalies: list[str] = []
         if window:
-            open_year = int(window.group(3) or window.group(6))
+            close_year = int(window.group(6))
+            if window.group(3):
+                open_year = int(window.group(3))
+            elif _MONTHS[window.group(2)] > _MONTHS[window.group(5)]:
+                # rows omit the open year; a window spanning New Year
+                # ("5 Dec … 5 Mar 2025") opened the year before it closes
+                open_year = close_year - 1
+            else:
+                open_year = close_year
             try:
                 dates.append(
                     NormalizedDate(

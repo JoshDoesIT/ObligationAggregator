@@ -69,6 +69,8 @@ def test_esma_consultation_filter():
     (item,) = EsmaAdapter().normalize(RawDocument(url="https://t", content=rss))
     assert item.obligation_slug == "dora"
     assert {d.date_type for d in item.dates} == {DateType.comment_open}
+    # the feed never carries the response deadline — that must surface, not stay silent
+    assert any("deadline" in a for a in item.anomalies)
 
 
 # --- CPPA ---
@@ -127,6 +129,23 @@ def test_eba_rendered_listing_parses_consultation_windows(db):
 
     events = tick(db, today=date(2026, 9, 29))
     assert [e.payload["to"] for e in events] == ["comment_closed"]
+
+
+def test_eba_year_spanning_window_rolls_open_year_back():
+    # live fixture row: "5 Dec … 5 Mar 2025" — opened Dec 2024, not Dec 2025
+    items = _normalize(EbaAdapter(), "eba", "consultations_rendered.html")
+    spanning = [
+        i
+        for i in items
+        for d in i.dates
+        if d.date_type is DateType.comment_open and d.value.month == 12
+    ]
+    assert spanning, "expected the December-opening consultation from the live fixture"
+    for item in spanning:
+        dates = {d.date_type: d.value for d in item.dates}
+        assert dates[DateType.comment_open] < dates[DateType.comment_close]
+        assert dates[DateType.comment_open] == date(2024, 12, 5)
+        assert dates[DateType.comment_close] == date(2025, 3, 5)
 
 
 def test_eba_disabled_without_browser(monkeypatch):
