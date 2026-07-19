@@ -67,18 +67,30 @@ def run_group(group: str, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(404, f"unknown group {group!r} (have: {sorted(ADAPTER_GROUPS)})")
     # weekly runs use a longer overlap window so a missed invocation never loses items
     since_days = 3 if group == "daily" else 10
+    work = [(name, since_days) for name in names]
+    weekly_included = False
+    if group == "daily" and datetime.now(UTC).weekday() == 0:
+        # Vercel Hobby allows only 2 cron jobs, so the weekly group has no schedule
+        # of its own — it piggybacks on Monday's daily invocation instead.
+        weekly_included = True
+        work += [(name, 10) for name in ADAPTER_GROUPS.get("weekly", []) if name not in names]
     results = []
-    for name in names:
+    for name, days in work:
         if name not in available_adapters() or not get_adapter(name).enabled():
             results.append({"adapter": name, "skipped": True})
             continue
         try:
-            results.append(_run_one(db, name, since_days))
+            results.append(_run_one(db, name, days))
         except Exception as exc:  # noqa: BLE001 — one adapter never blocks the group
             log.exception("cron run failed for %s", name)
             results.append({"adapter": name, "error": str(exc)[:200]})
     delivered = dispatch_pending(db)
-    return {"group": group, "runs": results, "notifications_delivered": delivered}
+    return {
+        "group": group,
+        "runs": results,
+        "weekly_included": weekly_included,
+        "notifications_delivered": delivered,
+    }
 
 
 @router.get("/tick")

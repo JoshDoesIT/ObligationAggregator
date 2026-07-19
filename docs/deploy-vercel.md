@@ -42,8 +42,11 @@ OBLAG_DATABASE_URL=… uv run oblag seed
 
 ## 4. Scheduling
 
-`vercel.json` defines the crons: daily source group (05:10 UTC), weekly group
-(Mon 08:10), the state-machine tick (00:15), and notification dispatch (every 6 h).
+`vercel.json` defines two crons (the Hobby plan allows at most 2, daily frequency
+minimum): the daily source group (05:10 UTC) and the state-machine tick (00:15).
+The daily run-group endpoint automatically includes the weekly adapter group on
+Mondays (UTC), and every ingestion endpoint dispatches pending notifications when
+it finishes, so no separate weekly or dispatch cron is needed.
 The endpoints are 404 unless `OBLAG_CRON_SECRET` is set and 401 without the bearer.
 
 ## Platform notes / limits

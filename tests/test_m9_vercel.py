@@ -204,6 +204,42 @@ def test_cron_run_group_skips_disabled(cron_client, monkeypatch):
     )
 
 
+def test_cron_daily_piggybacks_weekly_on_mondays(cron_client, monkeypatch):
+    from datetime import UTC, datetime
+
+    import oblag.browserfetch as bf
+    import oblag.web.internal as internal
+    from oblag.scheduler import ADAPTER_GROUPS
+
+    monkeypatch.setattr(
+        internal, "_run_one", lambda db, name, since_days: {"adapter": name, "items": 0}
+    )
+    monkeypatch.setattr(bf, "browser_available", lambda: False)
+
+    class _Monday:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 7, 20, 5, 10, tzinfo=UTC)  # a Monday
+
+    monkeypatch.setattr(internal, "datetime", _Monday)
+    r = cron_client.get("/api/internal/run-group/daily", headers={"Authorization": "Bearer s3cret"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["weekly_included"] is True
+    ran = {x["adapter"] for x in body["runs"]}
+    assert set(ADAPTER_GROUPS["daily"]) <= ran
+    assert set(ADAPTER_GROUPS["weekly"]) <= ran
+
+    class _Tuesday:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 7, 21, 5, 10, tzinfo=UTC)
+
+    monkeypatch.setattr(internal, "datetime", _Tuesday)
+    r = cron_client.get("/api/internal/run-group/daily", headers={"Authorization": "Bearer s3cret"})
+    assert r.json()["weekly_included"] is False
+
+
 # --- remote CDP browser availability ---
 
 
