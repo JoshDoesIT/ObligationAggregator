@@ -1,16 +1,30 @@
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_database_url() -> str:
+    # Serverless filesystems are read-only except /tmp: boot against an ephemeral
+    # SQLite there until OBLAG_DATABASE_URL points at Postgres (docs/deploy-vercel.md).
+    if os.environ.get("VERCEL"):
+        return "sqlite:////tmp/oblag/oblag.db"
+    return "sqlite:///data/oblag.db"
+
+
+def _default_data_dir() -> Path:
+    return Path("/tmp/oblag") if os.environ.get("VERCEL") else Path("data")
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="OBLAG_", env_file=".env", extra="ignore")
 
-    database_url: str = "sqlite:///data/oblag.db"
-    data_dir: Path = Path("data")
+    database_url: str = Field(default_factory=_default_database_url)
+    data_dir: Path = Field(default_factory=_default_data_dir)
 
     # Source credentials (all optional; adapters disable themselves when unset)
     regsgov_api_key: str | None = None
