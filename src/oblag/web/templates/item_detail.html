@@ -83,7 +83,9 @@
     {% for d in item.date_history %}
     <tr class="{{ 'ghost' if d.id in superseded_ids }}">
       <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
-      <td>{{ d.value }}</td>
+      <td>{% if d.retracted %}<span class="badge warn">withdrawn by source</span>
+          <span class="muted" style="font-size:.82rem">was {{ d.value }}</span>
+          {% else %}{{ d.value }}{% endif %}</td>
       <td>{{ conf(d.confidence) }}</td>
       <td class="muted">{{ d.asserted_at[:10] if d.asserted_at }}</td>
     </tr>

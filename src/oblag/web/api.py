@@ -129,7 +129,11 @@ def upcoming_deadlines(
     horizon = today + timedelta(days=within_days)
     rows = (
         db.query(KeyDate)
-        .filter(KeyDate.value >= today, KeyDate.value <= horizon)
+        .filter(
+            KeyDate.value >= today,
+            KeyDate.value <= horizon,
+            KeyDate.retracted.is_(False),  # a retraction row is not a deadline
+        )
         .order_by(KeyDate.value)
         .all()
     )

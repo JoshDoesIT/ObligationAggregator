@@ -32,6 +32,7 @@ def key_date_to_dict(session: Session, kd: KeyDate, *, provenance: bool = False)
         "confidence": kd.confidence.value,
         "asserted_at": kd.asserted_at.isoformat() if kd.asserted_at else None,
         "supersedes_id": kd.supersedes_id,
+        "retracted": kd.retracted,
     }
     if provenance:
         d["snapshot"] = snapshot_ref(session, kd.source_snapshot_id)

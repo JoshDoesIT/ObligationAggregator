@@ -54,7 +54,10 @@ def _emit(
 
 def current_dates(session: Session, item_id: int) -> dict[tuple, KeyDate]:
     """Resolve supersession chains: for each (date_type, label) return the live KeyDate
-    (the row no other row supersedes; ties broken by latest asserted_at/id)."""
+    (the row no other row supersedes; ties broken by latest asserted_at/id).
+
+    A chain ending in a retraction means the source withdrew the date — no current
+    value exists for that (date_type, label)."""
     rows = session.query(KeyDate).filter_by(pipeline_item_id=item_id).all()
     superseded_ids = {r.supersedes_id for r in rows if r.supersedes_id is not None}
     live: dict[tuple, KeyDate] = {}
@@ -65,7 +68,7 @@ def current_dates(session: Session, item_id: int) -> dict[tuple, KeyDate]:
         prev = live.get(key)
         if prev is None or row.id > prev.id:  # id is monotonic; avoids naive/aware tz compares
             live[key] = row
-    return live
+    return {k: v for k, v in live.items() if not v.retracted}
 
 
 def _date_values(live: dict[tuple, KeyDate]) -> CurrentDateMap:
@@ -288,6 +291,44 @@ def reduce_item(
                 snapshot_id,
             )
         )
+
+    # 2b. retractions: the source explicitly no longer states these date types.
+    # Append-only like everything else — a retracted row supersedes the value and
+    # keeps it in the audit trail. Idempotent: an already-retracted chain has no
+    # live entry, so repeated "no due date" signals are silent.
+    for retract_type in ni.retract_dates:
+        for key, cur in list(live.items()):
+            if key[0] is not retract_type:
+                continue
+            retraction = KeyDate(
+                pipeline_item_id=item.id,
+                date_type=cur.date_type,
+                label=cur.label,
+                value=cur.value,
+                confidence=cur.confidence,
+                retracted=True,
+                source_snapshot_id=snapshot_id,
+                supersedes_id=cur.id,
+            )
+            session.add(retraction)
+            session.flush()
+            del live[key]
+            events.append(
+                _emit(
+                    session,
+                    item,
+                    EventType.date_changed,
+                    {
+                        "date_type": cur.date_type.value,
+                        "label": cur.label,
+                        "from": cur.value.isoformat(),
+                        "to": None,
+                        "retracted": True,
+                        "superseded_key_date_id": cur.id,
+                    },
+                    snapshot_id,
+                )
+            )
 
     # 5. merge new join keys (done before state so statemap sees a settled item)
     existing_keys = {(k.type, k.value) for k in item.join_keys}

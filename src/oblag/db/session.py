@@ -59,15 +59,25 @@ _TEXT_UPGRADES = [
 def init_db(engine: Engine | None = None) -> None:
     eng = engine or get_engine()
     Base.metadata.create_all(eng)
+    from sqlalchemy import inspect as sa_inspect
+    from sqlalchemy import text as sql_text
+
     if eng.dialect.name == "postgresql":
         # Databases created before v0.1.2 have varchar limits on URL-bearing columns
         # (SQLite never enforced them; Postgres does — observed live: CELLAR SPARQL
         # source URLs exceed 1024 chars). ALTER ... TYPE TEXT is idempotent.
-        from sqlalchemy import text as sql_text
-
         with eng.begin() as conn:
             for table, column in _TEXT_UPGRADES:
                 conn.execute(sql_text(f"ALTER TABLE {table} ALTER COLUMN {column} TYPE TEXT"))
+    # v0.1.7: key_date.retracted (create_all only builds new tables, not new columns)
+    cols = {c["name"] for c in sa_inspect(eng).get_columns("key_date")}
+    if "retracted" not in cols:
+        default = "FALSE" if eng.dialect.name == "postgresql" else "0"
+        with eng.begin() as conn:
+            conn.execute(
+                sql_text(f"ALTER TABLE key_date ADD COLUMN retracted BOOLEAN DEFAULT {default}")
+            )
+            conn.execute(sql_text(f"UPDATE key_date SET retracted = {default}"))
 
 
 @contextmanager
