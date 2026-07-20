@@ -21,6 +21,10 @@ to match everything.</p>
       </select></div>
     <div><label for="wl-target" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Email / webhook URL <span style="font-weight:400">(blank for RSS)</span></label>
       <input id="wl-target" name="target" style="width:100%"></div>
+    <div><label for="wl-obligations" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Obligations <span style="font-weight:400">(hold Ctrl/Cmd for several)</span></label>
+      <select id="wl-obligations" name="obligation_slugs" multiple size="4" style="width:100%">
+        {% for o in obligations %}<option value="{{ o.slug }}">{{ o.name }}</option>{% endfor %}
+      </select></div>
     <div><label for="wl-sources" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Sources <span style="font-weight:400">(csv, optional)</span></label>
       <input id="wl-sources" name="source_systems" placeholder="cellar, edpb" style="width:100%"></div>
     <div><label for="wl-states" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">States <span style="font-weight:400">(csv, optional)</span></label>

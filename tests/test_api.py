@@ -80,3 +80,20 @@ def test_quick_watch_creates_obligation_watchlist(client, seeded, db):
     # idempotent: watching again doesn't duplicate
     client.post(f"/items/{item.id}/watch", follow_redirects=False)
     assert db.query(Watchlist).filter(Watchlist.name.like("Watch:%")).count() == 1
+
+
+def test_watchlist_form_accepts_obligations(client, seeded, db):
+    from oblag.db.models import Watchlist
+
+    r = client.post(
+        "/watchlists",
+        data={
+            "name": "Org: payments + health",
+            "channel": "rss",
+            "obligation_slugs": ["pci-dss", "hipaa"],
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    wl = db.query(Watchlist).filter_by(name="Org: payments + health").one()
+    assert wl.filters["obligation_slugs"] == ["pci-dss", "hipaa"]

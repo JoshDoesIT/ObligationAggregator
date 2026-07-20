@@ -480,9 +480,14 @@ def deadlines_page(request: Request, db: Session = Depends(get_db), within_days:
 
 @router.get("/watchlists", response_class=HTMLResponse)
 def watchlists_page(request: Request, db: Session = Depends(get_db)):
+    from oblag.db.models import Obligation
     from oblag.web import watchlists as wl_api
 
     data = wl_api.list_watchlists(db=db)
+    data["obligations"] = [
+        {"slug": slug, "name": name}
+        for slug, name in db.query(Obligation.slug, Obligation.name).order_by(Obligation.name)
+    ]
     return templates.TemplateResponse(request, "watchlists.html", data)
 
 
@@ -502,6 +507,7 @@ async def watchlists_create(request: Request, db: Session = Depends(get_db)):
             source_systems=csv("source_systems"),
             states=csv("states"),
             event_types=csv("event_types"),
+            obligation_slugs=[str(v) for v in form.getlist("obligation_slugs")],
         ),
     )
     wl_api.create_watchlist(body, db=db)
