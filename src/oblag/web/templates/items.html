@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% from "_macros.html" import state_badge, conf, due_chip %}
-{% block title %}Obligations — ObligationAggregator{% endblock %}
+{% block title %}Change feed — ObligationAggregator{% endblock %}
 {% block content %}
-<h2 class="page">Tracked obligations</h2>
-<p class="lede">Security &amp; privacy regulations, frameworks and standards moving through their
-lifecycle — from proposal to enforceable requirement.</p>
+<h2 class="page">Change feed</h2>
+<p class="lede">Rulemakings, drafts, consultations, advisories and releases moving through their
+lifecycle — the signals about the <a href="/obligations">obligations</a> you're subject to.</p>
 
 <div class="stats">
   <div class="stat hl"><a href="/"><span class="n">{{ stats.total }}</span>
-    <span class="l">tracked items</span></a></div>
+    <span class="l">tracked changes</span></a></div>
   <div class="stat"><a href="/?state=comment_open"><span class="n">{{ stats.comment_open }}</span>
     <span class="l">comment windows open</span></a></div>
   <div class="stat"><a href="/?state=final_pending_effective"><span class="n">{{ stats.pending_effective }}</span>
@@ -31,21 +31,28 @@ lifecycle — from proposal to enforceable requirement.</p>
     <option value="{{ s }}" {{ 'selected' if s == source }}>{{ s | human_source }}</option>
     {% endfor %}
   </select>
+  <select name="obligation">
+    <option value="">All obligations</option>
+    {% for o in obligations %}
+    <option value="{{ o.slug }}" {{ 'selected' if o.slug == obligation }}>{{ o.name }}</option>
+    {% endfor %}
+  </select>
   <button>Apply</button>
-  {% if q or state or source %}<a href="/" class="muted" style="font-size:.85rem">clear</a>{% endif %}
+  {% if q or state or source or obligation %}<a href="/" class="muted" style="font-size:.85rem">clear</a>{% endif %}
   <span class="muted" style="margin-left:auto; font-size:.85rem">{{ total }} result{{ '' if total == 1 else 's' }}</span>
 </form>
 
 <div class="panel">
   <div class="tablewrap">
   <table class="rows">
-    <thead><tr><th>Obligation</th><th>State</th><th>Source</th><th>Key dates</th></tr></thead>
+    <thead><tr><th>Change</th><th>Kind</th><th>State</th><th>Source</th><th>Key dates</th></tr></thead>
     <tbody>
     {% for item in items %}
     <tr>
       <td class="titlecell">
         <a href="/items/{{ item.id }}">{{ item.title }}</a>
-        {% if item.obligation %}<span class="tag">{{ item.obligation }}</span>{% endif %}
+        {% if item.obligation %}<a class="tag" href="/?obligation={{ item.obligation }}"
+          title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
         {% set idkeys = item.join_keys
              | selectattr('type', 'in', ['rin', 'docket_id', 'celex', 'bill_id',
                                          'fr_doc_number', 'oeil_procedure', 'eba_cp'])
@@ -56,6 +63,7 @@ lifecycle — from proposal to enforceable requirement.</p>
         </div>
         {% endif %}
       </td>
+      <td><span class="tag">{{ item | signal_kind }}</span></td>
       <td>{{ state_badge(item.state) }}</td>
       <td><span class="muted" style="white-space:nowrap">{{ item.source_system | human_source }}</span><br>
           <span class="muted" style="font-size:.8rem">{{ item.jurisdiction }}</span></td>
@@ -75,7 +83,7 @@ lifecycle — from proposal to enforceable requirement.</p>
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="4"><div class="empty"><span class="big">🔍</span>
+    <tr><td colspan="5"><div class="empty"><span class="big">🔍</span>
       No items match these filters.<br><a href="/">Show everything</a></div></td></tr>
     {% endfor %}
     </tbody>
