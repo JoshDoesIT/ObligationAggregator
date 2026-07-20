@@ -1,40 +1,63 @@
 {% extends "base.html" %}
 {% block title %}Watchlists — ObligationAggregator{% endblock %}
 {% block content %}
-<h2>Watchlists</h2>
-<p class="muted">Alerts on transitions: comment windows, final rules, effective-date countdowns,
-projected-date slips. Filters are ANDed; empty filter = match all.</p>
+<h2 class="page">Watchlists</h2>
+<p class="lede">Get notified when obligations move: comment windows opening, final rules landing,
+effective dates approaching, projected dates slipping. Filters are ANDed; leave a filter empty
+to match everything.</p>
 
-<div class="card">
-  <form method="post" action="/watchlists" class="filters" style="align-items:center">
-    <input name="name" placeholder="name" required>
+<div class="panel">
+  <h3>New watchlist</h3>
+  <div class="pad">
+  <form method="post" action="/watchlists" class="filters" style="margin:0">
+    <input name="name" placeholder="Name (e.g. “EU cyber deadlines”)" required>
     <select name="channel">
-      <option value="rss">rss</option>
-      <option value="email">email</option>
-      <option value="webhook">webhook</option>
+      <option value="rss">RSS feed</option>
+      <option value="email">Email</option>
+      <option value="webhook">Webhook</option>
     </select>
-    <input name="target" placeholder="email addr / webhook URL (rss: blank)">
-    <input name="source_systems" placeholder="sources (csv)">
-    <input name="states" placeholder="states (csv)">
-    <input name="event_types" placeholder="event types (csv)">
+    <input name="target" placeholder="Email address / webhook URL — blank for RSS">
+    <input name="source_systems" placeholder="Sources (csv, e.g. cellar,edpb)">
+    <input name="states" placeholder="States (csv, e.g. comment_open)">
+    <input name="event_types" placeholder="Events (csv, e.g. date_changed)">
     <button>Create</button>
   </form>
+  </div>
 </div>
 
-<table>
-  <tr><th>Name</th><th>Channel</th><th>Target / feed</th><th>Filters</th><th>Active</th><th></th></tr>
-  {% for w in watchlists %}
-  <tr>
-    <td>{{ w.name }}</td>
-    <td><span class="pill">{{ w.channel }}</span></td>
-    <td>{% if w.feed_url %}<a href="{{ w.feed_url }}">{{ w.feed_url }}</a>{% else %}{{ w.target or '—' }}{% endif %}</td>
-    <td><code style="white-space:pre-wrap">{{ w.filters | tojson }}</code></td>
-    <td>{{ 'yes' if w.active else 'no' }}</td>
-    <td>{% if w.active %}
-      <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline">
-        <button>disable</button>
-      </form>{% endif %}</td>
-  </tr>
-  {% endfor %}
-</table>
+<div class="panel">
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Name</th><th>Channel</th><th>Delivery</th><th>Filters</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for w in watchlists %}
+    <tr>
+      <td><strong>{{ w.name }}</strong></td>
+      <td><span class="tag">{{ w.channel }}</span></td>
+      <td style="max-width:22rem; overflow-wrap:anywhere">
+        {% if w.feed_url %}<a href="{{ w.feed_url }}">{{ w.feed_url }}</a>{% else %}{{ w.target or '—' }}{% endif %}</td>
+      <td>
+        {% set f = w.filters or {} %}
+        {% for key, vals in f.items() if vals %}
+          <div style="font-size:.82rem"><span class="muted">{{ key.replace('_', ' ') }}:</span>
+            {% for v in vals %}<span class="tag">{{ v }}</span> {% endfor %}</div>
+        {% else %}
+          <span class="muted" style="font-size:.85rem">everything</span>
+        {% endfor %}
+      </td>
+      <td>{% if w.active %}<span class="badge ok"><span class="dot"></span>active</span>
+          {% else %}<span class="badge"><span class="dot"></span>disabled</span>{% endif %}</td>
+      <td>{% if w.active %}
+        <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline">
+          <button class="quiet">Disable</button>
+        </form>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6"><div class="empty"><span class="big">🔔</span>
+      No watchlists yet — create one above to get change alerts.</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
 {% endblock %}

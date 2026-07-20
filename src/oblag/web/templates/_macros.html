@@ -1,0 +1,21 @@
+{% macro state_badge(state) -%}
+  {%- set cls = {
+    'comment_open': 'ok', 'effective': 'ok', 'final_pending_effective': 'warn',
+    'comment_closed': 'info', 'proposed': 'info', 'stalled': 'bad',
+    'withdrawn': '', 'superseded': ''
+  }[state] if state in ['comment_open','effective','final_pending_effective',
+                        'comment_closed','proposed','stalled','withdrawn','superseded'] else '' -%}
+  <span class="badge {{ cls }}"><span class="dot"></span>{{ state | human_state }}</span>
+{%- endmacro %}
+
+{% macro conf(confidence) -%}
+  <span class="conf conf-{{ confidence }}" title="{{ conf_help.get(confidence, '') }}">{{ confidence | human_conf }}</span>
+{%- endmacro %}
+
+{% macro due_chip(days) -%}
+  {%- if days is not none -%}
+    <span class="due {{ 'soon' if days <= 7 else 'near' if days <= 30 else 'far' }}">
+      {{- 'today' if days == 0 else ('%dd' % days) -}}
+    </span>
+  {%- endif -%}
+{%- endmacro %}
