@@ -79,6 +79,12 @@ class HaveYourSayAdapter(SourceAdapter):
         title = (ini.get("shortTitle") or "").strip()
         if raw_id is None or not title:
             return None
+        # Relevance gate: the DIGITAL topic spans all EU digital policy (spectrum
+        # conferences, platform economics) — keep security/privacy initiatives only.
+        from oblag.scope import in_scope
+
+        if not in_scope(title, ini.get("foreseenActType")):
+            return None
         ini_id = str(int(raw_id))  # API returns floats ("16413.0")
 
         # active feedback window: current status with the latest end date

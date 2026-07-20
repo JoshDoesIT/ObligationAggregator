@@ -66,6 +66,12 @@ class Settings(BaseSettings):
     # EU Have Your Say topics to monitor (csv of portal topic codes)
     hys_topics: str = "DIGITAL"
 
+    # Relevance gate for broad sources (Federal Register, CELLAR, Have Your Say):
+    # only security/privacy-scoped documents become items (oblag/scope.py).
+    # Disable to ingest everything; extend the vocabulary with extra csv terms.
+    scope_filter: bool = True
+    scope_extra_terms: str = ""
+
     # AI assist (M6): entirely optional; off unless a provider is configured.
     ai_provider: str | None = None  # "anthropic" | "openai-compatible" | None
     ai_api_key: str | None = None

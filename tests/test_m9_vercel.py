@@ -24,7 +24,7 @@ def _items(adapter, *fixture):
 
 def test_aicpa_exposure_drafts_from_sitemap(db):
     items = _items(AicpaAdapter(), "aicpa", "sitemap.xml")
-    assert len(items) >= 7  # slug-anchored exposure-draft URLs; noise/articles excluded
+    assert len(items) >= 6  # assurance/GRC-relevant drafts only; noise/articles/accounting excluded
     assert all("exposure" in i.url.lower() or "exposure" in i.title.lower() for i in items)
     ethics = next(i for i in items if "529" in i.url)
     assert ethics.native_status == "exposure_draft"
