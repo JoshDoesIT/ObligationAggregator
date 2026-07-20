@@ -104,6 +104,18 @@ def purge_items(ids: str, request: Request, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/seed")
+def seed_endpoint(request: Request, db: Session = Depends(get_db)):
+    """Maintenance: upsert the obligation catalog (boot only seeds an EMPTY table,
+    so catalog additions need an explicit run against existing databases)."""
+    _authorize(request)
+    from oblag.catalog import seed_obligations
+
+    count = seed_obligations(db)
+    db.commit()
+    return {"seeded": count}
+
+
 @router.get("/relink")
 def relink_items(request: Request, db: Session = Depends(get_db)):
     """Maintenance: run the title-based obligation matcher over unlinked items

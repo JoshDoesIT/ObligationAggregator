@@ -115,7 +115,7 @@ class PciSscAdapter(SourceAdapter):
                 native_status="rfc",
                 track="proposed",
                 dates=dates,
-                obligation_slug="pci-dss" if "pci dss" in subject.lower() else None,
+                obligation_slug=_pci_obligation(subject),
                 native_meta={"blog_title": title},
                 anomalies=anomalies,
             )
@@ -123,6 +123,31 @@ class PciSscAdapter(SourceAdapter):
 
 def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+# RFC subject → catalog slug for the PCI SSC standards family (first match wins)
+_PCI_SLUG_RULES = [
+    (r"pci dss|data security standard", "pci-dss"),
+    (r"pts hsm|hardware security module", "pci-pts-hsm"),
+    (r"pts poi|point of interaction", "pci-pts-poi"),
+    (r"pin security|\bpin\b(?!.*transaction)", "pci-pin"),
+    (r"point.to.point encryption|p2pe", "pci-p2pe"),
+    (r"3ds", "pci-3ds"),
+    (r"secure software lifecycle|secure slc", "pci-secure-slc"),
+    (r"secure software", "pci-secure-software"),
+    (r"card production", "pci-card-production"),
+    (r"token service", "pci-tsp"),
+    (r"mobile payments? on cots|mpoc", "pci-mpoc"),
+    (r"key management operations|\bkmo\b", "pci-kmo"),
+]
+
+
+def _pci_obligation(subject: str) -> str | None:
+    lowered = subject.lower()
+    for pattern, slug in _PCI_SLUG_RULES:
+        if re.search(pattern, lowered):
+            return slug
+    return None
 
 
 def _parse_window(description: str | None, anchor: date | None) -> tuple[date, date] | None:

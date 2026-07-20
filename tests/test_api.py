@@ -54,3 +54,29 @@ def test_html_pages_render(client, seeded):
         assert r.status_code == 200, path
         assert "ObligationAggregator" in r.text
     assert "CIRCIA" in client.get("/").text
+
+
+def test_deadlines_ics_export(client, seeded):
+    r = client.get("/deadlines.ics")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/calendar")
+    body = r.text
+    assert "BEGIN:VCALENDAR" in body and "END:VCALENDAR" in body
+    assert "BEGIN:VEVENT" in body
+    assert "Comments close: CIRCIA Reporting Requirements" in body
+    assert f"DTSTART;VALUE=DATE:{seeded.strftime('%Y%m%d')}" in body
+
+
+def test_quick_watch_creates_obligation_watchlist(client, seeded, db):
+    from oblag.db.models import PipelineItem, Watchlist
+
+    item = db.query(PipelineItem).first()
+    r = client.post(f"/items/{item.id}/watch", follow_redirects=False)
+    assert r.status_code == 303
+    wl = db.query(Watchlist).filter(Watchlist.name.like("Watch:%")).one()
+    assert wl.channel == "rss"
+    f = wl.filters
+    assert f.get("obligation_slugs") == ["circia"] or f.get("source_systems")
+    # idempotent: watching again doesn't duplicate
+    client.post(f"/items/{item.id}/watch", follow_redirects=False)
+    assert db.query(Watchlist).filter(Watchlist.name.like("Watch:%")).count() == 1

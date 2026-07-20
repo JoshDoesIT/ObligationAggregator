@@ -342,3 +342,9 @@ def test_malformed_sitemap_falls_back_to_tolerant_parse():
     assert len(items) == 1
     assert items[0].url.endswith("ethics-exposure-draft-x")
     assert items[0].dates and items[0].dates[0].value == date(2026, 6, 1)
+
+
+def test_seed_endpoint_upserts_catalog(cron_client):
+    r = cron_client.get("/api/internal/seed", headers={"Authorization": "Bearer s3cret"})
+    assert r.status_code == 200
+    assert r.json()["seeded"] >= 50  # 39 originals + PCI standards family

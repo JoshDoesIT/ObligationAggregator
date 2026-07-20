@@ -90,4 +90,13 @@ lifecycle — the signals about the <a href="/obligations">obligations</a> you'r
   </table>
   </div>
 </div>
+{% if page > 1 or has_next %}
+{% set qs = (('&q=' ~ (q | urlencode)) if q else '') ~ (('&state=' ~ state) if state else '')
+   ~ (('&source=' ~ source) if source else '') ~ (('&obligation=' ~ obligation) if obligation else '') %}
+<div style="display:flex; gap:.8rem; align-items:center; justify-content:center; margin:1rem 0">
+  {% if page > 1 %}<a href="/?page={{ page - 1 }}{{ qs }}">&larr; Newer</a>{% endif %}
+  <span class="muted" style="font-size:.85rem">page {{ page }}</span>
+  {% if has_next %}<a href="/?page={{ page + 1 }}{{ qs }}">Older &rarr;</a>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

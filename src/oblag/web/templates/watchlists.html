@@ -9,19 +9,28 @@ to match everything.</p>
 <div class="panel">
   <h3>New watchlist</h3>
   <div class="pad">
-  <form method="post" action="/watchlists" class="filters" style="margin:0">
-    <input name="name" placeholder="Name (e.g. “EU cyber deadlines”)" required>
-    <select name="channel">
-      <option value="rss">RSS feed</option>
-      <option value="email">Email</option>
-      <option value="webhook">Webhook</option>
-    </select>
-    <input name="target" placeholder="Email address / webhook URL — blank for RSS">
-    <input name="source_systems" placeholder="Sources (csv, e.g. cellar,edpb)">
-    <input name="states" placeholder="States (csv, e.g. comment_open)">
-    <input name="event_types" placeholder="Events (csv, e.g. date_changed)">
-    <button>Create</button>
+  <form method="post" action="/watchlists"
+        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:.7rem; align-items:end">
+    <div><label for="wl-name" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Name</label>
+      <input id="wl-name" name="name" placeholder="e.g. “EU cyber deadlines”" required style="width:100%"></div>
+    <div><label for="wl-channel" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Delivery channel</label>
+      <select id="wl-channel" name="channel" style="width:100%">
+        <option value="rss">RSS feed</option>
+        <option value="email">Email</option>
+        <option value="webhook">Webhook</option>
+      </select></div>
+    <div><label for="wl-target" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Email / webhook URL <span style="font-weight:400">(blank for RSS)</span></label>
+      <input id="wl-target" name="target" style="width:100%"></div>
+    <div><label for="wl-sources" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Sources <span style="font-weight:400">(csv, optional)</span></label>
+      <input id="wl-sources" name="source_systems" placeholder="cellar, edpb" style="width:100%"></div>
+    <div><label for="wl-states" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">States <span style="font-weight:400">(csv, optional)</span></label>
+      <input id="wl-states" name="states" placeholder="comment_open" style="width:100%"></div>
+    <div><label for="wl-events" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Event types <span style="font-weight:400">(csv, optional)</span></label>
+      <input id="wl-events" name="event_types" placeholder="date_changed" style="width:100%"></div>
+    <div><button style="width:100%">Create watchlist</button></div>
   </form>
+  <p class="muted" style="font-size:.82rem; margin:.6rem 0 0">Tip: the 🔔 Watch button on any
+  item page creates a one-click watchlist for that obligation.</p>
   </div>
 </div>
 

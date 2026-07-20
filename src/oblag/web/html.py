@@ -211,7 +211,10 @@ def items_page(
     source: str | None = None,
     obligation: str | None = None,
     q: str | None = None,
+    page: int = 1,
 ):
+    page = max(page, 1)
+    page_size = 50
     data = api.list_items(
         db=db,
         state=[state] if state else None,
@@ -220,8 +223,8 @@ def items_page(
         track=None,
         q=q,
         obligation=obligation,
-        limit=100,
-        offset=0,
+        limit=page_size,
+        offset=(page - 1) * page_size,
     )
     sources = sorted(row[0] for row in db.query(PipelineItem.source_system).distinct())
     from sqlalchemy import func
@@ -289,6 +292,9 @@ def items_page(
             "obligations": linked_obligations,
             "q": q,
             "stats": stats,
+            "page": page,
+            "page_size": page_size,
+            "has_next": page * page_size < data["total"],
         },
     )
 
@@ -370,13 +376,99 @@ def item_page(item_id: int, request: Request, db: Session = Depends(get_db)):
     )
 
 
+@router.post("/items/{item_id}/watch", response_class=HTMLResponse)
+def quick_watch(item_id: int, db: Session = Depends(get_db)):
+    """One-click watch: RSS watchlist scoped to the item's obligation (or source)."""
+    from fastapi.responses import RedirectResponse
+
+    from oblag.web import watchlists as wl_api
+
+    item = db.get(PipelineItem, item_id)
+    if item is None:
+        raise HTTPException(404, "item not found")
+    if item.obligation is not None:
+        name = f"Watch: {item.obligation.name}"
+        filters = wl_api.WatchlistFilters(obligation_slugs=[item.obligation.slug])
+    else:
+        name = f"Watch: {_human_source(item.source_system)}"
+        filters = wl_api.WatchlistFilters(source_systems=[item.source_system])
+    from oblag.db.models import Watchlist
+
+    exists = db.query(Watchlist).filter_by(name=name, active=True).first()
+    if exists is None:
+        wl_api.create_watchlist(
+            wl_api.WatchlistIn(name=name, channel="rss", target=None, filters=filters), db=db
+        )
+    return RedirectResponse("/watchlists", status_code=303)
+
+
 @router.get("/events", response_class=HTMLResponse)
 def events_page(request: Request, db: Session = Depends(get_db), type: str | None = None):
     data = api.list_events(db=db, type=[type] if type else None, item_id=None, limit=200, offset=0)
+    item_ids = {e["item_id"] for e in data["events"] if e.get("item_id")}
+    titles = {}
+    if item_ids:
+        titles = {
+            row[0]: row[1]
+            for row in db.query(PipelineItem.id, PipelineItem.title).filter(
+                PipelineItem.id.in_(item_ids)
+            )
+        }
     return templates.TemplateResponse(
         request,
         "events.html",
-        {"events": data["events"], "types": [t.value for t in EventType], "type": type},
+        {
+            "events": data["events"],
+            "types": [t.value for t in EventType],
+            "type": type,
+            "titles": titles,
+        },
+    )
+
+
+def _ics_escape(text: str) -> str:
+    return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+@router.get("/deadlines.ics")
+def deadlines_ics(request: Request, db: Session = Depends(get_db), within_days: int = 365):
+    """Deadlines as an iCalendar feed — subscribe from Outlook/Google/Apple Calendar."""
+    from datetime import date, timedelta
+
+    from fastapi.responses import Response
+
+    data = api.upcoming_deadlines(db=db, date_type=None, within_days=min(within_days, 3650))
+    base = str(request.base_url).rstrip("/")
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//ObligationAggregator//deadlines//EN",
+        "CALSCALE:GREGORIAN",
+        "X-WR-CALNAME:Regulatory deadlines",
+    ]
+    for d in data["deadlines"]:
+        start = date.fromisoformat(d["value"])
+        end = start + timedelta(days=1)
+        summary = f"{_human_date_type(d['date_type'])}: {d['title']}"
+        desc = (
+            f"Confidence: {_human_conf(d['confidence'])} · "
+            f"State: {_human_state(d['state'])} · {base}/items/{d['item_id']}"
+        )
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:oblag-{d['item_id']}-{d['date_type']}-{d['value']}@obligation-aggregator",
+            f"DTSTART;VALUE=DATE:{start.strftime('%Y%m%d')}",
+            f"DTEND;VALUE=DATE:{end.strftime('%Y%m%d')}",
+            f"SUMMARY:{_ics_escape(summary)}",
+            f"DESCRIPTION:{_ics_escape(desc)}",
+            f"URL:{base}/items/{d['item_id']}",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return Response(
+        "\r\n".join(lines) + "\r\n",
+        media_type="text/calendar",
+        headers={"Content-Disposition": 'attachment; filename="oblag-deadlines.ics"'},
     )
 
 
