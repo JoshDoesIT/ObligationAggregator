@@ -16,6 +16,12 @@ _EXPOSURE_RE = re.compile(r"(?i)/[a-z-]*exposure-draft")
 # "summary of comments") — journalism about drafts, not the drafts themselves
 _NEWS_RE = re.compile(r"(?i)/article/")
 _SOC_RE = re.compile(r"(?i)trust-services|soc-2|soc2|attestation")
+# Assurance/GRC-relevant drafts only: AICPA also exposes accounting/tax drafts
+# (GASB implementation guidance, DC plan contributions) that are out of scope.
+_RELEVANT_RE = re.compile(
+    r"(?i)trust-services|soc-?[123]|attestation|ssae|at-c|cyber|quality-management"
+    r"|peer-review|information-security|privacy|ethics|client-information|confidential"
+)
 
 
 @register
@@ -30,6 +36,8 @@ class AicpaAdapter(SitemapAdapter):
     def normalize(self, raw: RawDocument) -> Iterable[NormalizedItem]:
         for loc, lastmod in self.iter_urls(raw):
             if not _EXPOSURE_RE.search(loc) or _NEWS_RE.search(loc):
+                continue
+            if not _RELEVANT_RE.search(loc):
                 continue
             dates = []
             if lastmod:

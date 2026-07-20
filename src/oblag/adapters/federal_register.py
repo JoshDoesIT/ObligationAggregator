@@ -111,6 +111,12 @@ class FederalRegisterAdapter(SourceAdapter):
         # Scope boundary (spec 00): ANPRMs are weak signals, excluded by default.
         if "advance notice" in action_lower and not get_settings().include_prerule:
             return None
+        # Relevance gate: the FR publishes every federal rule (fisheries, drawbridges,
+        # airspace) — only security/privacy-scoped documents become items.
+        from oblag.scope import in_scope
+
+        if not in_scope(doc.get("title"), doc.get("abstract"), action):
+            return None
 
         anomalies: list[str] = []
         dates: list[NormalizedDate] = []

@@ -156,7 +156,14 @@ class CellarAdapter(SourceAdapter):
         rtype = (_v(row, "type") or "").rsplit("/", 1)[-1]
         title = _v(row, "title") or celex
 
+        # Relevance gate: CELLAR carries every EU act (fisheries authorisations,
+        # transport decisions). Explicitly-mapped CELEX ids always pass.
+        from oblag.scope import in_scope
+
         corr = _CORRIGENDUM_RE.match(celex)
+        base_celex = corr.group("base") if corr else celex
+        if base_celex not in CELEX_OBLIGATION_MAP and not in_scope(title):
+            return None
         if corr:
             # Corrigenda are erratum signals on the base act, not items (spec 05)
             return NormalizedItem(

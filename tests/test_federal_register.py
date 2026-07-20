@@ -35,7 +35,7 @@ def test_normalize_nprm(adapter):
     assert all(d.confidence is Confidence.published_firm for d in item.dates)
 
 
-def test_umbrella_rins_never_become_join_keys(adapter):
+def test_umbrella_rins_never_become_join_keys(adapter, scope_off):
     import json as _json
 
     doc = {
@@ -76,7 +76,7 @@ def test_supplementary_flag_on_extension_documents(adapter):
     assert item.supplementary is True
 
 
-def test_normalize_mixed_page_filters_and_maps(adapter):
+def test_normalize_mixed_page_filters_and_maps(adapter, scope_off):
     items = normalize_fixture(adapter, "mixed_page.json")
     by_key = {i.external_key[1]: i for i in items}
     # ANPRM excluded by default (weak signal)
@@ -89,7 +89,7 @@ def test_normalize_mixed_page_filters_and_maps(adapter):
     assert {d.date_type for d in rule.dates} >= {DateType.adopted}
 
 
-def test_anprm_included_when_prerule_enabled(adapter, monkeypatch):
+def test_anprm_included_when_prerule_enabled(adapter, scope_off, monkeypatch):
     monkeypatch.setenv("OBLAG_INCLUDE_PRERULE", "true")
     from oblag.config import get_settings
 

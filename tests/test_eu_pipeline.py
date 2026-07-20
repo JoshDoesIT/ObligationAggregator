@@ -25,7 +25,7 @@ def acts():
 
 
 @pytest.fixture()
-def proposals():
+def proposals(scope_off):
     adapter = CellarAdapter()
     raw = RawDocument(
         url="https://sparql",

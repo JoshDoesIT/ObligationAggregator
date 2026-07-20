@@ -99,3 +99,15 @@ def seeded(db):
     )
     db.commit()
     return future
+
+
+@pytest.fixture()
+def scope_off(monkeypatch):
+    """Disable the security/privacy relevance gate for tests exercising other
+    mechanics on fixtures that contain out-of-scope documents."""
+    from oblag.config import get_settings
+
+    monkeypatch.setenv("OBLAG_SCOPE_FILTER", "false")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
