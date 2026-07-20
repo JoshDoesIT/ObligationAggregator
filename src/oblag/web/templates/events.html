@@ -1,25 +1,38 @@
 {% extends "base.html" %}
-{% block title %}Events — ObligationAggregator{% endblock %}
+{% block title %}Activity — ObligationAggregator{% endblock %}
 {% block content %}
-<h2>Events</h2>
+<h2 class="page">Activity</h2>
+<p class="lede">The append-only event log: every state transition, date movement, content change
+and anomaly across all tracked obligations.</p>
+
 <form class="filters" method="get" action="/events">
   <select name="type">
-    <option value="">any type</option>
+    <option value="">All event types</option>
     {% for t in types %}
-    <option value="{{ t }}" {{ 'selected' if t == type }}>{{ t }}</option>
+    <option value="{{ t }}" {{ 'selected' if t == type }}>{{ t | human_event }}</option>
     {% endfor %}
   </select>
-  <button>Filter</button>
+  <button>Apply</button>
+  {% if type %}<a href="/events" class="muted" style="font-size:.85rem">clear</a>{% endif %}
 </form>
-<table>
-  <tr><th>When</th><th>Type</th><th>Item</th><th>Detail</th></tr>
-  {% for e in events %}
-  <tr>
-    <td class="muted">{{ e.occurred_at[:19] if e.occurred_at }}</td>
-    <td><span class="pill">{{ e.type }}</span></td>
-    <td>{% if e.item_id %}<a href="/items/{{ e.item_id }}">#{{ e.item_id }}</a>{% endif %}</td>
-    <td><code style="white-space:pre-wrap">{{ e.payload | tojson }}</code></td>
-  </tr>
-  {% endfor %}
-</table>
+
+<div class="panel">
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>When</th><th>Event</th><th>Item</th><th>What happened</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+    <tr>
+      <td class="muted" style="white-space:nowrap">{{ e.occurred_at[:16].replace('T', ' ') if e.occurred_at }}</td>
+      <td><span class="badge plain {{ 'bad' if e.type == 'anomaly' else 'info' if e.type == 'date_changed' else '' }}">{{ e.type | human_event }}</span></td>
+      <td>{% if e.item_id %}<a href="/items/{{ e.item_id }}">#{{ e.item_id }}</a>{% endif %}</td>
+      <td>{{ e | event_text }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4"><div class="empty"><span class="big">🕰️</span>No events yet.</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
 {% endblock %}

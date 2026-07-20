@@ -1,18 +1,38 @@
 {% extends "base.html" %}
-{% block title %}Adapter health — ObligationAggregator{% endblock %}
+{% block title %}Sources — ObligationAggregator{% endblock %}
 {% block content %}
-<h2>Adapter health</h2>
-<table>
-  <tr><th>Adapter</th><th>Last run</th><th>Last success</th><th>Failures</th><th>Items</th><th>Error</th></tr>
-  {% for a in adapters %}
-  <tr>
-    <td>{{ a.adapter }}</td>
-    <td class="muted">{{ a.last_run_at or '—' }}</td>
-    <td class="muted">{{ a.last_success_at or '—' }}</td>
-    <td>{{ a.consecutive_failures }}</td>
-    <td>{{ a.items_seen_last_run }}</td>
-    <td><code style="white-space:pre-wrap">{{ a.last_error or '' }}</code></td>
-  </tr>
-  {% endfor %}
-</table>
+<h2 class="page">Source health</h2>
+<p class="lede">Every ingestion source, when it last ran, and whether it's succeeding.
+Sources needing credentials or a browser endpoint stay dormant until configured.</p>
+
+<div class="panel">
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Source</th><th>Status</th><th>Last success</th><th>Items last run</th><th>Last error</th></tr></thead>
+    <tbody>
+    {% for a in adapters %}
+    <tr>
+      <td><strong>{{ a.adapter | human_source }}</strong>
+          <div class="muted" style="font-size:.78rem">{{ a.adapter }}</div></td>
+      <td>
+        {% if a.consecutive_failures and a.consecutive_failures > 0 %}
+          <span class="badge bad"><span class="dot"></span>failing ×{{ a.consecutive_failures }}</span>
+        {% elif a.last_success_at %}
+          <span class="badge ok"><span class="dot"></span>healthy</span>
+        {% else %}
+          <span class="badge"><span class="dot"></span>never run</span>
+        {% endif %}
+      </td>
+      <td class="muted" style="white-space:nowrap">{{ a.last_success_at[:16].replace('T',' ') if a.last_success_at else '—' }}</td>
+      <td class="num">{{ a.items_seen_last_run }}</td>
+      <td>{% if a.last_error %}<details><summary>show</summary>
+          <code style="white-space:pre-wrap">{{ a.last_error }}</code></details>{% else %}<span class="muted">—</span>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5"><div class="empty"><span class="big">📡</span>No sources have run yet.</div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
 {% endblock %}

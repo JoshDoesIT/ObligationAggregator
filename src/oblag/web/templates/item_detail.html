@@ -1,76 +1,123 @@
 {% extends "base.html" %}
+{% from "_macros.html" import state_badge, conf, due_chip %}
 {% block title %}{{ item.title }} — ObligationAggregator{% endblock %}
 {% block content %}
-<p><a href="/">&larr; items</a></p>
-<h2>{{ item.title }}</h2>
-<p>
-  <span class="pill state-{{ item.state }}">{{ item.state }}</span>
-  <span class="pill">{{ item.source_system }}</span>
-  <span class="pill">{{ item.jurisdiction }}</span>
-  <span class="pill">track: {{ item.track }}</span>
-  {% if item.url %}<a href="{{ item.url }}" rel="noopener">source ↗</a>{% endif %}
+<p style="margin:.2rem 0"><a href="/">&larr; All obligations</a></p>
+<h2 class="page" style="max-width:60rem">{{ item.title }}</h2>
+<p style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 .9rem">
+  {{ state_badge(item.state) }}
+  <span class="tag">{{ item.source_system | human_source }}</span>
+  <span class="tag">{{ item.jurisdiction }}</span>
+  {% if item.obligation %}<span class="tag">{{ item.obligation }}</span>{% endif %}
+  <span class="tag" title="lifecycle track">{{ item.track }} track</span>
+  {% if item.url %}<a href="{{ item.url }}" rel="noopener" style="font-size:.88rem">View at source ↗</a>{% endif %}
 </p>
-{% if item.abstract %}<p class="muted">{{ item.abstract }}</p>{% endif %}
-{% if item.resolved_change_id %}
-<p class="card">Resolved to final document:
-  <a href="/items/{{ item.resolved_change_id }}">item #{{ item.resolved_change_id }}</a></p>
+{% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
+
+{% set mainline = ['proposed', 'comment_open', 'comment_closed', 'final_pending_effective', 'effective'] %}
+{% if item.state in mainline %}
+  {% set pos = mainline.index(item.state) %}
+  <div class="steps">
+    {% for s in mainline %}
+    <div class="step {{ 'now' if loop.index0 == pos else 'done' if loop.index0 < pos }}">
+      <div class="node">{{ '✓' if loop.index0 < pos else '●' }}</div>
+      {{ s | human_state }}
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="sidestate">
+    {% if item.state == 'superseded' and item.resolved_change_id %}
+      <div class="panel"><div class="pad">This proposal was resolved by a final document:
+        <a href="/items/{{ item.resolved_change_id }}"><strong>item #{{ item.resolved_change_id }}</strong></a>
+      </div></div>
+    {% elif item.state == 'withdrawn' %}
+      <div class="panel"><div class="pad">{{ state_badge(item.state) }}
+        This proposal was formally withdrawn — it is no longer moving toward a requirement.</div></div>
+    {% elif item.state == 'stalled' %}
+      <div class="panel"><div class="pad">{{ state_badge(item.state) }}
+        No source activity for an extended period; timeline uncertain.</div></div>
+    {% endif %}
+  </div>
 {% endif %}
 
-<div class="card">
-  <strong>Current dates</strong>
+<div class="panel">
+  <h3>Key dates</h3>
+  <div class="tablewrap">
   <table>
-    <tr><th>Type</th><th>Date</th><th>Confidence</th><th>Provenance</th></tr>
+    <thead><tr><th>Milestone</th><th>Date</th><th>When</th><th>Confidence</th><th>Provenance</th></tr></thead>
+    <tbody>
     {% for d in item.current_dates %}
     <tr>
-      <td>{{ d.date_type }}{% if d.label %} <span class="muted">({{ d.label }})</span>{% endif %}</td>
-      <td>{{ d.value }}</td>
-      <td><span class="conf-{{ d.confidence }}">{{ d.confidence }}</span></td>
+      <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
+      <td><strong>{{ d.value }}</strong></td>
+      <td>{% set du = d.value | days_until %}
+          {% if du is not none and du >= 0 %}{{ due_chip(du) }}{% else %}<span class="muted">{{ d.value | reldate }}</span>{% endif %}</td>
+      <td>{{ conf(d.confidence) }}</td>
       <td class="muted">
         {% if d.snapshot %}
-        <details><summary>snapshot</summary>
+        <details><summary>verified snapshot</summary>
           sha256 <code>{{ d.snapshot.sha256[:16] }}…</code><br>
-          fetched {{ d.snapshot.fetched_at }}<br>
-          <a href="{{ d.snapshot.source_url }}" rel="noopener">source URL</a>
-          {% if d.snapshot.attestation_ref %}<br>attestation: <code>{{ d.snapshot.attestation_ref }}</code>{% endif %}
+          fetched {{ d.snapshot.fetched_at[:19] if d.snapshot.fetched_at }}<br>
+          <a href="{{ d.snapshot.source_url }}" rel="noopener">source URL ↗</a>
+          {% if d.snapshot.attestation_ref %}<br>signed attestation stored{% endif %}
         </details>
         {% else %}curated assertion{% endif %}
       </td>
     </tr>
+    {% else %}
+    <tr><td colspan="5" class="muted">No machine-readable dates yet — add one with a curated assertion.</td></tr>
     {% endfor %}
+    </tbody>
   </table>
+  </div>
 </div>
 
-<div class="card">
-  <strong>Date history</strong> <span class="muted">(append-only; superseded values struck through)</span>
+{% if item.date_history | length > item.current_dates | length %}
+<div class="panel">
+  <h3>Date history <span style="text-transform:none; letter-spacing:0">— append-only; superseded values struck through</span></h3>
+  <div class="tablewrap">
   <table>
-    <tr><th>Type</th><th>Date</th><th>Confidence</th><th>Asserted</th></tr>
+    <thead><tr><th>Milestone</th><th>Date</th><th>Confidence</th><th>Asserted</th></tr></thead>
+    <tbody>
     {% for d in item.date_history %}
     <tr class="{{ 'ghost' if d.id in superseded_ids }}">
-      <td>{{ d.date_type }}{% if d.label %} ({{ d.label }}){% endif %}</td>
+      <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
       <td>{{ d.value }}</td>
-      <td><span class="conf-{{ d.confidence }}">{{ d.confidence }}</span></td>
-      <td class="muted">{{ d.asserted_at[:19] if d.asserted_at }}</td>
+      <td>{{ conf(d.confidence) }}</td>
+      <td class="muted">{{ d.asserted_at[:10] if d.asserted_at }}</td>
     </tr>
     {% endfor %}
+    </tbody>
   </table>
+  </div>
 </div>
+{% endif %}
 
-<div class="card">
-  <strong>Lifecycle events</strong>
+<div class="panel">
+  <h3>Activity</h3>
+  <div class="tablewrap">
   <table>
-    <tr><th>When</th><th>Type</th><th>Detail</th></tr>
+    <thead><tr><th>When</th><th>Event</th><th>What happened</th></tr></thead>
+    <tbody>
     {% for e in item.events %}
     <tr>
-      <td class="muted">{{ e.occurred_at[:19] if e.occurred_at }}</td>
-      <td><span class="pill">{{ e.type }}</span></td>
-      <td><code style="white-space:pre-wrap">{{ e.payload | tojson }}</code></td>
+      <td class="muted" style="white-space:nowrap">{{ e.occurred_at[:10] if e.occurred_at }}</td>
+      <td><span class="badge plain {{ 'bad' if e.type == 'anomaly' else 'info' if e.type == 'date_changed' else '' }}">{{ e.type | human_event }}</span></td>
+      <td>{{ e | event_text }}
+          <details style="display:inline-block; margin-left:.4rem"><summary>raw</summary>
+            <code style="white-space:pre-wrap">{{ e.payload | tojson }}</code></details></td>
     </tr>
+    {% else %}
+    <tr><td colspan="3" class="muted">No events recorded.</td></tr>
     {% endfor %}
+    </tbody>
   </table>
+  </div>
 </div>
 
-<div class="card">
-  <strong>Join keys</strong>:
-  {% for k in item.join_keys %}<code>{{ k.type }}:{{ k.value }}</code> {% endfor %}
-</div>
+<div class="panel"><div class="pad">
+  <span class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.04em">Identifiers</span><br>
+  {% for k in item.join_keys %}<code>{{ k.type }}: {{ k.value }}</code> {% endfor %}
+</div></div>
 {% endblock %}

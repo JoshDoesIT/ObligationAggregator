@@ -1,41 +1,85 @@
 {% extends "base.html" %}
-{% block title %}Items — ObligationAggregator{% endblock %}
+{% from "_macros.html" import state_badge, conf, due_chip %}
+{% block title %}Obligations — ObligationAggregator{% endblock %}
 {% block content %}
+<h2 class="page">Tracked obligations</h2>
+<p class="lede">Security &amp; privacy regulations, frameworks and standards moving through their
+lifecycle — from proposal to enforceable requirement.</p>
+
+<div class="stats">
+  <div class="stat hl"><a href="/"><span class="n">{{ stats.total }}</span>
+    <span class="l">tracked items</span></a></div>
+  <div class="stat"><a href="/?state=comment_open"><span class="n">{{ stats.comment_open }}</span>
+    <span class="l">comment windows open</span></a></div>
+  <div class="stat"><a href="/?state=final_pending_effective"><span class="n">{{ stats.pending_effective }}</span>
+    <span class="l">final · not yet effective</span></a></div>
+  <div class="stat"><a href="/deadlines"><span class="n">→</span>
+    <span class="l">upcoming deadlines</span></a></div>
+</div>
+
 <form class="filters" method="get" action="/">
-  <input type="search" name="q" placeholder="search title/abstract" value="{{ q or '' }}">
+  <input type="search" name="q" placeholder="Search title or abstract…" value="{{ q or '' }}">
   <select name="state">
-    <option value="">any state</option>
+    <option value="">All states</option>
     {% for s in states %}
-    <option value="{{ s }}" {{ 'selected' if s == state }}>{{ s }}</option>
+    <option value="{{ s }}" {{ 'selected' if s == state }}>{{ s | human_state }}</option>
     {% endfor %}
   </select>
   <select name="source">
-    <option value="">any source</option>
+    <option value="">All sources</option>
     {% for s in sources %}
-    <option value="{{ s }}" {{ 'selected' if s == source }}>{{ s }}</option>
+    <option value="{{ s }}" {{ 'selected' if s == source }}>{{ s | human_source }}</option>
     {% endfor %}
   </select>
-  <button>Filter</button>
-  <span class="muted" style="align-self:center">{{ total }} item(s)</span>
+  <button>Apply</button>
+  {% if q or state or source %}<a href="/" class="muted" style="font-size:.85rem">clear</a>{% endif %}
+  <span class="muted" style="margin-left:auto; font-size:.85rem">{{ total }} result{{ '' if total == 1 else 's' }}</span>
 </form>
-<table>
-  <tr><th>Title</th><th>State</th><th>Source</th><th>Key dates</th><th>Last seen</th></tr>
-  {% for item in items %}
-  <tr>
-    <td><a href="/items/{{ item.id }}">{{ item.title }}</a>
-        <div class="muted" style="font-size:.8rem">
-          {% for k in item.join_keys %}<code>{{ k.type }}:{{ k.value }}</code> {% endfor %}
-        </div></td>
-    <td><span class="pill state-{{ item.state }}">{{ item.state }}</span></td>
-    <td class="muted">{{ item.source_system }}<br>{{ item.jurisdiction }}</td>
-    <td>
-      {% for d in item.current_dates %}
-      <div><span class="conf-{{ d.confidence }}" title="confidence: {{ d.confidence }}">
-        {{ d.date_type }}{% if d.label %} ({{ d.label }}){% endif %}: {{ d.value }}</span></div>
-      {% endfor %}
-    </td>
-    <td class="muted">{{ item.last_seen_at[:10] if item.last_seen_at }}</td>
-  </tr>
-  {% endfor %}
-</table>
+
+<div class="panel">
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Obligation</th><th>State</th><th>Source</th><th>Key dates</th></tr></thead>
+    <tbody>
+    {% for item in items %}
+    <tr>
+      <td class="titlecell">
+        <a href="/items/{{ item.id }}">{{ item.title }}</a>
+        {% if item.obligation %}<span class="tag">{{ item.obligation }}</span>{% endif %}
+        {% set idkeys = item.join_keys
+             | selectattr('type', 'in', ['rin', 'docket_id', 'celex', 'bill_id',
+                                         'fr_doc_number', 'oeil_procedure', 'eba_cp'])
+             | list %}
+        {% if idkeys %}
+        <div class="keyrow">
+          {% for k in idkeys[:3] %}<code>{{ k.value }}</code>{% endfor %}
+        </div>
+        {% endif %}
+      </td>
+      <td>{{ state_badge(item.state) }}</td>
+      <td><span class="muted" style="white-space:nowrap">{{ item.source_system | human_source }}</span><br>
+          <span class="muted" style="font-size:.8rem">{{ item.jurisdiction }}</span></td>
+      <td>
+        <div class="datechips">
+        {% for d in item.current_dates %}
+          <div class="datechip">
+            <span class="t">{{ d.date_type | human_date_type }}{% if d.label %} · {{ d.label }}{% endif %}</span>
+            <strong>{{ d.value }}</strong>
+            {% set du = d.value | days_until %}
+            {% if du is not none and du >= 0 and d.date_type in ('comment_close', 'effective', 'transition_deadline', 'phased_compliance') %}
+              {{ due_chip(du) }}
+            {% endif %}
+          </div>
+        {% endfor %}
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4"><div class="empty"><span class="big">🔍</span>
+      No items match these filters.<br><a href="/">Show everything</a></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
 {% endblock %}
