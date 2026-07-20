@@ -159,7 +159,12 @@ class Snapshot(Base):
 
 
 class KeyDate(Base):
-    """Append-only date assertions. Never UPDATE a value; supersede it (spec 00 inv. 1)."""
+    """Append-only date assertions. Never UPDATE a value; supersede it (spec 00 inv. 1).
+
+    A retraction is itself an append-only assertion: a row with retracted=True
+    supersedes the previous value and means "the source no longer states this date"
+    (e.g. NIST flipping a draft to 'no closing date — ongoing comment period').
+    `value` keeps the withdrawn date for the audit trail."""
 
     __tablename__ = "key_date"
 
@@ -169,6 +174,7 @@ class KeyDate(Base):
     label: Mapped[str | None] = mapped_column(String(255))
     value: Mapped[date] = mapped_column(Date)
     confidence: Mapped[Confidence] = mapped_column(Enum(Confidence))
+    retracted: Mapped[bool] = mapped_column(Boolean, default=False)
     source_snapshot_id: Mapped[int | None] = mapped_column(ForeignKey("snapshot.id"))
     asserted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     supersedes_id: Mapped[int | None] = mapped_column(ForeignKey("key_date.id"))

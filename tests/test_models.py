@@ -95,3 +95,19 @@ def test_obligation_defaults_are_conservative_enough(db):
     # defaults exist; copyrighted obligations must be set explicitly by seed data
     assert ob.display_policy.value == "full_text"
     assert ob.copyright_status.value == "public_domain"
+
+
+def test_init_db_backfills_retracted_column(tmp_path):
+    """Databases created before v0.1.7 lack key_date.retracted; init_db adds it."""
+    from sqlalchemy import create_engine, inspect, text
+
+    from oblag.db.models import Base
+    from oblag.db.session import init_db
+
+    eng = create_engine(f"sqlite:///{tmp_path}/old.db")
+    Base.metadata.create_all(eng)
+    with eng.begin() as conn:
+        conn.execute(text("ALTER TABLE key_date DROP COLUMN retracted"))
+    assert "retracted" not in {c["name"] for c in inspect(eng).get_columns("key_date")}
+    init_db(eng)
+    assert "retracted" in {c["name"] for c in inspect(eng).get_columns("key_date")}

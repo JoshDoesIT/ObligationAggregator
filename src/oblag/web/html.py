@@ -129,6 +129,11 @@ def _event_text(e: dict) -> str:
         return f"{_human_state(p.get('from')) or 'New'} → {_human_state(p.get('to'))}"
     if t == "date_changed":
         frm = p.get("from") or "unset"
+        if p.get("retracted"):
+            return (
+                f"{_human_date_type(p.get('date_type'))}: {frm} withdrawn — "
+                "the source no longer states this date"
+            )
         return (
             f"{_human_date_type(p.get('date_type'))}: {frm} → {p.get('to')}"
             f" ({_human_conf(p.get('confidence'))})"

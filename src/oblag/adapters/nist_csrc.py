@@ -92,6 +92,7 @@ class NistCsrcAdapter(SourceAdapter):
                 title = title[: -len(stage_name)].rstrip(" ,;–-")
 
         dates: list[NormalizedDate] = []
+        retract_dates: list[DateType] = []
         content = entry.get("content") or ""
         due = _DUE_RE.search(content)
         if due:
@@ -104,7 +105,12 @@ class NistCsrcAdapter(SourceAdapter):
                 )
             except ValueError:
                 anomalies.append(f"unparseable comments-due date {due.group(1)!r} on {url}")
-        elif not _NO_DUE_RE.search(content):
+        elif _NO_DUE_RE.search(content):
+            # "No Due Date: Comment Period Remains Open" — an explicit statement that
+            # no deadline exists. Retract any previously-asserted close date so the
+            # item matches the source (observed live: PIV drafts flip to ongoing).
+            retract_dates.append(DateType.comment_close)
+        else:
             anomalies.append(f"no comments-due information in feed content for {url}")
 
         published = _parse_ts(entry.get("published"))
@@ -131,6 +137,7 @@ class NistCsrcAdapter(SourceAdapter):
             obligation_slug=obligation_slug,
             native_meta={"stage_name": stage_name, "feed_link": entry.get("link") or ""},
             anomalies=anomalies,
+            retract_dates=retract_dates,
         )
 
 

@@ -58,6 +58,11 @@ class NormalizedItem:
     # airworthiness directive; NOAA inseason actions share a fisheries docket) are
     # distinct rulemakings, observed merged live before this flag existed.
     supplementary: bool = False
+    # Date types the source EXPLICITLY no longer states (e.g. NIST's "No Due Date:
+    # Comment Period Remains Open"). The reducer retracts any live assertion of these
+    # types — append-only, so the withdrawn value stays in the history. Only emit a
+    # retraction on an explicit source signal, never on mere absence of a field.
+    retract_dates: list[DateType] = field(default_factory=list)
 
     @property
     def all_join_keys(self) -> list[tuple[str, str]]:
