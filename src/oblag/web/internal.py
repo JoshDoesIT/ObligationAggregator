@@ -50,13 +50,58 @@ def _run_one(db: Session, name: str, since_days: int) -> dict:
 
 
 @router.get("/run/{adapter}")
-def run_single(adapter: str, request: Request, db: Session = Depends(get_db)):
+def run_single(adapter: str, request: Request, since_days: int = 3, db: Session = Depends(get_db)):
     _authorize(request)
     if adapter not in available_adapters():
         raise HTTPException(404, f"unknown adapter {adapter!r}")
-    result = _run_one(db, adapter, since_days=3)
+    result = _run_one(db, adapter, since_days=min(max(since_days, 1), 90))
     delivered = dispatch_pending(db)
     return {"run": result, "notifications_delivered": delivered}
+
+
+@router.get("/purge-items")
+def purge_items(ids: str, request: Request, db: Session = Depends(get_db)):
+    """Maintenance: hard-delete corrupted pipeline items (with their dates, join keys,
+    and events) so the next ingestion run re-creates them cleanly. Built for the
+    umbrella-join-key merge corruption; usable for any bad-data repair."""
+    _authorize(request)
+    from oblag.db.models import Event, JoinKey, KeyDate, NotificationLog, PipelineItem
+
+    try:
+        item_ids = sorted({int(x) for x in ids.split(",") if x.strip()})
+    except ValueError as exc:
+        raise HTTPException(422, "ids must be a comma-separated list of integers") from exc
+    if not item_ids:
+        raise HTTPException(422, "no ids given")
+    found = [i for (i,) in db.query(PipelineItem.id).filter(PipelineItem.id.in_(item_ids)).all()]
+    event_ids = [e for (e,) in db.query(Event.id).filter(Event.pipeline_item_id.in_(found)).all()]
+    deleted_notifications = 0
+    if event_ids:
+        deleted_notifications = (
+            db.query(NotificationLog)
+            .filter(NotificationLog.event_id.in_(event_ids))
+            .delete(synchronize_session=False)
+        )
+    deleted_events = (
+        db.query(Event).filter(Event.pipeline_item_id.in_(found)).delete(synchronize_session=False)
+    )
+    db.query(KeyDate).filter(KeyDate.pipeline_item_id.in_(found)).delete(synchronize_session=False)
+    db.query(JoinKey).filter(JoinKey.pipeline_item_id.in_(found)).delete(synchronize_session=False)
+    # unlink survivors pointing at purged items before the rows disappear
+    db.query(PipelineItem).filter(PipelineItem.resolved_change_id.in_(found)).update(
+        {PipelineItem.resolved_change_id: None}, synchronize_session=False
+    )
+    deleted_items = (
+        db.query(PipelineItem).filter(PipelineItem.id.in_(found)).delete(synchronize_session=False)
+    )
+    db.commit()
+    return {
+        "purged_items": found,
+        "not_found": sorted(set(item_ids) - set(found)),
+        "deleted_events": deleted_events,
+        "deleted_notifications": deleted_notifications,
+        "deleted_item_rows": deleted_items,
+    }
 
 
 @router.get("/run-group/{group}")

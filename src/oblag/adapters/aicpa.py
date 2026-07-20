@@ -12,6 +12,9 @@ from oblag.db.models import Confidence, DateType
 # query 500s server-side — captured live 2026-07-18) and the GraphQL API requires a
 # browser session. The sitemap, however, lists every exposure-draft page directly.
 _EXPOSURE_RE = re.compile(r"(?i)/[a-z-]*exposure-draft")
+# /article/ paths are newsroom coverage ("IASB publishes exposure draft on…",
+# "summary of comments") — journalism about drafts, not the drafts themselves
+_NEWS_RE = re.compile(r"(?i)/article/")
 _SOC_RE = re.compile(r"(?i)trust-services|soc-2|soc2|attestation")
 
 
@@ -26,7 +29,7 @@ class AicpaAdapter(SitemapAdapter):
 
     def normalize(self, raw: RawDocument) -> Iterable[NormalizedItem]:
         for loc, lastmod in self.iter_urls(raw):
-            if not _EXPOSURE_RE.search(loc):
+            if not _EXPOSURE_RE.search(loc) or _NEWS_RE.search(loc):
                 continue
             dates = []
             if lastmod:
