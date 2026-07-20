@@ -20,9 +20,14 @@ dependencies = [
     "python-multipart>=0.0.9",
     "cryptography>=42.0",
     "defusedxml>=0.7",
+    # core, not an extra: Vercel git builds install [project] dependencies only
+    # (build log: "Installing required dependencies from pyproject.toml") — as an
+    # extra the driver was absent and the deployed function crashed on import
+    "psycopg[binary]>=3.1",
 ]
 
 [project.optional-dependencies]
+# kept for compatibility with documented `pip install .[postgres]` invocations
 postgres = ["psycopg[binary]>=3.1"]
 pdf = ["pypdf>=4.2"]
 browser = ["playwright>=1.45"]
