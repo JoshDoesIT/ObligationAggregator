@@ -13,8 +13,8 @@ lifecycle — the signals about the <a href="/obligations">obligations</a> you'r
     <span class="l">comment windows open</span></a></div>
   <div class="stat"><a href="/?state=final_pending_effective"><span class="n">{{ stats.pending_effective }}</span>
     <span class="l">final · not yet effective</span></a></div>
-  <div class="stat"><a href="/deadlines"><span class="n">→</span>
-    <span class="l">upcoming deadlines</span></a></div>
+  <div class="stat"><a href="/deadlines"><span class="n">{{ stats.deadlines_30d }}</span>
+    <span class="l">deadlines in 30 days</span></a></div>
 </div>
 
 <form class="filters" method="get" action="/">
@@ -44,7 +44,7 @@ lifecycle — the signals about the <a href="/obligations">obligations</a> you'r
 
 <div class="panel">
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows feed">
     <thead><tr><th>Change</th><th>Kind</th><th>State</th><th>Source</th><th>Key dates</th></tr></thead>
     <tbody>
     {% for item in items %}

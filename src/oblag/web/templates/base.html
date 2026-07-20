@@ -142,18 +142,29 @@
     .datechips { display:flex; flex-direction:column; gap:.25rem; }
     .datechip { font-size:.82rem; white-space:nowrap; }
     .datechip .t { color:var(--muted); }
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+    summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .skip { position:absolute; left:-9999px; top:0; background:var(--accent); color:#fff;
+            padding:.5rem 1rem; border-radius:0 0 8px 0; z-index:20; }
+    .skip:focus { left:0; }
     @media (max-width:720px) {
       main { padding:1rem .8rem 2.5rem; }
       th, td { padding:.5rem .55rem; }
+      /* feed table: drop Kind + Source columns; title, state and dates carry the row */
+      table.feed th:nth-child(2), table.feed td:nth-child(2),
+      table.feed th:nth-child(4), table.feed td:nth-child(4) { display:none; }
+      .stats { grid-template-columns:repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <header class="site">
   <a class="brand" href="/"><span class="logo">OA</span> ObligationAggregator</a>
   <nav class="site">
     {% set path = request.url.path %}
-    <a href="/" class="{{ 'active' if path == '/' or path.startswith('/items') }}">Changes</a>
+    <a href="/" class="{{ 'active' if path == '/' or path.startswith('/items') }}"
+       {% if path == '/' or path.startswith('/items') %}aria-current="page"{% endif %}>Changes</a>
     <a href="/obligations" class="{{ 'active' if path.startswith('/obligations') }}">Obligations</a>
     <a href="/deadlines" class="{{ 'active' if path.startswith('/deadlines') }}">Deadlines</a>
     <a href="/events" class="{{ 'active' if path.startswith('/events') }}">Activity</a>
@@ -162,6 +173,6 @@
     <a href="/docs" title="OpenAPI documentation">API</a>
   </nav>
 </header>
-<main>{% block content %}{% endblock %}</main>
+<main id="content">{% block content %}{% endblock %}</main>
 </body>
 </html>
