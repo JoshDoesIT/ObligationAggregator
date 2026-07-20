@@ -20,7 +20,13 @@ from oblag.db.models import (
 )
 
 
-def _resolve_obligation(session: Session, slug: str | None) -> int | None:
+def _resolve_obligation(session: Session, slug: str | None, title: str | None = None) -> int | None:
+    """Adapter-stated slug wins; otherwise infer the obligation from the title
+    (oblag.linking) so signals like 'guidance on the Cyber Resilience Act' link."""
+    if not slug and title:
+        from oblag.linking import infer_obligation
+
+        slug = infer_obligation(title)
     if not slug:
         return None
     row = session.query(Obligation.id).filter_by(slug=slug).one_or_none()
@@ -196,7 +202,7 @@ def reduce_item(
             native_meta=dict(ni.native_meta),
             track=ni.track,
             content_fingerprint=ni.content_fingerprint,
-            obligation_id=_resolve_obligation(session, ni.obligation_slug),
+            obligation_id=_resolve_obligation(session, ni.obligation_slug, ni.title),
         )
         session.add(item)
         session.flush()
@@ -390,8 +396,8 @@ def reduce_item(
         item.abstract = ni.abstract
         item.url = ni.url or item.url
 
-    if item.obligation_id is None and ni.obligation_slug:
-        item.obligation_id = _resolve_obligation(session, ni.obligation_slug)
+    if item.obligation_id is None:
+        item.obligation_id = _resolve_obligation(session, ni.obligation_slug, ni.title)
     item.last_seen_at = datetime.now(UTC)
     _note_item_anomalies(session, item, ni, snapshot_id, events)
     session.flush()

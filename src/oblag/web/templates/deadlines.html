@@ -13,7 +13,15 @@ Hover a confidence label to see what it means — an
   <table class="rows">
     <thead><tr><th>Due</th><th>Date</th><th>Milestone</th><th>Obligation</th><th>Confidence</th></tr></thead>
     <tbody>
+    {% set groups = namespace(current='') %}
     {% for d in deadlines %}
+    {% set bucket = 'This week' if d.days_until <= 7 else 'This month' if d.days_until <= 30
+                    else 'Next 3 months' if d.days_until <= 90 else 'Later' %}
+    {% if bucket != groups.current %}
+      {% set groups.current = bucket %}
+      <tr><td colspan="5" style="background:var(--line2); font-weight:700; font-size:.8rem;
+        text-transform:uppercase; letter-spacing:.05em; color:var(--muted)">{{ bucket }}</td></tr>
+    {% endif %}
     <tr>
       <td>{{ due_chip(d.days_until) }}</td>
       <td style="white-space:nowrap"><strong>{{ d.value }}</strong></td>

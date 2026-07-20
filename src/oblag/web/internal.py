@@ -104,6 +104,25 @@ def purge_items(ids: str, request: Request, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/relink")
+def relink_items(request: Request, db: Session = Depends(get_db)):
+    """Maintenance: run the title-based obligation matcher over unlinked items
+    (backfills data ingested before the fallback linker existed)."""
+    _authorize(request)
+    from oblag.db.models import Obligation, PipelineItem
+    from oblag.linking import infer_obligation
+
+    slug_ids = {slug: oid for oid, slug in db.query(Obligation.id, Obligation.slug)}
+    linked = []
+    for item in db.query(PipelineItem).filter(PipelineItem.obligation_id.is_(None)):
+        slug = infer_obligation(item.title)
+        if slug and slug in slug_ids:
+            item.obligation_id = slug_ids[slug]
+            linked.append({"item": item.id, "obligation": slug, "title": item.title[:80]})
+    db.commit()
+    return {"linked": linked, "count": len(linked)}
+
+
 @router.get("/run-group/{group}")
 def run_group(group: str, request: Request, db: Session = Depends(get_db)):
     _authorize(request)

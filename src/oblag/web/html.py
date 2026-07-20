@@ -230,13 +230,42 @@ def items_page(
         row[0]: row[1]
         for row in db.query(PipelineItem.state, func.count()).group_by(PipelineItem.state)
     }
+    deadlines_30d = len(api.upcoming_deadlines(db=db, date_type=None, within_days=30)["deadlines"])
     stats = {
         "total": sum(state_counts.values()),
         "comment_open": state_counts.get(ItemState.comment_open, 0),
         "pending_effective": state_counts.get(ItemState.final_pending_effective, 0),
-        "proposed": state_counts.get(ItemState.proposed, 0)
-        + state_counts.get(ItemState.comment_closed, 0),
+        "deadlines_30d": deadlines_30d,
     }
+
+    # Attention-first default ordering: open comment windows (nearest close first),
+    # then finals awaiting effectiveness, then fresh proposals; historical/terminal
+    # states sink. Explicit filters keep the API's recency order within the subset.
+    _state_rank = {
+        "comment_open": 0,
+        "final_pending_effective": 1,
+        "proposed": 2,
+        "comment_closed": 3,
+        "effective": 4,
+        "stalled": 5,
+        "superseded": 6,
+        "withdrawn": 7,
+    }
+
+    def _next_deadline(it: dict) -> str:
+        from datetime import date as _date
+
+        future = [
+            d["value"]
+            for d in it.get("current_dates", [])
+            if d["value"] >= _date.today().isoformat()
+        ]
+        return min(future) if future else "9999-12-31"
+
+    items_sorted = sorted(
+        data["items"],
+        key=lambda it: (_state_rank.get(it["state"], 8), _next_deadline(it), -it["id"]),
+    )
     from oblag.db.models import Obligation
 
     linked_obligations = [
@@ -250,7 +279,7 @@ def items_page(
         request,
         "items.html",
         {
-            "items": data["items"],
+            "items": items_sorted,
             "total": data["total"],
             "states": [s.value for s in ItemState],
             "sources": sources,
