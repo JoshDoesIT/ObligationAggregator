@@ -13,6 +13,9 @@
     title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
   <span class="tag" title="lifecycle track">{{ item.track }} track</span>
   {% if item.url %}<a href="{{ item.url }}" rel="noopener" style="font-size:.88rem">View at source ↗</a>{% endif %}
+  <form method="post" action="/items/{{ item.id }}/watch" style="display:inline; margin-left:auto">
+    <button title="Create an RSS watchlist for this {{ 'obligation' if item.obligation else 'source' }}">🔔 Watch</button>
+  </form>
 </p>
 {% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
 
