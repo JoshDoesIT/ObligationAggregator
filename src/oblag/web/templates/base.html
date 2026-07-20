@@ -153,7 +153,8 @@
   <a class="brand" href="/"><span class="logo">OA</span> ObligationAggregator</a>
   <nav class="site">
     {% set path = request.url.path %}
-    <a href="/" class="{{ 'active' if path == '/' }}">Obligations</a>
+    <a href="/" class="{{ 'active' if path == '/' or path.startswith('/items') }}">Changes</a>
+    <a href="/obligations" class="{{ 'active' if path.startswith('/obligations') }}">Obligations</a>
     <a href="/deadlines" class="{{ 'active' if path.startswith('/deadlines') }}">Deadlines</a>
     <a href="/events" class="{{ 'active' if path.startswith('/events') }}">Activity</a>
     <a href="/watchlists" class="{{ 'active' if path.startswith('/watchlists') }}">Watchlists</a>

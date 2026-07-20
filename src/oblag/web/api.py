@@ -30,9 +30,14 @@ def _apply_item_filters(
     jurisdiction: list[str] | None,
     track: str | None,
     q: str | None,
+    obligation: str | None = None,
 ):
     if state:
         query = query.filter(PipelineItem.state.in_([ItemState(s) for s in state]))
+    if obligation:
+        query = query.join(Obligation, PipelineItem.obligation_id == Obligation.id).filter(
+            Obligation.slug == obligation
+        )
     if source:
         query = query.filter(PipelineItem.source_system.in_(source))
     if jurisdiction:
@@ -53,6 +58,7 @@ def list_items(
     jurisdiction: list[str] | None = Query(None),
     track: str | None = None,
     q: str | None = None,
+    obligation: str | None = None,
     limit: int = Query(50, le=500),
     offset: int = 0,
 ):
@@ -64,6 +70,7 @@ def list_items(
             jurisdiction=jurisdiction,
             track=track,
             q=q,
+            obligation=obligation,
         )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None

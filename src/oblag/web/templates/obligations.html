@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import due_chip %}
+{% block title %}Obligations — ObligationAggregator{% endblock %}
+{% block content %}
+<h2 class="page">Obligation catalog</h2>
+<p class="lede">The regulations, frameworks and standards this instance tracks — the things your
+program is actually subject to. Everything on the <a href="/">change feed</a> is a signal
+<em>about</em> one of these (a rulemaking, draft, consultation, advisory or release).</p>
+
+<div class="panel">
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Obligation</th><th>Issuing body</th><th>Jurisdiction</th>
+      <th class="num">Active changes</th><th>Next deadline</th></tr></thead>
+    <tbody>
+    {% for o in rows %}
+    <tr>
+      <td class="titlecell">
+        {% if o.total_items %}<a href="/?obligation={{ o.slug }}">{{ o.name }}</a>
+        {% else %}<span style="font-weight:600">{{ o.name }}</span>{% endif %}
+        <span class="tag">{{ o.slug }}</span>
+        {% if o.canonical_url %}
+          <div class="keyrow"><a href="{{ o.canonical_url }}" rel="noopener" class="muted"
+            style="font-size:.78rem">official source ↗</a></div>
+        {% endif %}
+      </td>
+      <td class="muted">{{ o.issuing_body }}</td>
+      <td><span class="tag">{{ o.jurisdiction }}</span></td>
+      <td class="num">
+        {% if o.active_items %}
+          <a href="/?obligation={{ o.slug }}"><strong>{{ o.active_items }}</strong></a>
+          {% if o.total_items > o.active_items %}<span class="muted" style="font-size:.8rem">/ {{ o.total_items }}</span>{% endif %}
+        {% elif o.total_items %}
+          <span class="muted">{{ o.total_items }}</span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if o.next_deadline %}
+          {{ due_chip(o.next_deadline.days_until) }}
+          <span style="font-size:.85rem">{{ o.next_deadline.date_type | human_date_type }}
+            <strong>{{ o.next_deadline.value }}</strong></span>
+        {% else %}<span class="muted">—</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<p class="muted" style="font-size:.85rem">Quiet rows are still monitored — their sources simply
+have no open rulemaking or draft right now. Copyrighted standards (ISO, PCI DSS, HITRUST)
+track change events and identifiers only; bring your own licensed copy for full-text diffs.</p>
+{% endblock %}

@@ -2,13 +2,15 @@
 {% from "_macros.html" import state_badge, conf, due_chip %}
 {% block title %}{{ item.title }} — ObligationAggregator{% endblock %}
 {% block content %}
-<p style="margin:.2rem 0"><a href="/">&larr; All obligations</a></p>
+<p style="margin:.2rem 0"><a href="/">&larr; Change feed</a></p>
 <h2 class="page" style="max-width:60rem">{{ item.title }}</h2>
 <p style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 .9rem">
   {{ state_badge(item.state) }}
+  <span class="tag">{{ item | signal_kind }}</span>
   <span class="tag">{{ item.source_system | human_source }}</span>
   <span class="tag">{{ item.jurisdiction }}</span>
-  {% if item.obligation %}<span class="tag">{{ item.obligation }}</span>{% endif %}
+  {% if item.obligation %}<a class="tag" href="/?obligation={{ item.obligation }}"
+    title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
   <span class="tag" title="lifecycle track">{{ item.track }} track</span>
   {% if item.url %}<a href="{{ item.url }}" rel="noopener" style="font-size:.88rem">View at source ↗</a>{% endif %}
 </p>
