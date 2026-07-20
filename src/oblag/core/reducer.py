@@ -82,6 +82,24 @@ def _find_item(session: Session, ni: NormalizedItem) -> tuple[PipelineItem | Non
     if not rows:
         return None, None
     items = {r.item.id: r.item for r in rows if r.item.track == ni.track}
+    if items and not ni.supplementary:
+        # Identity guard: a candidate whose own external-type keys all differ from this
+        # document's external key is a DIFFERENT document that merely shares an umbrella
+        # join key (agency-wide RIN, fisheries docket). Merging would splice two
+        # rulemakings into one item (observed live: distinct airworthiness directives
+        # via FAA RIN 2120-AA64). Only supplementary docs may cross that line.
+        ext_type, ext_value = ni.external_key
+        ext_rows = (
+            session.query(JoinKey)
+            .filter(JoinKey.pipeline_item_id.in_(list(items)), JoinKey.type == ext_type)
+            .all()
+        )
+        typed: dict[int, set[str]] = {}
+        for r in ext_rows:
+            typed.setdefault(r.pipeline_item_id, set()).add(r.value)
+        items = {
+            iid: it for iid, it in items.items() if iid not in typed or ext_value in typed[iid]
+        }
     if not items:
         return None, None
     if len(items) == 1:

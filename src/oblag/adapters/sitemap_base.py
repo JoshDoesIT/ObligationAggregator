@@ -29,9 +29,23 @@ class SitemapAdapter(SourceAdapter):
             content_type="application/xml",
             http_status=resp.status_code,
             http_headers=dict(resp.headers),
+            # normalize() has no FetchContext, so the incremental window rides on the
+            # raw doc. Without it every page in the sitemap became an item on every
+            # run (observed live: exposure drafts back to 2022 ingested as 'proposed').
+            meta={"since": ctx.since.date().isoformat()} if ctx.since else {},
         )
 
     def iter_urls(self, raw: RawDocument) -> Iterable[tuple[str, date | None]]:
+        """(url, lastmod) pairs, filtered to lastmod >= the run's incremental window.
+        Entries with no lastmod pass through — a subclass can't know they're old."""
+        since_str = raw.meta.get("since")
+        since = date.fromisoformat(since_str) if since_str else None
+        for loc, lastmod in self._iter_all_urls(raw):
+            if since and lastmod and lastmod < since:
+                continue
+            yield loc, lastmod
+
+    def _iter_all_urls(self, raw: RawDocument) -> Iterable[tuple[str, date | None]]:
         try:
             root = ElementTree.fromstring(raw.content)
         except ElementTree.ParseError:

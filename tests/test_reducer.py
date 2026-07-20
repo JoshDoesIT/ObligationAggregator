@@ -70,6 +70,7 @@ def test_date_change_supersedes_and_emits(db):
         comment_close=date(2024, 7, 3),
         external_key=("fr_doc_number", "2024-09689"),
         native_meta={"action": "Proposed rule; extension of comment period"},
+        supplementary=True,
     )
     res = reduce_item(db, extension, today=TODAY)
     assert not res.created
@@ -106,6 +107,7 @@ def test_illegal_transition_records_anomaly_keeps_state(db):
     withdrawal = nprm(
         external_key=("fr_doc_number", "2024-55555"),
         native_meta={"action": "Proposed rule; withdrawal"},
+        supplementary=True,
     )
     res = reduce_item(db, withdrawal, today=TODAY)
     assert res.item.state is ItemState.withdrawn
@@ -139,9 +141,50 @@ def test_track_separation_prevents_final_merging_into_proposed(db):
     assert db.query(PipelineItem).count() == 2
 
 
+def test_umbrella_join_key_does_not_merge_distinct_root_docs(db):
+    # Two different airworthiness directives share only FAA's agency-wide RIN —
+    # observed live splicing distinct rules into one item with flip-flopping dates.
+    ge = nprm(
+        external_key=("fr_doc_number", "2026-14478"),
+        title="Airworthiness Directives; General Electric Company Engines",
+        native_status="RULE",
+        track="final",
+        join_keys=[("rin", "2120-AA99"), ("docket_id", "FAA-2026-0001")],
+    )
+    diamond = nprm(
+        external_key=("fr_doc_number", "2026-14511"),
+        title="Airworthiness Directives; Diamond Aircraft Industries GmbH",
+        native_status="RULE",
+        track="final",
+        join_keys=[("rin", "2120-AA99"), ("docket_id", "FAA-2026-0002")],
+    )
+    r1 = reduce_item(db, ge, today=TODAY)
+    r2 = reduce_item(db, diamond, today=TODAY)
+    assert r2.created
+    assert r1.item.id != r2.item.id
+    assert r1.item.title.endswith("Engines")
+    assert r2.item.title.endswith("GmbH")
+
+
+def test_supplementary_doc_still_merges_into_root(db):
+    # Comment-period extensions are separate FR documents that MUST update the root
+    # rulemaking (CIRCIA benchmark behavior) — the identity guard exempts them.
+    root = reduce_item(db, nprm(), today=TODAY)
+    extension = nprm(
+        external_key=("fr_doc_number", "2024-09999"),
+        title="CIRCIA Reporting Requirements; Extension of Comment Period",
+        comment_close=date(2024, 7, 3),
+        supplementary=True,
+    )
+    res = reduce_item(db, extension, today=TODAY)
+    assert not res.created
+    assert res.item.id == root.item.id
+
+
 def test_join_key_conflict_same_track_is_anomaly(db):
     reduce_item(db, nprm(), today=TODAY)
-    # a different proposed item claims the same docket
+    # a different ROOT doc claiming the same docket is a distinct rulemaking now
+    # (identity guard) — shared dockets are umbrella keys for e.g. NOAA inseason actions
     other = nprm(
         external_key=("fr_doc_number", "2024-11111"),
         title="Unrelated NPRM",
@@ -149,8 +192,8 @@ def test_join_key_conflict_same_track_is_anomaly(db):
     )
     other.dates = []
     res = reduce_item(db, other, today=TODAY)
-    # matched into the existing item by docket — that is by design; but if it had
-    # matched TWO items we'd get an anomaly. Simulate that:
+    assert res.created
+    # a SUPPLEMENTARY doc matching TWO items is ambiguous → anomaly, best-effort match
     third = nprm(
         external_key=("fr_doc_number", "2024-22222"),
         title="Another NPRM",
@@ -160,6 +203,7 @@ def test_join_key_conflict_same_track_is_anomaly(db):
     ambiguous = nprm(
         external_key=("fr_doc_number", "2024-33333"),
         join_keys=[("rin", "1670-AA04"), ("rin", "9999-ZZ99")],
+        supplementary=True,
     )
     res = reduce_item(db, ambiguous, today=TODAY)
     assert EventType.anomaly in {e.type for e in res.events}

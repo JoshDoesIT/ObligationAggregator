@@ -50,12 +50,17 @@ class HitrustAdapter(SitemapAdapter):
             elif advisory_match and version_match:
                 # advisories only when tied to a CSF version (formal lifecycle signal,
                 # e.g. version submission deadlines) — general advisories are noise
+                # the slug starts with the advisory id — strip it so the title
+                # doesn't read "HAA-2017-003: Haa 2017 003 interim assessment…"
+                subject_slug = re.sub(
+                    rf"(?i)^{advisory_match.group(1)}-?", "", loc.rstrip("/").rsplit("/", 1)[-1]
+                )
                 yield NormalizedItem(
                     source_system=self.name,
                     external_key=("hitrust_advisory", advisory_match.group(1)),
                     jurisdiction=self.jurisdiction,
                     title=f"HITRUST advisory {advisory_match.group(1).upper()}: "
-                    f"{slug_to_title(loc)}",
+                    f"{slug_to_title(subject_slug)}",
                     url=loc,
                     native_status="advisory",
                     track="final",

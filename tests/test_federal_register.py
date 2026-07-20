@@ -35,6 +35,47 @@ def test_normalize_nprm(adapter):
     assert all(d.confidence is Confidence.published_firm for d in item.dates)
 
 
+def test_umbrella_rins_never_become_join_keys(adapter):
+    import json as _json
+
+    doc = {
+        "document_number": "2026-14478",
+        "title": "Airworthiness Directives; General Electric Company Engines",
+        "type": "Rule",
+        "action": "Final rule.",
+        "publication_date": "2026-07-17",
+        "effective_on": "2026-08-21",
+        "regulation_id_numbers": ["2120-AA64"],
+        "docket_ids": ["FAA-2026-7000"],
+        "agencies": [],
+    }
+    raw = RawDocument(url="https://test", content=_json.dumps({"results": [doc]}).encode())
+    (item,) = adapter.normalize(raw)
+    # every FAA airworthiness directive carries RIN 2120-AA64 — not identifying
+    assert not any(t == "rin" for t, _ in item.join_keys)
+    assert ("docket_id", "FAA-2026-7000") in item.join_keys
+    assert item.supplementary is False
+
+
+def test_supplementary_flag_on_extension_documents(adapter):
+    import json as _json
+
+    doc = {
+        "document_number": "2024-09689",
+        "title": "CIRCIA; Extension of Comment Period",
+        "type": "Proposed Rule",
+        "action": "Proposed rule; extension of comment period.",
+        "publication_date": "2024-05-01",
+        "comments_close_on": "2024-07-03",
+        "regulation_id_numbers": ["1670-AA04"],
+        "docket_ids": [],
+        "agencies": [],
+    }
+    raw = RawDocument(url="https://test", content=_json.dumps({"results": [doc]}).encode())
+    (item,) = adapter.normalize(raw)
+    assert item.supplementary is True
+
+
 def test_normalize_mixed_page_filters_and_maps(adapter):
     items = normalize_fixture(adapter, "mixed_page.json")
     by_key = {i.external_key[1]: i for i in items}

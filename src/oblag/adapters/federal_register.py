@@ -37,6 +37,24 @@ FIELDS = [
 TYPE_TO_NATIVE = {"Proposed Rule": "PRORULE", "Rule": "RULE"}
 NATIVE_TO_TRACK = {"PRORULE": "proposed", "RULE": "final"}
 
+# Agency-wide umbrella RINs shared by every action of a routine category — NOT
+# identifying, so never emitted as join keys (they falsely merged/linked distinct
+# rulemakings, observed live). FAA: airworthiness directives, standard instrument
+# approach procedures, airspace amendments. USCG: safety zones, special local
+# regulations, drawbridge operations, anchorages, security zones.
+UMBRELLA_RINS = frozenset(
+    {
+        "2120-AA64",
+        "2120-AA65",
+        "2120-AA66",
+        "1625-AA00",
+        "1625-AA08",
+        "1625-AA09",
+        "1625-AA11",
+        "1625-AA87",
+    }
+)
+
 
 @register
 class FederalRegisterAdapter(SourceAdapter):
@@ -128,7 +146,8 @@ class FederalRegisterAdapter(SourceAdapter):
 
         join_keys: list[tuple[str, str]] = []
         for rin in doc.get("regulation_id_numbers") or []:
-            join_keys.append(("rin", rin))
+            if rin not in UMBRELLA_RINS:
+                join_keys.append(("rin", rin))
         for docket in doc.get("docket_ids") or []:
             join_keys.append(("docket_id", _clean_docket(docket)))
 
@@ -153,6 +172,7 @@ class FederalRegisterAdapter(SourceAdapter):
                 "significant": str(doc.get("significant")),
             },
             anomalies=anomalies,
+            supplementary=is_supplementary,
         )
 
 

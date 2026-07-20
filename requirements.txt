@@ -1,4 +1,6 @@
 # Vercel deployment manifest (self-hosters: use `uv sync` / pip install .[...]).
-# Installs the package itself plus the serverless extras.
-.
-psycopg[binary]>=3.1
+# Single requirement line: Vercel's Python builder skipped the separate
+# `psycopg[binary]` line, crashing the deployed function with
+# ModuleNotFoundError (observed live 2026-07-20) — the postgres driver must
+# come in via the package extra instead.
+.[postgres]

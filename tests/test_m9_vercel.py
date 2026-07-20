@@ -24,7 +24,7 @@ def _items(adapter, *fixture):
 
 def test_aicpa_exposure_drafts_from_sitemap(db):
     items = _items(AicpaAdapter(), "aicpa", "sitemap.xml")
-    assert len(items) >= 8  # slug-anchored exposure-draft URLs; noise excluded
+    assert len(items) >= 7  # slug-anchored exposure-draft URLs; noise/articles excluded
     assert all("exposure" in i.url.lower() or "exposure" in i.title.lower() for i in items)
     ethics = next(i for i in items if "529" in i.url)
     assert ethics.native_status == "exposure_draft"
@@ -54,6 +54,39 @@ def test_aicpa_exposure_drafts_from_sitemap(db):
 def test_aicpa_noise_pages_excluded():
     items = _items(AicpaAdapter(), "aicpa", "sitemap.xml")
     assert not any("/category/" in i.url for i in items)
+    # newsroom coverage of drafts (IASB/GASB articles, comment summaries) is not a draft
+    assert not any("/article/" in i.url for i in items)
+
+
+def test_sitemap_since_window_filters_stale_pages():
+    sitemap = b"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://x.com/resources/download/old-exposure-draft</loc>
+<lastmod>2022-07-01</lastmod></url>
+<url><loc>https://x.com/resources/download/new-exposure-draft</loc>
+<lastmod>2026-07-15</lastmod></url>
+<url><loc>https://x.com/resources/download/undated-exposure-draft</loc></url>
+</urlset>"""
+    raw = RawDocument(url="https://t", content=sitemap, meta={"since": "2026-07-10"})
+    urls = [u for u, _ in AicpaAdapter().iter_urls(raw)]
+    assert "https://x.com/resources/download/old-exposure-draft" not in urls
+    assert "https://x.com/resources/download/new-exposure-draft" in urls
+    # entries without lastmod pass through — age unknowable
+    assert "https://x.com/resources/download/undated-exposure-draft" in urls
+    # without a window (first run / backfill) everything passes
+    raw_all = RawDocument(url="https://t", content=sitemap)
+    assert len(list(AicpaAdapter().iter_urls(raw_all))) == 3
+
+
+def test_hitrust_advisory_title_not_duplicated():
+    sitemap = b"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://hitrustalliance.net/advisories/haa-2017-003-interim-assessment-integrated-into-mycsf-2.0-csf-v9</loc></url>
+</urlset>"""
+    raw = RawDocument(url="https://t", content=sitemap)
+    (item,) = HitrustAdapter().normalize(raw)
+    assert item.title.startswith("HITRUST advisory HAA-2017-003: Interim assessment")
+    assert "Haa 2017 003" not in item.title
 
 
 # --- HITRUST (sitemap) ---
@@ -202,6 +235,49 @@ def test_cron_run_group_skips_disabled(cron_client, monkeypatch):
         ).status_code
         == 404
     )
+
+
+def test_purge_items_deletes_item_and_dependents(cron_client):
+    from oblag.db.models import Event, ItemState, JoinKey, PipelineItem
+    from oblag.db.session import session_scope
+
+    with session_scope() as db:
+        item = PipelineItem(
+            source_system="test",
+            jurisdiction="US",
+            title="corrupt merged item",
+            state=ItemState.proposed,
+            track="final",
+        )
+        db.add(item)
+        db.flush()
+        db.add(JoinKey(pipeline_item_id=item.id, type="rin", value="2120-AA64"))
+        db.add(Event(pipeline_item_id=item.id, type="item_created", payload={}))
+        survivor = PipelineItem(
+            source_system="test",
+            jurisdiction="US",
+            title="falsely resolved",
+            state=ItemState.superseded,
+            track="proposed",
+            resolved_change_id=item.id,
+        )
+        db.add(survivor)
+        db.flush()
+        item_id, survivor_id = item.id, survivor.id
+
+    r = cron_client.get(
+        f"/api/internal/purge-items?ids={item_id},99999",
+        headers={"Authorization": "Bearer s3cret"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["purged_items"] == [item_id]
+    assert body["not_found"] == [99999]
+    with session_scope() as db:
+        assert db.get(PipelineItem, item_id) is None
+        assert db.query(JoinKey).filter_by(pipeline_item_id=item_id).count() == 0
+        surv = db.get(PipelineItem, survivor_id)
+        assert surv is not None and surv.resolved_change_id is None
 
 
 def test_cron_daily_piggybacks_weekly_on_mondays(cron_client, monkeypatch):

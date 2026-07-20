@@ -142,6 +142,10 @@ class RegulationsGovAdapter(SourceAdapter):
         return NormalizedItem(
             source_system=self.name,
             external_key=("regsgov_doc", doc_id),
+            # enrichment-by-design: every document on a watched docket attaches to the
+            # same rulemaking item, so the reducer's external-key conflict guard must
+            # not split them apart
+            supplementary=True,
             jurisdiction=self.jurisdiction,
             title=attrs.get("title") or doc_id,
             url=f"https://www.regulations.gov/document/{doc_id}",

@@ -51,6 +51,13 @@ class NormalizedItem:
     track: str = "default"  # lifecycle track: "proposed" | "final" | "default" (spec 01)
     native_meta: dict[str, str] = field(default_factory=dict)  # extra statemap inputs
     anomalies: list[str] = field(default_factory=list)  # defensive-parse notes → anomaly events
+    # Supplementary documents (comment extensions, corrections, delays, withdrawals)
+    # are allowed to merge into an item with a DIFFERENT external key of the same type
+    # — they update the root rulemaking. Root documents never are (spec 03): two root
+    # docs sharing only an umbrella join key (FAA's RIN 2120-AA64 covers every
+    # airworthiness directive; NOAA inseason actions share a fisheries docket) are
+    # distinct rulemakings, observed merged live before this flag existed.
+    supplementary: bool = False
 
     @property
     def all_join_keys(self) -> list[tuple[str, str]]:
