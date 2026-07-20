@@ -57,7 +57,14 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | LegiScan (US state laws, passed/enrolled only) | JSON API | `OBLAG_LEGISCAN_API_KEY` + `OBLAG_LEGISCAN_STATES="CA,RI,…"` |
 | PCI SSC RFC announcements | blog RSS, formal signals only | on by default (weekly) |
 | ISO catalog stage codes | HTML (defensive) | on by default (weekly, watched standards) |
-| AICPA exposure drafts | — | intentionally not built: page is client-side rendered (spec 06); use curated `assert-date` |
+| EDPB consultations & adopted guidance | news RSS, formal signals only | on by default |
+| ESMA consultations (incl. DORA RTS/ITS) | site RSS, "consults" filter | on by default |
+| EBA consultations | **headless-browser rendered** | `uv sync --extra browser` (self-disables without it) |
+| CPPA (California) rulemaking packages | static HTML | on by default (weekly) |
+| NERC standards under development | static HTML | on by default (weekly) |
+| CIS Controls version releases | blog RSS, strict release filter | on by default (weekly) |
+| AICPA exposure drafts | sitemap (tolerant parser) | on by default (weekly) |
+| HITRUST CSF releases + advisories | sitemap slug signals | on by default (weekly) |
 | Unified Agenda / OIRA projected dates | — | no API; curated `oblag assert-date … --confidence agency_estimate --note "<citation>"` |
 
 ## Beyond the feed
@@ -80,13 +87,21 @@ uv run oblag serve         # UI + API on http://localhost:8000
 - **Event severity** — every event carries a derived severity
   (`new_obligation | substantive | editorial | operational`) in the API.
 
+## Deployment
+
+- **Self-host**: `docker compose up` (Postgres + in-process scheduler), or
+  `uv run oblag serve --with-scheduler` against SQLite/Postgres.
+- **Vercel (fully serverless)**: the whole app runs as one Python function with
+  Vercel Cron for ingestion, Postgres/Neon as system of record, Vercel Blob for
+  snapshots/attestations (`OBLAG_STORAGE_BACKEND=vercel-blob`), the signing key via
+  `OBLAG_SIGNING_KEY_PEM`, and an optional remote Chromium (`OBLAG_BROWSER_CDP_URL`)
+  for the browser-tier adapters. See [`docs/deploy-vercel.md`](docs/deploy-vercel.md).
+
 ## Roadmap (not yet built, and why)
 
-- **ESA (EBA/ESMA) / EDPB / AICPA / CPPA consultation scrapers** — all four are
-  client-side-rendered sites with no static payload or feed (probed live; see
-  `docs/specs/06`). Formal EU feedback periods are largely covered via Have Your Say;
-  the rest flows through the curated `assert-date` workflow. Community adapters welcome
-  if these bodies ship parseable pages.
+- Every body from the original "unparseable" list (EBA, ESMA, EDPB, CPPA, NERC, CIS,
+  AICPA, HITRUST) now has an adapter — feed/sitemap-first, headless-browser tier where
+  genuinely needed (see `docs/specs/06` for the per-source mechanisms and evidence).
 - **OSCAL control-level crosswalk** (set-theory relations) — deliberately curated-only
   until mappings can carry human review; the OSCAL catalog export ships today.
 - **Multi-tenant workspaces / SSO / hosted SaaS** — self-host single-workspace first.

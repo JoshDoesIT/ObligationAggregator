@@ -40,6 +40,9 @@ _SERIES_RE = re.compile(r"^(SP|IR|NISTIR|FIPS|CSWP|AI|ITL)\s*([0-9]{1,4}[A-Za-z]
 _OBLIGATION_MAP = {
     ("SP", "800-53"): "nist-800-53",
     ("SP", "800-171"): "nist-800-171",
+    ("SP", "800-63"): "nist-800-63",
+    ("FIPS", "140-3"): "fips-140-3",
+    ("CSWP", "29"): "nist-csf",  # CSF 2.0 publishes as CSWP 29
 }
 
 

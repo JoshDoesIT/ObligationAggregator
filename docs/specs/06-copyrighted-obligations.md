@@ -19,16 +19,44 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   date. Stage → state map (open enum): 40.20 DIS ballot → comment_open; 40.6x/40.9x →
   comment_closed; 50.x → final_pending_effective; 60.x → effective (60.60 published);
   90.x (review) → effective; 95.x → withdrawn. Edition changes → content_changed.
-- **AICPA: intentionally NOT built.** The exposure-drafts page is client-side rendered
-  with no static payload (probed 2026-07-14); a headless-browser scraper fails the
-  maintenance-budget rule. SOC 2 TSC changes are rare — track via curated
-  `assert-date` / manual items until AICPA ships a parseable page.
-- **ESA (EBA/ESMA) and EDPB consultations: same verdict** (probed 2026-07-14: EBA
-  listing is JS-rendered with no static links/dates; EDPB filtered listing 404s).
-  DORA RTS/ITS and delegated/implementing-act feedback periods are largely covered by
-  the Have Your Say adapter (brpapi JSON); the remainder is the curated
-  `assert-date` workflow. Revisit if either body ships a feed/API — headless-browser
-  scrapers are below the maintenance-budget line.
+- **Formerly-unparseable sources (resolved in M8, feed-first + browser tier):**
+  - **EDPB** — news RSS (`/feed/news_en`), filtered to formal signals (consultation
+    launches with parsed deadlines, adopted guidelines) on obligation `gdpr`.
+  - **ESMA** — site RSS filtered to "consults" titles; DORA-matched items link to
+    obligation `dora`. Dates from embedded `datetime` attributes.
+  - **CPPA** — the regulations page is static HTML: Proposed/Completed rulemaking
+    packages ingested; "Preliminary Rulemaking Activities" excluded as pre-rule
+    weak signals (spec 00).
+  - **EBA** — genuinely JS-rendered (Drupal 10, JSON:API disabled): fetched via the
+    **headless-browser tier** (`oblag[browser]`, spec 06 addendum below). Rows carry
+    EBA/CP references (durable join keys) and consultation windows.
+  - **NERC** — the relocated standards-under-development page is static; development
+    projects ingested conservatively; ballot/comment dates via curated assertions.
+  - **CIS** — blog RSS with a strict "CIS Controls vX" release filter (zero-noise by
+    design; community posts and vulnerability advisories never match).
+- **AICPA: resolved via sitemap (M9).** Root cause established by intercepting the
+  SPA's GraphQL traffic: its `getStaticLandingPage(slug:"exposure-drafts")` query
+  **500s server-side** ("Cannot read properties of null") — the landing page is broken
+  upstream, and the GraphQL API needs a browser session. The sitemap, however, lists
+  every exposure-draft page; the adapter ingests slug-anchored `…exposure-draft…`
+  URLs (44 live). Comment deadlines arrive via curated `assert-date`, which upgrades
+  items into the comment-window lifecycle. Caveat: AICPA's sitemap is malformed XML
+  (raw `&` in a slug) — `sitemap_base` degrades to tolerant regex extraction.
+- **HITRUST: resolved via sitemap (M9).** No feed and WP REST disabled (probed), but
+  the sitemap carries formal signals in slugs: CSF version releases
+  (`…csf-v11.3.0-launch`, `…release-of-version-11.4.0…`) and version-tied HAA
+  advisories. Marketing/case-study slugs never match. `events_only` display posture
+  unchanged — these items are metadata-only by construction.
+
+## Headless-browser tier (addendum)
+
+`src/oblag/browserfetch.py`: last-resort rendering for sources with no feed, API, or
+static payload. Optional extra (`pip install 'oblag[browser]'`;
+`docker build --build-arg WITH_BROWSER=true`). Browser-gated adapters self-disable
+cleanly without it. Rendered snapshots are DOM serializations, flagged
+`x-oblag-rendered: true` in snapshot headers/provenance. Behind TLS-intercepting
+egress proxies, Chromium's TLS 1.3 post-quantum ClientHello is capped to TLS 1.2 on
+the client→proxy leg (diagnosed via netlog; the proxy re-originates TLS upstream).
 
 ## 3. Identifier-level structure (facts, not expression)
 

@@ -45,8 +45,29 @@ def get_session_factory() -> sessionmaker[Session]:
     return _session_factory
 
 
+_TEXT_UPGRADES = [
+    ("obligation", "canonical_url"),
+    ("pipeline_item", "url"),
+    ("join_key", "value"),
+    ("snapshot", "source_url"),
+    ("snapshot", "storage_ref"),
+    ("snapshot", "attestation_ref"),
+    ("watchlist", "target"),
+]
+
+
 def init_db(engine: Engine | None = None) -> None:
-    Base.metadata.create_all(engine or get_engine())
+    eng = engine or get_engine()
+    Base.metadata.create_all(eng)
+    if eng.dialect.name == "postgresql":
+        # Databases created before v0.1.2 have varchar limits on URL-bearing columns
+        # (SQLite never enforced them; Postgres does — observed live: CELLAR SPARQL
+        # source URLs exceed 1024 chars). ALTER ... TYPE TEXT is idempotent.
+        from sqlalchemy import text as sql_text
+
+        with eng.begin() as conn:
+            for table, column in _TEXT_UPGRADES:
+                conn.execute(sql_text(f"ALTER TABLE {table} ALTER COLUMN {column} TYPE TEXT"))
 
 
 @contextmanager

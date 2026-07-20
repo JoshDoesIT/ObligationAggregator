@@ -32,6 +32,18 @@ PROPOSAL_TYPES = ["PROP_REG", "PROP_DIR", "PROP_DEC"]
 
 _CORRIGENDUM_RE = re.compile(r"^(?P<base>.+?)R\(\d+\)$")
 
+# Known CELEX numbers → shipped obligation slugs, so EU items auto-link to the
+# obligations GRC teams filter/alert on (amendments and corrigenda land on the
+# same item via the celex join key).
+CELEX_OBLIGATION_MAP = {
+    "32016R0679": "gdpr",
+    "32022R2554": "dora",
+    "32022L2555": "nis2",
+    "32024R1689": "eu-ai-act",
+    "32024R2847": "eu-cra",
+    "32024R1183": "eidas2",
+}
+
 _PREFIX = (
     "PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>\n"
     "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
@@ -155,6 +167,7 @@ class CellarAdapter(SourceAdapter):
                 url=_eurlex_url(corr.group("base")),
                 native_status=rtype,
                 track="final",
+                obligation_slug=CELEX_OBLIGATION_MAP.get(corr.group("base")),
                 anomalies=[f"corrigendum {celex} published {doc_date.isoformat()}"],
             )
 
@@ -201,6 +214,7 @@ class CellarAdapter(SourceAdapter):
             native_status=rtype,
             track=track,
             dates=dates,
+            obligation_slug=CELEX_OBLIGATION_MAP.get(celex),
             native_meta={"resource_type": rtype},
             anomalies=anomalies,
         )

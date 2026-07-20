@@ -1,16 +1,30 @@
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_database_url() -> str:
+    # Serverless filesystems are read-only except /tmp: boot against an ephemeral
+    # SQLite there until OBLAG_DATABASE_URL points at Postgres (docs/deploy-vercel.md).
+    if os.environ.get("VERCEL"):
+        return "sqlite:////tmp/oblag/oblag.db"
+    return "sqlite:///data/oblag.db"
+
+
+def _default_data_dir() -> Path:
+    return Path("/tmp/oblag") if os.environ.get("VERCEL") else Path("data")
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="OBLAG_", env_file=".env", extra="ignore")
 
-    database_url: str = "sqlite:///data/oblag.db"
-    data_dir: Path = Path("data")
+    database_url: str = Field(default_factory=_default_database_url)
+    data_dir: Path = Field(default_factory=_default_data_dir)
 
     # Source credentials (all optional; adapters disable themselves when unset)
     regsgov_api_key: str | None = None
@@ -24,8 +38,20 @@ class Settings(BaseSettings):
     smtp_from: str = "oblag@localhost"
     base_url: str = "http://localhost:8000"
 
-    # Provenance (M3): path to an Ed25519 private key (PEM). Generated via `oblag keygen`.
+    # Provenance (M3): Ed25519 private key — a PEM string (serverless: set
+    # OBLAG_SIGNING_KEY_PEM from `oblag keygen` output) or a file path.
+    signing_key_pem: str | None = None
     signing_key_path: Path | None = None
+
+    # Deployment (M9): "local" filesystem or "vercel-blob" object storage for
+    # snapshots/attestations; cron endpoints are enabled by setting a secret
+    # (Vercel injects CRON_SECRET as the Authorization bearer on cron invocations).
+    storage_backend: str = "local"
+    cron_secret: str | None = None
+
+    # Browser tier: remote Chromium over CDP (e.g. wss://…browserless…?token=…) for
+    # serverless platforms that cannot run a local browser.
+    browser_cdp_url: str | None = None
 
     # Scope boundary: include pre-rule/ANPRM weak signals? (spec 00 — default off)
     include_prerule: bool = False
