@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Sources — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Source health</h2>
@@ -29,7 +30,7 @@ Sources needing credentials or a browser endpoint stay dormant until configured.
           <code style="white-space:pre-wrap">{{ a.last_error }}</code></details>{% else %}<span class="muted">—</span>{% endif %}</td>
     </tr>
     {% else %}
-    <tr><td colspan="5"><div class="empty"><span class="big">📡</span>No sources have run yet.</div></td></tr>
+    <tr><td colspan="5"><div class="empty">{{ icon('rss', 40, 'big-ic') }}No sources have run yet.</div></td></tr>
     {% endfor %}
     </tbody>
   </table>

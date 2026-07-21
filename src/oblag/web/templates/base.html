@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}ObligationAggregator{% endblock %}</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%232d5bd7%22 d=%22M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z%22/><path fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22m8.5 12 2.5 2.5 4.5-5%22/></svg>">
   <style>
     :root {
       --fg:#16181d; --fg2:#3f4650; --muted:#697180; --bg:#f8f9fb; --panel:#ffffff;
@@ -135,6 +135,10 @@
     details[open] summary { margin-bottom:.3rem; }
     .empty { text-align:center; color:var(--muted); padding:2.5rem 1rem; }
     .empty .big { font-size:1.9rem; display:block; margin-bottom:.4rem; }
+    /* inline icons: inherit text colour + size, align to the text baseline */
+    .ic { vertical-align:-.15em; flex:none; }
+    button .ic, a .ic { vertical-align:-.15em; }
+    .empty .big-ic { color:var(--line); margin:0 auto .5rem; display:block; }
     .keyrow { margin-top:.15rem; }
     .keyrow code { font-size:.74rem; color:var(--muted); background:transparent; padding:0 .35rem 0 0; }
     .titlecell a { font-weight:600; color:var(--fg); }

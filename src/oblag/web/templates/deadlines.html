@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import state_badge, conf, due_chip %}
+{% from "_icons.html" import icon %}
 {% block title %}Deadlines — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Upcoming deadlines</h2>
@@ -7,7 +8,7 @@
 Hover a confidence label to see what it means — an
 <span class="conf conf-agency_estimate" title="{{ conf_help['agency_estimate'] }}">estimate</span> is never a
 <span class="conf conf-statutory_hard" title="{{ conf_help['statutory_hard'] }}">statutory date</span>.
-<br><a href="/deadlines.ics">📅 Export to calendar (.ics)</a> — subscribe from Outlook, Google or Apple Calendar.</p>
+<br><a href="/deadlines.ics" style="display:inline-flex; align-items:center; gap:.35rem">{{ icon('calendar', 14) }} Export to calendar (.ics)</a> — subscribe from Outlook, Google or Apple Calendar.</p>
 
 <div class="panel">
   <div class="tablewrap">
@@ -32,7 +33,7 @@ Hover a confidence label to see what it means — an
       <td>{{ conf(d.confidence) }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="5"><div class="empty"><span class="big">📅</span>
+    <tr><td colspan="5"><div class="empty">{{ icon('calendar', 40, 'big-ic') }}
       No deadlines in the selected window.</div></td></tr>
     {% endfor %}
     </tbody>

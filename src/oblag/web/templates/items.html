@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import state_badge, conf, due_chip %}
+{% from "_icons.html" import icon %}
 {% block title %}Change feed — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Change feed</h2>
@@ -83,7 +84,7 @@ lifecycle — the signals about the <a href="/obligations">obligations</a> you'r
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="5"><div class="empty"><span class="big">🔍</span>
+    <tr><td colspan="5"><div class="empty">{{ icon('search', 40, 'big-ic') }}
       No items match these filters.<br><a href="/">Show everything</a></div></td></tr>
     {% endfor %}
     </tbody>

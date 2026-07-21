@@ -48,11 +48,29 @@ def test_obligation_catalog_display_policies(client, seeded):
 
 
 def test_html_pages_render(client, seeded):
+    import re
+
     item_id = client.get("/api/v1/items").json()["items"][0]["id"]
-    for path in ("/", f"/items/{item_id}", "/events", "/deadlines", "/health"):
+    # single-org mode → is_admin, so /admin/versions renders too
+    emoji = re.compile(
+        "[\U0001f000-\U0001faff\U00002600-\U000027bf\U00002b00-\U00002bff\U00002197]"
+    )
+    for path in (
+        "/",
+        f"/items/{item_id}",
+        "/events",
+        "/deadlines",
+        "/health",
+        "/obligations",
+        "/watchlists",
+        "/admin/versions",
+    ):
         r = client.get(path)
         assert r.status_code == 200, path
         assert "ObligationAggregator" in r.text
+        # icons are inline SVG now — no pictographic emoji should reach the page
+        assert not emoji.search(r.text), f"emoji leaked into {path}"
+        assert "<svg" in r.text  # the icon set is present
     assert "CIRCIA" in client.get("/").text
 
 

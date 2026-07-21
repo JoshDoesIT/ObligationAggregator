@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Watchlists — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Watchlists</h2>
@@ -34,8 +35,8 @@ to match everything.</p>
       <input id="wl-events" name="event_types" placeholder="date_changed" style="width:100%"></div>
     <div><button style="width:100%">Create watchlist</button></div>
   </form>
-  <p class="muted" style="font-size:.82rem; margin:.6rem 0 0">Tip: the 🔔 Watch button on any
-  item page creates a one-click watchlist for that obligation.</p>
+  <p class="muted" style="font-size:.82rem; margin:.6rem 0 0">Tip: the {{ icon('bell', 12) }} Watch
+  button on any item page creates a one-click watchlist for that obligation.</p>
   </div>
 </div>
 
@@ -68,7 +69,7 @@ to match everything.</p>
         </form>{% endif %}</td>
     </tr>
     {% else %}
-    <tr><td colspan="6"><div class="empty"><span class="big">🔔</span>
+    <tr><td colspan="6"><div class="empty">{{ icon('bell', 40, 'big-ic') }}
       No watchlists yet — create one above to get change alerts.</div></td></tr>
     {% endfor %}
     </tbody>
