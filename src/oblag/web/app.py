@@ -7,25 +7,21 @@ from oblag.db.session import init_db, session_scope
 
 
 def _sync_catalog() -> None:
-    """Ship the obligation catalog on first boot, and re-upsert it when the deployed
-    code carries catalog rows or fields the database hasn't seen (new slugs, or
-    current_version introduced in v0.4.2). Two scalar probes keep cold starts cheap;
-    in-place VALUE edits to existing fields still need /api/internal/seed."""
-    from sqlalchemy import func
-
+    """Keep the database's obligation catalog matching the shipped one: the catalog in
+    code is authoritative, so any drift — new slugs, new fields, or edited values (e.g.
+    a current_version bump when a standards body publishes) — re-upserts on boot. One
+    50-row SELECT per cold start; the upsert itself only runs when something changed."""
     from oblag.catalog import CATALOG, seed_obligations
     from oblag.db.models import Obligation
 
     with session_scope() as session:
-        db_slugs = session.query(func.count(Obligation.id)).scalar() or 0
-        db_versioned = (
-            session.query(func.count(Obligation.id))
-            .filter(Obligation.current_version.isnot(None))
-            .scalar()
-            or 0
+        rows = {o.slug: o for o in session.query(Obligation).all()}
+        drift = any(
+            (row := rows.get(entry["slug"])) is None
+            or any(getattr(row, field) != value for field, value in entry.items())
+            for entry in CATALOG
         )
-        want_versioned = sum(1 for e in CATALOG if e.get("current_version"))
-        if db_slugs < len(CATALOG) or db_versioned < want_versioned:
+        if drift:
             seed_obligations(session)
 
 

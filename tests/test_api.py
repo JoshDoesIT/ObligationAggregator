@@ -105,6 +105,14 @@ def test_boot_syncs_catalog_fields_into_existing_db(engine, db, monkeypatch):
     assert db.query(Obligation).filter_by(slug="pci-dss").one().current_version == "4.0.1"
     assert db.query(Obligation).filter_by(slug="pci-kmo").one().current_version is None
 
+    # value drift (catalog edit, e.g. a standards body publishes a new version)
+    # also re-syncs — not just missing rows/fields
+    db.query(Obligation).filter_by(slug="pci-dss").update({Obligation.current_version: "0.9"})
+    db.commit()
+    create_app()
+    db.expire_all()
+    assert db.query(Obligation).filter_by(slug="pci-dss").one().current_version == "4.0.1"
+
 
 def test_version_parts_normalization():
     from oblag.web.html import _version_parts
