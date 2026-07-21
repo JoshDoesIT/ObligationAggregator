@@ -56,6 +56,44 @@ def test_html_pages_render(client, seeded):
     assert "CIRCIA" in client.get("/").text
 
 
+def test_rfc_on_published_standard_shows_revision_lifecycle(client, seeded, db):
+    """An RFC on an already-published standard (PCI DSS) must render the revision
+    lifecycle — 'In force → … → Revision published' with an in-force banner — not the
+    proposed→effective mainline that implies a first effectiveness."""
+    from datetime import date, timedelta
+
+    from oblag.adapters.base import NormalizedDate, NormalizedItem
+    from oblag.core.reducer import reduce_item
+    from oblag.db.models import Confidence, DateType, PipelineItem
+
+    future = date.today() + timedelta(days=20)
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="pci_ssc",
+            external_key=("pci_doc", "pci-dss-v4-0-1"),
+            jurisdiction="Global",
+            title="PCI SSC RFC: PCI DSS v4.0.1",
+            native_status="rfc",
+            track="proposed",
+            obligation_slug="pci-dss",
+            dates=[NormalizedDate(DateType.comment_close, future, Confidence.published_firm)],
+        ),
+    )
+    db.commit()
+    item = db.query(PipelineItem).filter_by(source_system="pci_ssc").one()
+    html = client.get(f"/items/{item.id}").text
+    assert "remains in force" in html
+    assert "In force" in html and "Revision published" in html
+    # the misleading first-effectiveness node is not on this stepper
+    assert "Final · pending effective" not in html
+
+    # a genuine rulemaking still uses the ordinary lifecycle (control)
+    circia = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    control = client.get(f"/items/{circia.id}").text
+    assert "remains in force" not in control
+
+
 def test_deadlines_ics_export(client, seeded):
     r = client.get("/deadlines.ics")
     assert r.status_code == 200
