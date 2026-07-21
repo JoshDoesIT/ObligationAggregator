@@ -6,13 +6,26 @@ from oblag import __version__
 from oblag.db.session import init_db, session_scope
 
 
-def _seed_if_empty() -> None:
-    """First boot on a fresh database ships the obligation catalog automatically."""
-    from oblag.catalog import seed_obligations
+def _sync_catalog() -> None:
+    """Ship the obligation catalog on first boot, and re-upsert it when the deployed
+    code carries catalog rows or fields the database hasn't seen (new slugs, or
+    current_version introduced in v0.4.2). Two scalar probes keep cold starts cheap;
+    in-place VALUE edits to existing fields still need /api/internal/seed."""
+    from sqlalchemy import func
+
+    from oblag.catalog import CATALOG, seed_obligations
     from oblag.db.models import Obligation
 
     with session_scope() as session:
-        if session.query(Obligation.id).first() is None:
+        db_slugs = session.query(func.count(Obligation.id)).scalar() or 0
+        db_versioned = (
+            session.query(func.count(Obligation.id))
+            .filter(Obligation.current_version.isnot(None))
+            .scalar()
+            or 0
+        )
+        want_versioned = sum(1 for e in CATALOG if e.get("current_version"))
+        if db_slugs < len(CATALOG) or db_versioned < want_versioned:
             seed_obligations(session)
 
 
@@ -39,7 +52,7 @@ def create_app() -> FastAPI:
         description="Open-source regulatory & framework change-intelligence for GRC engineers.",
     )
     init_db()
-    _seed_if_empty()
+    _sync_catalog()
     _provision_tenancy()
 
     from oblag.web import api, auth_routes, byol_routes, html, internal, watchlists
