@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}Version review — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Version review</h2>
@@ -18,7 +19,7 @@ everywhere — no catalog edit, no deploy. Nothing changes until you accept.</p>
       <td>{{ s.in_force or '—' }}</td>
       <td><span class="badge info">{{ s.version }}</span></td>
       <td class="muted">
-        {% if s.source_url %}<a href="{{ s.source_url }}" rel="noopener">{{ s.item_title }} ↗</a>
+        {% if s.source_url %}<a href="{{ s.source_url }}" rel="noopener">{{ s.item_title }} {{ icon('external', 12) }}</a>
         {% else %}<a href="/items/{{ s.item_id }}">{{ s.item_title }}</a>{% endif %}
       </td>
       <td style="white-space:nowrap">
@@ -39,7 +40,7 @@ everywhere — no catalog edit, no deploy. Nothing changes until you accept.</p>
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="5" class="empty"><span class="big">✓</span>
+    <tr><td colspan="5" class="empty">{{ icon('check', 40, 'big-ic') }}
       No pending version bumps — every tracked standard matches its latest detected publication.</td></tr>
     {% endfor %}
     </tbody>

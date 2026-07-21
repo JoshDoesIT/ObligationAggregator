@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import state_badge, conf, due_chip %}
+{% from "_icons.html" import icon %}
 {% block title %}{{ item.title }} — ObligationAggregator{% endblock %}
 {% block content %}
 <p style="margin:.2rem 0"><a href="/">&larr; Change feed</a></p>
@@ -12,10 +13,11 @@
   {% if item.obligation %}<a class="tag" href="/?obligation={{ item.obligation }}"
     title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
   <span class="tag" title="lifecycle track">{{ item.track }} track</span>
-  {% if item.url %}<a href="{{ item.url }}" rel="noopener" style="font-size:.88rem">View at source ↗</a>{% endif %}
+  {% if item.url %}<a href="{{ item.url }}" rel="noopener" style="font-size:.88rem">View at source {{ icon('external', 13) }}</a>{% endif %}
   <form method="post" action="/items/{{ item.id }}/watch" style="display:inline; margin-left:auto">
     {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
-    <button title="Create an RSS watchlist for this {{ 'obligation' if item.obligation else 'source' }}">🔔 Watch</button>
+    <button title="Create an RSS watchlist for this {{ 'obligation' if item.obligation else 'source' }}"
+      style="display:inline-flex; align-items:center; gap:.35rem">{{ icon('bell', 14) }} Watch</button>
   </form>
 </p>
 {% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
@@ -57,10 +59,10 @@
   {% endif %}
   {% set rpos = rrank.get(item.state, 0) %}
   <div class="steps">
-    <div class="step done"><div class="node">✓</div>In force</div>
+    <div class="step done"><div class="node">{{ icon('check', 12) }}</div>In force</div>
     {% for key, label in rstages %}
     <div class="step {{ 'now' if loop.index0 == rpos else 'done' if loop.index0 < rpos }}">
-      <div class="node">{{ '✓' if loop.index0 < rpos else '●' }}</div>
+      <div class="node">{% if loop.index0 < rpos %}{{ icon('check', 12) }}{% endif %}</div>
       {{ label }}
     </div>
     {% endfor %}
@@ -70,7 +72,7 @@
   <div class="steps">
     {% for s in mainline %}
     <div class="step {{ 'now' if loop.index0 == pos else 'done' if loop.index0 < pos }}">
-      <div class="node">{{ '✓' if loop.index0 < pos else '●' }}</div>
+      <div class="node">{% if loop.index0 < pos %}{{ icon('check', 12) }}{% endif %}</div>
       {{ s | human_state }}
     </div>
     {% endfor %}
@@ -109,7 +111,7 @@
         <details><summary>verified snapshot</summary>
           sha256 <code>{{ d.snapshot.sha256[:16] }}…</code><br>
           fetched {{ d.snapshot.fetched_at[:19] if d.snapshot.fetched_at }}<br>
-          <a href="{{ d.snapshot.source_url }}" rel="noopener">source URL ↗</a>
+          <a href="{{ d.snapshot.source_url }}" rel="noopener">source URL {{ icon('external', 12) }}</a>
           {% if d.snapshot.attestation_ref %}<br>signed attestation stored{% endif %}
         </details>
         {% else %}curated assertion{% endif %}

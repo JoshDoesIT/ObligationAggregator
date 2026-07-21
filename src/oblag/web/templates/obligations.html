@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_macros.html" import due_chip %}
+{% from "_icons.html" import icon %}
 {% block title %}Obligations — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Obligation catalog</h2>
@@ -21,7 +22,7 @@ program is actually subject to. Everything on the <a href="/">change feed</a> is
         <span class="tag">{{ o.slug }}</span>
         {% if o.canonical_url %}
           <div class="keyrow"><a href="{{ o.canonical_url }}" rel="noopener" class="muted"
-            style="font-size:.78rem">official source ↗</a></div>
+            style="font-size:.78rem">official source {{ icon('external', 11) }}</a></div>
         {% endif %}
       </td>
       <td class="muted">{{ o.issuing_body }}</td>
