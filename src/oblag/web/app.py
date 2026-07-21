@@ -22,6 +22,14 @@ def _sync_catalog() -> None:
             for entry in CATALOG
         )
         if drift:
+            # A catalog current_version edit is the always-wins override for an
+            # auto-detected version: clear the auto value so the corrected baseline
+            # takes effect (otherwise effective = max(baseline, auto) would keep a
+            # wrong auto value). Only for obligations whose baseline actually changed.
+            for entry in CATALOG:
+                row = rows.get(entry["slug"])
+                if row is not None and row.current_version != entry.get("current_version"):
+                    row.confirmed_version = None
             seed_obligations(session)
 
 

@@ -51,6 +51,31 @@ def is_newer(candidate: str | None, baseline: str | None) -> bool:
     return kc > kb
 
 
+def plausible_successor(current: str | None, candidate: str | None) -> bool:
+    """Whether `candidate` is a sane forward step from `current` — the gate for
+    auto-applying a detected version, so a mis-parse can't silently install a wrong one.
+
+    - must parse and be strictly newer (forward-only);
+    - a first known version (current is None) is always allowed;
+    - year scheme (a single component ≥ 1990, e.g. ISO edition years): at most 15 years
+      ahead — enough for a long-dormant standard, tight enough to reject a stray number;
+    - dotted scheme (semver-ish): the major component rises by at most one — standards
+      bump majors one at a time (PCI 4.x→5.0, POI 6.2→7.0), so a jump to 12.x is noise.
+    A scheme mismatch (a year against a dotted baseline, or vice versa) fails these bounds
+    and is treated as implausible."""
+    if not is_newer(candidate, current):
+        return False
+    kc = version_key(candidate)
+    kb = version_key(current)
+    if kc is None:  # unreachable once is_newer passed, but keeps mypy + callers safe
+        return False
+    if kb is None:
+        return True
+    if len(kb) == 1 and kb[0] >= 1990:
+        return len(kc) == 1 and (kc[0] - kb[0]) <= 15
+    return (kc[0] - kb[0]) <= 1
+
+
 def latest(*versions: str | None) -> str | None:
     """The version string with the highest comparable key. Unparseable/None values are
     ignored; ties and all-unparseable fall back to the first non-empty argument."""

@@ -88,6 +88,11 @@ def run_adapter(
                         log.exception(msg)
                         stats.errors.append(msg)
         stats.events.extend(link_resolved_items(session))
+        # advance any standard whose newer version this run just ingested (automatic;
+        # implausible parses are flagged, not applied — see oblag.versionsuggest)
+        from oblag.versionsuggest import auto_apply
+
+        auto_apply(session)
     except Exception as exc:  # fetch-level failure
         session.rollback()
         health = _health(session, name)

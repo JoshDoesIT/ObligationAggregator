@@ -488,8 +488,8 @@ async def assert_date_route(
 def versions_review_page(
     request: Request, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
 ):
-    """Detected version bumps awaiting an instance-admin's one-click confirmation.
-    Writes the SHARED in-force version, so it's admin-gated like curated assertions."""
+    """Read-only audit of the automatic version tracker: what it advanced and what it
+    flagged as implausible (left for a catalog edit). Admin-gated — shared data."""
     from oblag import versionsuggest
 
     if not ctx.is_admin:
@@ -497,38 +497,8 @@ def versions_review_page(
     return templates.TemplateResponse(
         request,
         "admin_versions.html",
-        {"suggestions": versionsuggest.pending_suggestions(db), "ctx": ctx},
+        {"log": versionsuggest.version_log(db), "ctx": ctx},
     )
-
-
-@router.post("/admin/versions/{action}", response_class=HTMLResponse)
-async def versions_decide(
-    action: str,
-    request: Request,
-    db: Session = Depends(get_db),
-    ctx: Context = Depends(get_context),
-):
-    from oblag import versionsuggest
-
-    if not ctx.is_admin:
-        raise HTTPException(403, "instance-admin only")
-    if action not in ("accept", "dismiss"):
-        raise HTTPException(404, "unknown action")
-    form = await request.form()
-    check_csrf(ctx, str(form.get("csrf_token", "")))
-    fn = versionsuggest.accept if action == "accept" else versionsuggest.dismiss
-    item_raw = str(form.get("item_id") or "")
-    try:
-        fn(
-            db,
-            int(str(form.get("obligation_id"))),
-            str(form.get("version")),
-            int(item_raw) if item_raw else None,
-            ctx.user_email or "operator",
-        )
-    except (ValueError, TypeError) as exc:
-        raise HTTPException(422, f"invalid decision: {exc}") from None
-    return RedirectResponse("/admin/versions", status_code=303)
 
 
 @router.post("/items/{item_id}/watch", response_class=HTMLResponse)
