@@ -90,6 +90,10 @@ class Obligation(Base):
     issuing_body: Mapped[str] = mapped_column(String(255))
     jurisdiction: Mapped[str] = mapped_column(String(64))
     canonical_url: Mapped[str | None] = mapped_column(Text)
+    # Version of the standard currently published/in force (e.g. "4.0.1", "2022",
+    # "Rev. 5"). None means no published version exists yet — a consultation on such
+    # an obligation is a FIRST-version draft, not a revision of an in-force standard.
+    current_version: Mapped[str | None] = mapped_column(String(64))
     copyright_status: Mapped[CopyrightStatus] = mapped_column(
         Enum(CopyrightStatus), default=CopyrightStatus.public_domain
     )

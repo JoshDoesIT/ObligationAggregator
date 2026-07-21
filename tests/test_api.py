@@ -56,10 +56,7 @@ def test_html_pages_render(client, seeded):
     assert "CIRCIA" in client.get("/").text
 
 
-def test_rfc_on_published_standard_shows_revision_lifecycle(client, seeded, db):
-    """An RFC on an already-published standard (PCI DSS) must render the revision
-    lifecycle — 'In force → … → Revision published' with an in-force banner — not the
-    proposed→effective mainline that implies a first effectiveness."""
+def _rfc_item(db, key: str, title: str, slug: str):
     from datetime import date, timedelta
 
     from oblag.adapters.base import NormalizedDate, NormalizedItem
@@ -71,22 +68,58 @@ def test_rfc_on_published_standard_shows_revision_lifecycle(client, seeded, db):
         db,
         NormalizedItem(
             source_system="pci_ssc",
-            external_key=("pci_doc", "pci-dss-v4-0-1"),
+            external_key=("pci_doc", key),
             jurisdiction="Global",
-            title="PCI SSC RFC: PCI DSS v4.0.1",
+            title=title,
             native_status="rfc",
             track="proposed",
-            obligation_slug="pci-dss",
+            obligation_slug=slug,
             dates=[NormalizedDate(DateType.comment_close, future, Confidence.published_firm)],
         ),
     )
     db.commit()
-    item = db.query(PipelineItem).filter_by(source_system="pci_ssc").one()
-    html = client.get(f"/items/{item.id}").text
-    assert "remains in force" in html
-    assert "In force" in html and "Revision published" in html
-    # the misleading first-effectiveness node is not on this stepper
+    return db.query(PipelineItem).filter_by(title=title).one()
+
+
+def test_version_parts_normalization():
+    from oblag.web.html import _version_parts
+
+    assert _version_parts("PCI PTS HSM v5.0") == ("5",)
+    assert _version_parts("4.0") == _version_parts("v4")  # bare catalog value vs title token
+    assert _version_parts("PCI DSS v4.0.1") == _version_parts("4.0.1")
+    assert _version_parts("SP 800-53 Rev. 5.2.0") == ("5", "2")
+    assert _version_parts("Rev. 5") == ("5",)
+    assert _version_parts("ISO/IEC 27001 revision under development") is None
+    assert _version_parts(None) is None
+
+
+def test_rfc_flavors_render_the_truthful_lifecycle(client, seeded, db):
+    """PCI runs RFCs in three flavors; each must render what is actually true.
+
+    - Feedback on the in-force version (DSS v4.0.1): revision lifecycle,
+      'solicits feedback on the current version'.
+    - RFC on a draft of the NEXT version (PTS HSM v5.0 while v4.0 is in force):
+      revision lifecycle, 'draft of the next version', current version in force.
+    - RFC on a first-version draft (KMO v1.0, nothing published): the ordinary
+      proposed→effective lifecycle — a v1.0 really is heading toward first
+      effectiveness, and no 'in force' claim may appear."""
+    from oblag.db.models import PipelineItem
+
+    cur = _rfc_item(db, "pci-dss-401", "PCI SSC RFC: PCI DSS v4.0.1", "pci-dss")
+    html = client.get(f"/items/{cur.id}").text
+    assert "solicits feedback on the current version" in html
+    assert "remains in force" in html and "Revision published" in html
     assert "Final · pending effective" not in html
+
+    draft = _rfc_item(db, "pts-hsm-5", "PCI SSC RFC: PCI PTS HSM v5.0", "pci-pts-hsm")
+    html = client.get(f"/items/{draft.id}").text
+    assert "draft of the next" in html
+    assert "remains in force" in html and "(4.0)" in html
+
+    first = _rfc_item(db, "kmo-1", "PCI SSC RFC: PCI KMO v1.0 Standard", "pci-kmo")
+    html = client.get(f"/items/{first.id}").text
+    assert "remains in force" not in html
+    assert "Final · pending effective" in html  # ordinary mainline stepper
 
     # a genuine rulemaking still uses the ordinary lifecycle (control)
     circia = db.query(PipelineItem).filter_by(source_system="federal_register").first()

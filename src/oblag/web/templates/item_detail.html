@@ -21,15 +21,27 @@
 {% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
 
 {% set mainline = ['proposed', 'comment_open', 'comment_closed', 'final_pending_effective', 'effective'] %}
-{% if item | revision_consultation %}
-  {# A revision consultation on an already-published standard: the current version stays
-     in force; the comment window feeds a future revision, not a first effectiveness. #}
+{% set rflavor = item | revision_flavor %}
+{% if rflavor %}
+  {# Standards maintenance on a published standard: the current version stays in force;
+     the comment window feeds a future revision, not a first effectiveness. The flavor
+     says WHAT is under review — the in-force version itself, or a draft of the next. #}
   <div class="panel"><div class="pad">
-    This is a <strong>{{ item | signal_kind }}</strong> on an already-published standard.
-    The current version{% if item.obligation %} of
-    <a href="/?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endif %}
-    <strong>remains in force</strong> throughout the comment period — the feedback shapes a
-    future revision and changes nothing until a revised version is published.
+    {% set oblink %}<a href="/?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
+    {% set cur = item.obligation_current_version %}
+    {% if rflavor == 'current' %}
+      This <strong>{{ item | signal_kind }}</strong> solicits feedback on the current version
+      of {{ oblink }} ({{ cur }}), which <strong>remains in force</strong> — the feedback
+      shapes a future revision and changes nothing until a revised version is published.
+    {% elif rflavor == 'draft' %}
+      This <strong>{{ item | signal_kind }}</strong> covers a <strong>draft of the next
+      version</strong> of {{ oblink }}. The current version ({{ cur }})
+      <strong>remains in force</strong> until the revised standard is published.
+    {% else %}
+      This is a <strong>{{ item | signal_kind }}</strong> on an already-published standard.
+      The current version of {{ oblink }} ({{ cur }}) <strong>remains in force</strong>
+      throughout the comment period — the feedback shapes a future revision.
+    {% endif %}
   </div></div>
   {% set rrank = {'proposed': -1, 'comment_open': 0, 'comment_closed': 1, 'final_pending_effective': 2, 'effective': 3} %}
   {% set rpos = rrank.get(item.state, 0) %}
