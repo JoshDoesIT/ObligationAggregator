@@ -93,7 +93,13 @@ class Obligation(Base):
     # Version of the standard currently published/in force (e.g. "4.0.1", "2022",
     # "Rev. 5"). None means no published version exists yet — a consultation on such
     # an obligation is a FIRST-version draft, not a revision of an in-force standard.
+    # This is the hand-curated catalog BASELINE, kept in sync with catalog.py.
     current_version: Mapped[str | None] = mapped_column(String(64))
+    # An operator-confirmed advance detected from a publication signal (spec: version
+    # suggestions). Written only by accepting a suggestion, never by the catalog sync —
+    # so accepted bumps survive redeploys even though the baseline lags. The value the
+    # UI treats as in force is `effective_version`: the newer of baseline and confirmed.
+    confirmed_version: Mapped[str | None] = mapped_column(String(64))
     copyright_status: Mapped[CopyrightStatus] = mapped_column(
         Enum(CopyrightStatus), default=CopyrightStatus.public_domain
     )
@@ -103,6 +109,31 @@ class Obligation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     items: Mapped[list[PipelineItem]] = relationship(back_populates="obligation")
+
+    @property
+    def effective_version(self) -> str | None:
+        """The version the UI treats as in force: the newer of the catalog baseline and
+        any operator-confirmed advance. Comparison lives in oblag.versions."""
+        from oblag.versions import latest
+
+        return latest(self.current_version, self.confirmed_version)
+
+
+class VersionDecision(Base):
+    """An operator's ruling on a suggested version bump — accepted or dismissed. Records
+    the decision so a dismissed suggestion never reappears and an accept is auditable;
+    the accepted value is also written to Obligation.confirmed_version. Append-only."""
+
+    __tablename__ = "version_decision"
+    __table_args__ = (UniqueConstraint("obligation_id", "version", name="uq_decision_obl_version"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    obligation_id: Mapped[int] = mapped_column(ForeignKey("obligation.id"), index=True)
+    version: Mapped[str] = mapped_column(String(64))
+    decision: Mapped[str] = mapped_column(String(16))  # "accepted" | "dismissed"
+    source_item_id: Mapped[int | None] = mapped_column(ForeignKey("pipeline_item.id"))
+    decided_by: Mapped[str | None] = mapped_column(String(320))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class PipelineItem(Base):

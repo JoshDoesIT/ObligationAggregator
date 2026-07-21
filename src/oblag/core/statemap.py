@@ -196,6 +196,8 @@ def legiscan_statemap(
 def pci_ssc_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
 ) -> ItemState | None:
+    if native_status == "publication":
+        return ItemState.effective  # a new version is now in force
     if native_status != "rfc":
         return None
     cc = _get(dates, DateType.comment_close)

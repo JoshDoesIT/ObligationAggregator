@@ -201,7 +201,7 @@ def list_obligations(db: Session = Depends(get_db)):
                 "name": o.name,
                 "issuing_body": o.issuing_body,
                 "jurisdiction": o.jurisdiction,
-                "current_version": o.current_version,
+                "current_version": o.effective_version,
                 "copyright_status": o.copyright_status.value,
                 "display_policy": o.display_policy.value,
                 "canonical_url": o.canonical_url,

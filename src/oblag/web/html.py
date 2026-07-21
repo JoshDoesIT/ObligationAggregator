@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -214,27 +213,6 @@ _REVISION_SIGNAL_KINDS = {
     "Draft standard",  # NIST CSRC drafts (of an existing SP)
 }
 
-# Version tokens as sources actually write them: "v4.0.1", "V5.0", "Rev. 3", "rev 5.2.0"
-_VERSION_RE = re.compile(r"\b(?:v(\d+(?:\.\d+)*)|rev\.?\s*(\d+(?:\.\d+)*))", re.IGNORECASE)
-
-
-def _version_parts(text: str | None) -> tuple[str, ...] | None:
-    """Comparable version from free text: numeric parts, trailing zeros dropped so
-    "v4.0" == "4" and "5.0" == "5". None when no version token is present."""
-    if not text:
-        return None
-    m = _VERSION_RE.search(text)
-    if m is not None:
-        raw = m.group(1) or m.group(2)
-    elif re.fullmatch(r"\d+(?:\.\d+)*", text.strip()):
-        raw = text.strip()  # catalog values are bare: "4.0.1", "2022"
-    else:
-        return None
-    parts = raw.split(".")
-    while parts and parts[-1] == "0":
-        parts.pop()
-    return tuple(parts)
-
 
 def _revision_flavor(item: dict) -> str | None:
     """Which standards-maintenance lifecycle an item gets, if any.
@@ -259,10 +237,12 @@ def _revision_flavor(item: dict) -> str | None:
     current = item.get("obligation_current_version")
     if not current:
         return None
-    subject = _version_parts(item.get("title"))
+    from oblag.versions import version_key
+
+    subject = version_key(item.get("title"))
     if subject is None:
         return "revision"
-    return "current" if subject == _version_parts(current) else "draft"
+    return "current" if subject == version_key(current) else "draft"
 
 
 templates.env.filters.update(
@@ -502,6 +482,53 @@ async def assert_date_route(
     except (ValueError, KeyError) as exc:
         raise HTTPException(422, f"invalid assertion: {exc}") from None
     return RedirectResponse(f"/items/{item_id}", status_code=303)
+
+
+@router.get("/admin/versions", response_class=HTMLResponse)
+def versions_review_page(
+    request: Request, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
+    """Detected version bumps awaiting an instance-admin's one-click confirmation.
+    Writes the SHARED in-force version, so it's admin-gated like curated assertions."""
+    from oblag import versionsuggest
+
+    if not ctx.is_admin:
+        raise HTTPException(403, "instance-admin only")
+    return templates.TemplateResponse(
+        request,
+        "admin_versions.html",
+        {"suggestions": versionsuggest.pending_suggestions(db), "ctx": ctx},
+    )
+
+
+@router.post("/admin/versions/{action}", response_class=HTMLResponse)
+async def versions_decide(
+    action: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    from oblag import versionsuggest
+
+    if not ctx.is_admin:
+        raise HTTPException(403, "instance-admin only")
+    if action not in ("accept", "dismiss"):
+        raise HTTPException(404, "unknown action")
+    form = await request.form()
+    check_csrf(ctx, str(form.get("csrf_token", "")))
+    fn = versionsuggest.accept if action == "accept" else versionsuggest.dismiss
+    item_raw = str(form.get("item_id") or "")
+    try:
+        fn(
+            db,
+            int(str(form.get("obligation_id"))),
+            str(form.get("version")),
+            int(item_raw) if item_raw else None,
+            ctx.user_email or "operator",
+        )
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, f"invalid decision: {exc}") from None
+    return RedirectResponse("/admin/versions", status_code=303)
 
 
 @router.post("/items/{item_id}/watch", response_class=HTMLResponse)

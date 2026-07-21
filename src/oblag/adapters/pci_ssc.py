@@ -23,6 +23,18 @@ FEED_URL = "https://blog.pcisecuritystandards.org/rss.xml"
 _RFC_RE = re.compile(r"^\s*Request for Comments:?\s*(?P<subject>.+?)\s*$", re.IGNORECASE)
 RFC_MIN_DAYS = 30  # PCI SSC minimum RFC duration — fallback floor for the close date
 
+# Publication announcements — a new standard version is now in force. The SSC phrases
+# these several ways ("Just Published: …", "PCI SSC Publishes …", "PCI SSC Releases
+# Version N of the …", "… Version N Now Available"); we require a publication lead-in
+# AND a parseable version AND a recognized standard before trusting the signal. These
+# feed version-bump suggestions (a human confirms before the catalog changes).
+_PUB_LEADIN_RE = re.compile(
+    r"\b(?:just\s+published|just\s+released|now\s+available|publishes|releases?\s+version"
+    r"|publication\s+of)\b",
+    re.IGNORECASE,
+)
+_PUB_VERSION_RE = re.compile(r"\b(?:version\s+|v)(\d+(?:\.\d+)*)\b", re.IGNORECASE)
+
 # Announcement bodies state the real window: "From 3 June to 20 July, eligible
 # PCI SSC stakeholders are invited…". Day-first, month by name, no year.
 _WINDOW_RE = re.compile(
@@ -74,11 +86,15 @@ class PciSscAdapter(SourceAdapter):
             return
         for item in root.iter("item"):
             title = (item.findtext("title") or "").strip()
-            match = _RFC_RE.match(title)
-            if not match:
-                continue
             link = (item.findtext("link") or "").strip()
             pub = _parse_rfc822_date(item.findtext("pubDate"))
+
+            match = _RFC_RE.match(title)
+            if not match:
+                pub_item = _publication_item(self, title, link, pub)
+                if pub_item is not None:
+                    yield pub_item
+                continue
             subject = match.group("subject")
 
             dates: list[NormalizedDate] = []
@@ -119,6 +135,33 @@ class PciSscAdapter(SourceAdapter):
                 native_meta={"blog_title": title},
                 anomalies=anomalies,
             )
+
+
+def _publication_item(
+    adapter: SourceAdapter, title: str, link: str, pub: date | None
+) -> NormalizedItem | None:
+    """A 'new version published' announcement → an effective publication item, or None
+    when the post isn't a recognized standard publication. Drives version suggestions."""
+    if not _PUB_LEADIN_RE.search(title):
+        return None
+    vm = _PUB_VERSION_RE.search(title)
+    slug = _pci_obligation(title)
+    if vm is None or slug is None:
+        return None
+    version = vm.group(1)
+    dates = [NormalizedDate(DateType.effective, pub, Confidence.published_firm)] if pub else []
+    return NormalizedItem(
+        source_system=adapter.name,
+        external_key=("pci_pub", f"{slug}-{version}"),
+        jurisdiction=adapter.jurisdiction,
+        title=title,
+        url=link or None,
+        native_status="publication",
+        track="final",
+        dates=dates,
+        obligation_slug=slug,
+        native_meta={"published_version": version},
+    )
 
 
 def _slug(text: str) -> str:

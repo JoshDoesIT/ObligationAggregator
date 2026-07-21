@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Version review — ObligationAggregator{% endblock %}
+{% block content %}
+<h2 class="page">Version review</h2>
+<p class="lede">When an issuing body publishes a newer version of a standard, it's detected
+from the change feed and queued here. Confirm the advance and the in-force version updates
+everywhere — no catalog edit, no deploy. Nothing changes until you accept.</p>
+
+<div class="panel">
+  <h3>Suggested version bumps</h3>
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Standard</th><th>In force</th><th>Detected</th><th>Source</th><th></th></tr></thead>
+    <tbody>
+    {% for s in suggestions %}
+    <tr>
+      <td><strong>{{ s.name }}</strong> <a class="tag" href="/?obligation={{ s.slug }}">{{ s.slug }}</a></td>
+      <td>{{ s.in_force or '—' }}</td>
+      <td><span class="badge info">{{ s.version }}</span></td>
+      <td class="muted">
+        {% if s.source_url %}<a href="{{ s.source_url }}" rel="noopener">{{ s.item_title }} ↗</a>
+        {% else %}<a href="/items/{{ s.item_id }}">{{ s.item_title }}</a>{% endif %}
+      </td>
+      <td style="white-space:nowrap">
+        <form method="post" action="/admin/versions/accept" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+          <input type="hidden" name="obligation_id" value="{{ s.obligation_id }}">
+          <input type="hidden" name="version" value="{{ s.version }}">
+          <input type="hidden" name="item_id" value="{{ s.item_id }}">
+          <button title="Set {{ s.slug }} in force to {{ s.version }}">Accept {{ s.version }}</button>
+        </form>
+        <form method="post" action="/admin/versions/dismiss" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+          <input type="hidden" name="obligation_id" value="{{ s.obligation_id }}">
+          <input type="hidden" name="version" value="{{ s.version }}">
+          <input type="hidden" name="item_id" value="{{ s.item_id }}">
+          <button class="quiet" title="Ignore this detection">Dismiss</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="empty"><span class="big">✓</span>
+      No pending version bumps — every tracked standard matches its latest detected publication.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<p class="muted" style="font-size:.82rem">Detection covers sources that announce publications
+in a machine-readable feed (currently PCI SSC and ISO catalog pages). Accepting records an
+audit trail and writes a confirmed-version layer the catalog sync never overwrites.</p>
+{% endblock %}
