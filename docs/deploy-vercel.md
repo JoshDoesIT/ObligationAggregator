@@ -45,6 +45,14 @@ over the raw body for authenticity, and targets are SSRF-validated (no private /
 loopback / metadata hosts; redirects disabled). Org admins invite teammates by email
 under Settings; invitees join on first sign-in.
 
+**Org depth (Phase 3):** each org's BYOL licensed documents are strictly isolated —
+org-partitioned storage, every query org-scoped, so one tenant can never read
+another's copies (uploaded + diffed under **Documents**). Orgs set a notification
+From-name and Reply-To under Settings, applied to their email watchlists. Instance
+admins (`OBLAG_INSTANCE_ADMINS`) can add curated dates to items from the UI. Optional
+per-org quotas: `OBLAG_QUOTA_WATCHLISTS`, `OBLAG_QUOTA_API_KEYS`, `OBLAG_QUOTA_BYOL_DOCS`,
+`OBLAG_QUOTA_INVITES` (0 = unlimited, the default).
+
 ## 3. Deploy
 
 ```bash

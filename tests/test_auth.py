@@ -327,3 +327,117 @@ def test_members_only_admin_manages_keys(ml):
     csrf2 = _csrf(member, "/settings")
     member.post("/settings/api-keys", data={"name": "x", "csrf_token": csrf2})
     assert "won't be shown again" not in member.get("/settings").text
+
+
+# --- Phase 3: BYOL isolation, email prefs, assert-date, quotas ---------------
+
+
+def test_byol_org_isolation(ml, tmp_path):
+    a = _login_with_org(ml, "a@byol.test", "ByolA")
+    b = _login_with_org(ml, "b@byol.test", "ByolB")
+    # org A uploads a licensed doc
+    f = tmp_path / "std.txt"
+    f.write_text("1.1 Do the thing.\n1.2 Do another thing.\n")
+    csrf = _csrf(a, "/byol")
+    up = a.post(
+        "/byol/upload",
+        data={
+            "obligation": "pci-dss",
+            "version": "v-secret-9",
+            "attest_license": "1",
+            "csrf_token": csrf,
+        },
+        files={"file": ("std.txt", f.read_bytes(), "text/plain")},
+        follow_redirects=False,
+    )
+    assert up.status_code == 303
+    # A sees its doc
+    assert "v-secret-9" in a.get("/byol").text
+    # B sees NOTHING of A's (isolation)
+    bpage = b.get("/byol").text
+    assert "v-secret-9" not in bpage
+    # B cannot diff against A's version — no cross-org read
+    csrfb = _csrf(b, "/byol")
+    r = b.post(
+        "/byol/diff",
+        data={
+            "obligation": "pci-dss",
+            "from_version": "1.0",
+            "to_version": "1.0",
+            "csrf_token": csrfb,
+        },
+    )
+    assert "no BYOL document" in r.text
+
+
+def test_org_email_preferences_saved_and_applied(ml, monkeypatch):
+    owner = _login_with_org(ml, "o@mail.test", "MailOrg")
+    csrf = _csrf(owner, "/settings")
+    owner.post(
+        "/settings/email",
+        data={
+            "notify_from_name": "MailOrg Alerts",
+            "notify_reply_to": "reply@mail.test",
+            "csrf_token": csrf,
+        },
+    )
+    from oblag.db.models import Org
+    from oblag.db.session import session_scope
+
+    with session_scope() as db:
+        org = db.query(Org).filter_by(name="MailOrg").one()
+        assert org.notify_from_name == "MailOrg Alerts"
+        assert org.notify_reply_to == "reply@mail.test"
+
+
+def test_assert_date_admin_only(ml, seeded_via_ml=None):
+    from oblag.db.models import PipelineItem
+    from oblag.db.session import session_scope
+
+    # seed one item to assert against
+    with session_scope() as db:
+        db.add(
+            PipelineItem(
+                source_system="test",
+                jurisdiction="US",
+                title="t",
+                state="proposed",
+                track="proposed",
+            )
+        )
+    admin = _login(ml, "admin@oblag.test")  # instance admin (from fixture env)
+    csrf = _csrf(admin, "/settings")
+    admin.post(
+        "/auth/onboarding",
+        data={"org_name": "AdminOrg", "csrf_token": _csrf(admin, "/auth/onboarding")},
+    ) if admin.get("/watchlists", follow_redirects=False).status_code == 303 else None
+    with session_scope() as db:
+        iid = db.query(PipelineItem.id).first()[0]
+    # admin can assert a date
+    csrf = _csrf(admin, f"/items/{iid}")
+    r = admin.post(
+        f"/items/{iid}/assert-date",
+        data={
+            "date_type": "comment_close",
+            "value": "2027-01-01",
+            "confidence": "published_firm",
+            "csrf_token": csrf,
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    # a non-admin cannot even see the form
+    member = _login_with_org(ml, "plain@user.test", "PlainOrg")
+    assert "assert-date" not in member.get(f"/items/{iid}").text
+
+
+def test_watchlist_quota_enforced(ml, monkeypatch):
+    monkeypatch.setenv("OBLAG_QUOTA_WATCHLISTS", "2")
+    from oblag.config import get_settings
+
+    get_settings.cache_clear()
+    c = _login_with_org(ml, "q@quota.test", "QuotaOrg")
+    assert c.post("/api/v1/watchlists", json={"name": "a", "channel": "rss"}).status_code == 201
+    assert c.post("/api/v1/watchlists", json={"name": "b", "channel": "rss"}).status_code == 201
+    over = c.post("/api/v1/watchlists", json={"name": "c", "channel": "rss"})
+    assert over.status_code == 409

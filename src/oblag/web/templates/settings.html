@@ -49,6 +49,24 @@
   {% endif %}
 </div>
 
+{% if ctx.can_admin_org %}
+<div class="panel">
+  <h3>Notification email</h3>
+  <div class="pad">
+    <form method="post" action="/settings/email" class="filters" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+      <input name="notify_from_name" placeholder="From name (e.g. “Acme Alerts”)"
+             value="{{ ctx.org.notify_from_name or '' }}">
+      <input name="notify_reply_to" type="email" placeholder="Reply-to address"
+             value="{{ ctx.org.notify_reply_to or '' }}">
+      <button>Save</button>
+    </form>
+    <p class="muted" style="font-size:.82rem; margin:.5rem 0 0">Applied to this org's
+    email watchlists. The instance mail server still does the sending.</p>
+  </div>
+</div>
+{% endif %}
+
 <div class="panel">
   <h3>Team</h3>
   <div class="tablewrap">

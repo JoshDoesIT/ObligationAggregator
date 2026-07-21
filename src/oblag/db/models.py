@@ -244,14 +244,16 @@ class AdapterHealth(Base):
 
 
 class PrivateDocument(Base):
-    """BYOL store. Rows/files here must NEVER appear in shared outputs (spec 00 inv. 3)."""
+    """BYOL store. Rows/files here must NEVER appear in shared outputs (spec 00 inv. 3)
+    and NEVER cross an org boundary (spec 07 §6) — every access is org-scoped."""
 
     __tablename__ = "private_document"
     __table_args__ = (
-        UniqueConstraint("obligation_id", "version_label", name="uq_private_doc_version"),
+        UniqueConstraint("org_id", "obligation_id", "version_label", name="uq_private_doc_version"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    org_id: Mapped[int | None] = mapped_column(ForeignKey("org.id"), index=True)
     obligation_id: Mapped[int] = mapped_column(ForeignKey("obligation.id"), index=True)
     version_label: Mapped[str] = mapped_column(String(64))
     sha256: Mapped[str] = mapped_column(String(64))
@@ -273,6 +275,10 @@ class Org(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     slug: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
+    # per-org notification-email preferences (Phase 3), applied to this org's
+    # watchlist emails; the instance SMTP still does the sending.
+    notify_from_name: Mapped[str | None] = mapped_column(String(255))
+    notify_reply_to: Mapped[str | None] = mapped_column(String(320))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

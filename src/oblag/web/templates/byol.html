@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Licensed documents (BYOL) — ObligationAggregator{% endblock %}
+{% block content %}
+<h2 class="page">Licensed documents</h2>
+<p class="lede">Upload copies of copyrighted standards <strong>your organization holds a license
+for</strong> to run identifier-level version diffs. These files are private to
+{{ ctx.org.name if ctx.org else 'your org' }}, never shared, never attested, and never
+visible to any other organization.</p>
+
+{% if error %}<div class="panel"><div class="pad" style="color:var(--bad)">{{ error }}</div></div>{% endif %}
+
+{% if diff is defined %}
+<div class="panel">
+  <h3>Diff — {{ diff_obligation }} ({{ diff.policy.value }})</h3>
+  <div class="pad">
+    <p><strong>{{ diff.counts.added }}</strong> added ·
+       <strong>{{ diff.counts.removed }}</strong> removed ·
+       {{ diff.counts.kept }} unchanged</p>
+    {% if diff.added is not none %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
+      <div><strong style="color:var(--ok)">Added</strong>
+        <ul>{% for r in diff.added %}<li><code>{{ r.id }}</code>{% if r.heading %} — {{ r.heading }}{% endif %}</li>{% endfor %}</ul></div>
+      <div><strong style="color:var(--bad)">Removed</strong>
+        <ul>{% for r in diff.removed %}<li><code>{{ r.id }}</code>{% if r.heading %} — {{ r.heading }}{% endif %}</li>{% endfor %}</ul></div>
+    </div>
+    {% else %}<p class="muted">Identifier lists are withheld for this obligation
+    (display policy: events only).</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h3>Your documents</h3>
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Obligation</th><th>Version</th><th>SHA-256</th><th>Uploaded</th></tr></thead>
+    <tbody>
+    {% for d in docs %}
+    <tr>
+      <td><strong>{{ d.obligation }}</strong> <span class="tag">{{ d.obligation_slug }}</span></td>
+      <td>{{ d.version_label }}</td>
+      <td class="muted"><code>{{ d.sha256[:16] }}…</code></td>
+      <td class="muted">{{ d.uploaded_at.strftime('%Y-%m-%d') if d.uploaded_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">No documents yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="panel">
+  <h3>Upload a version</h3>
+  <div class="pad">
+    <form method="post" action="/byol/upload" enctype="multipart/form-data"
+          style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:.7rem; align-items:end">
+      {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
+      <div><label style="display:block; font-size:.8rem; color:var(--muted)">Obligation</label>
+        <select name="obligation" required style="width:100%">
+          {% for o in obligations %}<option value="{{ o.slug }}">{{ o.name }}</option>{% endfor %}
+        </select></div>
+      <div><label style="display:block; font-size:.8rem; color:var(--muted)">Version label</label>
+        <input name="version" required placeholder="e.g. 4.0.1" style="width:100%"></div>
+      <div><label style="display:block; font-size:.8rem; color:var(--muted)">File (.txt / .pdf)</label>
+        <input type="file" name="file" required style="width:100%"></div>
+      <div><label style="font-size:.82rem"><input type="checkbox" name="attest_license" value="1" required>
+        I attest my org holds a license for this document</label></div>
+      <div><button>Upload</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="panel">
+  <h3>Compare two versions</h3>
+  <div class="pad">
+    <form method="post" action="/byol/diff" class="filters" style="margin:0">
+      {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
+      <select name="obligation" required>
+        {% for o in obligations %}<option value="{{ o.slug }}">{{ o.name }}</option>{% endfor %}
+      </select>
+      <input name="from_version" required placeholder="from version">
+      <input name="to_version" required placeholder="to version">
+      <button>Diff</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

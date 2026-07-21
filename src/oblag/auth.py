@@ -282,6 +282,41 @@ def accept_pending_invites(session: Session, user: User) -> list[Org]:
 _ROLES = ("owner", "admin", "member")
 
 
+# --- quotas (Phase 3) --------------------------------------------------------
+
+
+class QuotaError(Exception):
+    pass
+
+
+def enforce_quota(session: Session, org_id: int, kind: str) -> None:
+    """Raise QuotaError if creating one more `kind` would exceed the org's cap.
+    Limit 0 = unlimited."""
+    from oblag.db.models import ApiKey, Invite, PrivateDocument, Watchlist
+
+    settings = get_settings()
+    limit, current = {
+        "watchlists": (
+            settings.quota_watchlists,
+            lambda: session.query(Watchlist).filter_by(org_id=org_id, active=True).count(),
+        ),
+        "api_keys": (
+            settings.quota_api_keys,
+            lambda: session.query(ApiKey).filter_by(org_id=org_id, revoked_at=None).count(),
+        ),
+        "byol_docs": (
+            settings.quota_byol_docs,
+            lambda: session.query(PrivateDocument).filter_by(org_id=org_id).count(),
+        ),
+        "invites": (
+            settings.quota_invites,
+            lambda: session.query(Invite).filter_by(org_id=org_id, accepted_at=None).count(),
+        ),
+    }[kind]
+    if limit and current() >= limit:
+        raise QuotaError(f"{kind} quota reached ({limit}) for this organization")
+
+
 # --- email -------------------------------------------------------------------
 
 

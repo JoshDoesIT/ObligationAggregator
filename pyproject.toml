@@ -1,6 +1,6 @@
 [project]
 name = "oblag"
-version = "0.3.0"
+version = "0.4.0"
 description = "ObligationAggregator: open-source regulatory & framework change-intelligence for GRC engineers"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -67,7 +67,7 @@ ignore = ["SIM108"]
 
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI/Typer dependency-injection idioms are call-in-default by design
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "typer.Option", "typer.Argument"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Form", "fastapi.File", "typer.Option", "typer.Argument"]
 
 [tool.mypy]
 python_version = "3.11"

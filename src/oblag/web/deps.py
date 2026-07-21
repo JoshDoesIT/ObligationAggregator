@@ -101,6 +101,20 @@ def get_context(request: Request, db: Session = Depends(get_db)) -> Context:
     return ctx
 
 
+def login_redirect(ctx: Context):
+    """In magic-link mode, redirect an unauthenticated visitor to sign-in (or a
+    logged-in user without an org to onboarding). None in single-org mode."""
+    from fastapi.responses import RedirectResponse
+
+    if not ctx.auth_on:
+        return None
+    if not ctx.authed:
+        return RedirectResponse("/auth/login", status_code=303)
+    if ctx.org is None:
+        return RedirectResponse("/auth/onboarding", status_code=303)
+    return None
+
+
 def check_csrf(ctx: Context, submitted: str | None) -> None:
     """Reject a state-changing form POST whose CSRF token doesn't match the session.
     No-op in single-org mode (no cookie session to protect)."""

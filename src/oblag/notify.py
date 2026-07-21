@@ -107,7 +107,9 @@ def _deliver_webhook(watchlist: Watchlist, events: list[tuple[Event, PipelineIte
     resp.raise_for_status()
 
 
-def _deliver_email(watchlist: Watchlist, events: list[tuple[Event, PipelineItem | None]]) -> None:
+def _deliver_email(
+    session: Session, watchlist: Watchlist, events: list[tuple[Event, PipelineItem | None]]
+) -> None:
     settings = get_settings()
     if not settings.smtp_host:
         raise RuntimeError("SMTP is not configured (OBLAG_SMTP_HOST)")
@@ -124,7 +126,16 @@ def _deliver_email(watchlist: Watchlist, events: list[tuple[Event, PipelineItem 
             lines.append(f"  {base}/items/{item.id}")
     msg = EmailMessage()
     msg["Subject"] = f"[oblag] {len(events)} change event(s) — {watchlist.name}"
-    msg["From"] = settings.smtp_from
+    # per-org email preferences (Phase 3): a friendly From display name and Reply-To
+    from oblag.db.models import Org
+
+    org = session.get(Org, watchlist.org_id) if watchlist.org_id else None
+    if org is not None and org.notify_from_name:
+        msg["From"] = f"{org.notify_from_name} <{settings.smtp_from}>"
+    else:
+        msg["From"] = settings.smtp_from
+    if org is not None and org.notify_reply_to:
+        msg["Reply-To"] = org.notify_reply_to
     msg["To"] = watchlist.target
     msg.set_content("\n".join(lines))
     with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:
@@ -165,7 +176,7 @@ def dispatch_pending(session: Session) -> int:
             if wl.channel == "webhook":
                 _deliver_webhook(wl, batch)
             else:
-                _deliver_email(wl, batch)
+                _deliver_email(session, wl, batch)
         except Exception as exc:  # noqa: BLE001 — transient failure: retry next run
             log.warning("delivery failed for watchlist %s: %s", wl.name, exc)
             continue
