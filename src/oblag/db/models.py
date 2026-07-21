@@ -203,6 +203,9 @@ class Watchlist(Base):
     __tablename__ = "watchlist"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # tenancy (spec 07): nullable during migration; boot adopts orphans into the
+    # default org. In single-org mode every watchlist belongs to the default org.
+    org_id: Mapped[int | None] = mapped_column(ForeignKey("org.id"), index=True)
     name: Mapped[str] = mapped_column(String(255))
     channel: Mapped[str] = mapped_column(String(16))  # rss | email | webhook
     target: Mapped[str | None] = mapped_column(Text)
@@ -252,3 +255,70 @@ class PrivateDocument(Base):
     storage_ref: Mapped[str] = mapped_column(String(255))
     license_attested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# --- Multi-tenancy (spec 07) -------------------------------------------------
+# All additive: the pipeline data (obligations, items, events, snapshots) is
+# shared and never tenant-scoped. Only these tables + watchlist.org_id carry
+# tenancy. Single-org deployments run with OBLAG_AUTH=disabled and a single
+# auto-provisioned default org, so these tables stay effectively invisible.
+
+
+class Org(Base):
+    __tablename__ = "org"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class User(Base):
+    # "user" is reserved in Postgres; the table is app_user.
+    __tablename__ = "app_user"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)  # lowercased
+    display_name: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class OrgMember(Base):
+    __tablename__ = "org_member"
+    __table_args__ = (UniqueConstraint("org_id", "user_id", name="uq_org_member"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("org.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id"), index=True)
+    role: Mapped[str] = mapped_column(String(16), default="member")  # owner|admin|member
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LoginToken(Base):
+    """Single-use magic-link token. Only the SHA-256 hash is stored; the raw token
+    lives only in the emailed URL."""
+
+    __tablename__ = "login_token"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class UserSession(Base):
+    """Browser session. Cookie carries the raw token; only its hash is stored, so a
+    DB read can't forge sessions. Carries the active org for multi-org users."""
+
+    __tablename__ = "user_session"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id"), index=True)
+    org_id: Mapped[int | None] = mapped_column(ForeignKey("org.id"))
+    csrf_token: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

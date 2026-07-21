@@ -78,6 +78,11 @@ def init_db(engine: Engine | None = None) -> None:
                 sql_text(f"ALTER TABLE key_date ADD COLUMN retracted BOOLEAN DEFAULT {default}")
             )
             conn.execute(sql_text(f"UPDATE key_date SET retracted = {default}"))
+    # v0.2.0 (spec 07): watchlist.org_id — new tenancy column on an existing table
+    wl_cols = {c["name"] for c in sa_inspect(eng).get_columns("watchlist")}
+    if "org_id" not in wl_cols:
+        with eng.begin() as conn:
+            conn.execute(sql_text("ALTER TABLE watchlist ADD COLUMN org_id INTEGER"))
 
 
 @contextmanager

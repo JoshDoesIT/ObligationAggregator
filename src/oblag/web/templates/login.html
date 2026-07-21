@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign in — ObligationAggregator{% endblock %}
+{% block content %}
+<div style="max-width:26rem; margin:2rem auto">
+  <h2 class="page">Sign in</h2>
+  {% if sent %}
+    <div class="panel"><div class="pad">
+      <p><strong>Check your email.</strong></p>
+      <p class="muted">If that address has access, a one-time sign-in link is on its way.
+      It expires shortly and can only be used once.</p>
+    </div></div>
+  {% else %}
+    <p class="lede">Enter your work email and we'll send you a one-time sign-in link — no
+    password needed.</p>
+    {% if error %}<div class="panel"><div class="pad" style="color:var(--bad)">{{ error }}</div></div>{% endif %}
+    <div class="panel"><div class="pad">
+      <form method="post" action="/auth/login" style="display:flex; flex-direction:column; gap:.7rem">
+        <label for="email" style="font-size:.8rem; color:var(--muted)">Email address</label>
+        <input id="email" name="email" type="email" required placeholder="you@company.com" autofocus>
+        <button>Send sign-in link</button>
+      </form>
+    </div></div>
+  {% endif %}
+</div>
+{% endblock %}

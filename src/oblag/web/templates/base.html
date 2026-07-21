@@ -172,6 +172,21 @@
     <a href="/health" class="{{ 'active' if path.startswith('/health') }}">Sources</a>
     <a href="/docs" title="OpenAPI documentation">API</a>
   </nav>
+  {% set ctx = request.state.ctx if (request.state.ctx is defined) else none %}
+  {% if ctx and ctx.auth_on %}
+    {% if ctx.authed %}
+    <div style="margin-left:auto; display:flex; align-items:center; gap:.6rem; font-size:.85rem">
+      {% if ctx.org %}<span class="tag" title="active organization">{{ ctx.org.name }}</span>{% endif %}
+      <span class="muted">{{ ctx.user_email }}</span>
+      <form method="post" action="/auth/logout" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+        <button class="quiet" style="padding:.3rem .7rem">Sign out</button>
+      </form>
+    </div>
+    {% else %}
+    <div style="margin-left:auto; font-size:.9rem"><a href="/auth/login">Sign in</a></div>
+    {% endif %}
+  {% endif %}
 </header>
 <main id="content">{% block content %}{% endblock %}</main>
 </body>

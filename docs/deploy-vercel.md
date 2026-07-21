@@ -24,7 +24,18 @@ for snapshots/attestations.
 | `OBLAG_BASE_URL` | your deployment URL (used in notifications/RSS links) |
 | `OBLAG_REGSGOV_API_KEY` … | source credentials as desired (regulations.gov, LegiScan, OEIL procedures, HYS topics) |
 | `OBLAG_BROWSER_CDP_URL` | optional: a remote Chromium CDP websocket (e.g. Browserless) — enables the EBA browser adapter serverlessly |
-| `OBLAG_SMTP_*` | optional email delivery |
+| `OBLAG_SMTP_*` | email delivery — also required for magic-link login below |
+| `OBLAG_AUTH` | `disabled` (default, single-org) or `magic-link` (multi-org public app, spec 07) |
+| `OBLAG_INSTANCE_ADMINS` | csv of emails granted instance-admin operations (only with `magic-link`) |
+
+### Single-org vs multi-org
+
+By default (`OBLAG_AUTH` unset or `disabled`) the instance is single-org: no login,
+watchlists open to anyone who can reach it — the current behavior. Set
+`OBLAG_AUTH=magic-link` (plus working `OBLAG_SMTP_*` for the sign-in emails and
+`OBLAG_BASE_URL` for the link host) to run it as a public multi-org app: orgs sign
+up by email, watchlists and notifications are scoped per org, and the change
+feed / obligations / deadlines stay public. See `docs/specs/07-multi-tenancy.md`.
 
 ## 3. Deploy
 

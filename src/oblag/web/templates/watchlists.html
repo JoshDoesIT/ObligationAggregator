@@ -11,6 +11,7 @@ to match everything.</p>
   <div class="pad">
   <form method="post" action="/watchlists"
         style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:.7rem; align-items:end">
+    {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
     <div><label for="wl-name" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Name</label>
       <input id="wl-name" name="name" placeholder="e.g. “EU cyber deadlines”" required style="width:100%"></div>
     <div><label for="wl-channel" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Delivery channel</label>
@@ -62,6 +63,7 @@ to match everything.</p>
           {% else %}<span class="badge"><span class="dot"></span>disabled</span>{% endif %}</td>
       <td>{% if w.active %}
         <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline">
+          {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
           <button class="quiet">Disable</button>
         </form>{% endif %}</td>
     </tr>
