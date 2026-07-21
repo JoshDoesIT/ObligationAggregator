@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -202,11 +203,9 @@ def _signal_kind(item: dict) -> str:
     return "Change signal"
 
 
-# Signal kinds that are MAINTENANCE of an already-published standard. A standards
-# body issues an RFC / revision / exposure draft / new version only for a document
-# it already publishes, so the current version stays in force throughout the comment
-# period — these never head toward a *first* effectiveness the way a bill or a
-# rulemaking does. Detached from `native_status` so it holds for every such source.
+# Signal kinds that are MAINTENANCE of a standard: RFCs, revisions, exposure drafts,
+# new versions. Whether the item revises an in-force standard (vs drafting a first
+# version) is decided against the catalog's `current_version` — never assumed.
 _REVISION_SIGNAL_KINDS = {
     "RFC",  # PCI SSC
     "Standard revision",  # ISO
@@ -215,18 +214,60 @@ _REVISION_SIGNAL_KINDS = {
     "Draft standard",  # NIST CSRC drafts (of an existing SP)
 }
 
+# Version tokens as sources actually write them: "v4.0.1", "V5.0", "Rev. 3", "rev 5.2.0"
+_VERSION_RE = re.compile(r"\b(?:v(\d+(?:\.\d+)*)|rev\.?\s*(\d+(?:\.\d+)*))", re.IGNORECASE)
 
-def _revision_consultation(item: dict) -> bool:
-    """True when the item is a consultation/draft that REVISES a standard already in
-    our catalog. Requiring a known obligation keeps "the current version is in force"
-    a claim we can stand behind — a revision-kind signal with no cataloged standard
-    (e.g. a brand-new NIST draft) falls back to the ordinary proposed→effective track."""
-    return bool(item.get("obligation")) and _signal_kind(item) in _REVISION_SIGNAL_KINDS
+
+def _version_parts(text: str | None) -> tuple[str, ...] | None:
+    """Comparable version from free text: numeric parts, trailing zeros dropped so
+    "v4.0" == "4" and "5.0" == "5". None when no version token is present."""
+    if not text:
+        return None
+    m = _VERSION_RE.search(text)
+    if m is not None:
+        raw = m.group(1) or m.group(2)
+    elif re.fullmatch(r"\d+(?:\.\d+)*", text.strip()):
+        raw = text.strip()  # catalog values are bare: "4.0.1", "2022"
+    else:
+        return None
+    parts = raw.split(".")
+    while parts and parts[-1] == "0":
+        parts.pop()
+    return tuple(parts)
+
+
+def _revision_flavor(item: dict) -> str | None:
+    """Which standards-maintenance lifecycle an item gets, if any.
+
+    PCI (and others) run consultations in three flavors, and only the catalog knows
+    which: `Obligation.current_version` records what is actually in force.
+
+    - None: not a maintenance signal, or the obligation has no published version
+      (e.g. PCI KMO v1.0, still in RFC) — the ordinary proposed→effective lifecycle
+      is the truthful one, since a first version IS heading toward first effectiveness.
+    - "current": feedback solicited on the in-force version itself (PCI DSS v4.0.1 RFC).
+    - "draft": the document under review is a draft of the NEXT version (PTS HSM v5.0
+      RFC while v4.0 is in force) — the current version stays in force regardless.
+    - "revision": maintenance of a published standard, but the title carries no
+      comparable version token (ISO revisions, most NIST drafts) — the in-force claim
+      holds; which flavor of it is unknown.
+    """
+    if _signal_kind(item) not in _REVISION_SIGNAL_KINDS:
+        return None
+    if not item.get("obligation"):
+        return None
+    current = item.get("obligation_current_version")
+    if not current:
+        return None
+    subject = _version_parts(item.get("title"))
+    if subject is None:
+        return "revision"
+    return "current" if subject == _version_parts(current) else "draft"
 
 
 templates.env.filters.update(
     signal_kind=_signal_kind,
-    revision_consultation=_revision_consultation,
+    revision_flavor=_revision_flavor,
     human_event=_human_event,
     human_state=_human_state,
     human_date_type=_human_date_type,

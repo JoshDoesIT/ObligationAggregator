@@ -112,6 +112,22 @@ def test_obligation_defaults_are_conservative_enough(db):
     assert ob.copyright_status.value == "public_domain"
 
 
+def test_init_db_backfills_current_version_column(tmp_path):
+    """Databases created before v0.4.2 lack obligation.current_version; init_db adds it."""
+    from sqlalchemy import create_engine, inspect, text
+
+    from oblag.db.models import Base
+    from oblag.db.session import init_db
+
+    eng = create_engine(f"sqlite:///{tmp_path}/old.db")
+    Base.metadata.create_all(eng)
+    with eng.begin() as conn:
+        conn.execute(text("ALTER TABLE obligation DROP COLUMN current_version"))
+    assert "current_version" not in {c["name"] for c in inspect(eng).get_columns("obligation")}
+    init_db(eng)
+    assert "current_version" in {c["name"] for c in inspect(eng).get_columns("obligation")}
+
+
 def test_init_db_backfills_retracted_column(tmp_path):
     """Databases created before v0.1.7 lack key_date.retracted; init_db adds it."""
     from sqlalchemy import create_engine, inspect, text

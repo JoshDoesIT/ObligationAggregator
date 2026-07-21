@@ -97,6 +97,11 @@ def init_db(engine: Engine | None = None) -> None:
         if col not in org_cols:
             with eng.begin() as conn:
                 conn.execute(sql_text(f"ALTER TABLE org ADD COLUMN {col} VARCHAR(320)"))
+    # v0.4.2: obligation.current_version — which version of a standard is in force
+    ob_cols = {c["name"] for c in sa_inspect(eng).get_columns("obligation")}
+    if "current_version" not in ob_cols:
+        with eng.begin() as conn:
+            conn.execute(sql_text("ALTER TABLE obligation ADD COLUMN current_version VARCHAR(64)"))
 
 
 @contextmanager
