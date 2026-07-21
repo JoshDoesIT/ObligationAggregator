@@ -31,6 +31,7 @@ def add_document(
     source_path: Path,
     *,
     license_attested: bool,
+    org_id: int,
 ) -> PrivateDocument:
     if not license_attested:
         raise ByolError(
@@ -44,14 +45,15 @@ def add_document(
 
     content = source_path.read_bytes()
     sha = hashlib.sha256(content).hexdigest()
-    dest_dir = get_settings().private_dir / obligation_slug / version_label
+    # org-partitioned storage: an org's files never share a directory with another's
+    dest_dir = get_settings().private_dir / f"org-{org_id}" / obligation_slug / version_label
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / source_path.name
     shutil.copyfile(source_path, dest)
 
     existing = (
         session.query(PrivateDocument)
-        .filter_by(obligation_id=obligation.id, version_label=version_label)
+        .filter_by(org_id=org_id, obligation_id=obligation.id, version_label=version_label)
         .one_or_none()
     )
     if existing is not None:
@@ -61,6 +63,7 @@ def add_document(
         session.flush()
         return existing
     doc = PrivateDocument(
+        org_id=org_id,
         obligation_id=obligation.id,
         version_label=version_label,
         sha256=sha,
@@ -70,6 +73,16 @@ def add_document(
     session.add(doc)
     session.flush()
     return doc
+
+
+def list_documents(session: Session, org_id: int) -> list[PrivateDocument]:
+    """This org's BYOL documents only — never another tenant's (spec 07 §6)."""
+    return (
+        session.query(PrivateDocument)
+        .filter_by(org_id=org_id)
+        .order_by(PrivateDocument.obligation_id, PrivateDocument.version_label)
+        .all()
+    )
 
 
 def _read_text(path: Path) -> str:
@@ -96,7 +109,7 @@ class GatedDiff:
 
 
 def diff_versions(
-    session: Session, obligation_slug: str, from_version: str, to_version: str
+    session: Session, obligation_slug: str, from_version: str, to_version: str, *, org_id: int
 ) -> GatedDiff:
     obligation = session.query(Obligation).filter_by(slug=obligation_slug).one_or_none()
     if obligation is None:
@@ -105,7 +118,7 @@ def diff_versions(
     for version in (from_version, to_version):
         doc = (
             session.query(PrivateDocument)
-            .filter_by(obligation_id=obligation.id, version_label=version)
+            .filter_by(org_id=org_id, obligation_id=obligation.id, version_label=version)
             .one_or_none()
         )
         if doc is None:

@@ -67,6 +67,12 @@ def create_watchlist(
     body: WatchlistIn, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
 ):
     org = require_org(ctx)
+    from oblag.auth import QuotaError, enforce_quota
+
+    try:
+        enforce_quota(db, org.id, "watchlists")
+    except QuotaError as exc:
+        raise HTTPException(409, str(exc)) from None
     if body.channel in ("email", "webhook") and not body.target:
         raise HTTPException(422, f"{body.channel} watchlists require a target")
     target = body.target

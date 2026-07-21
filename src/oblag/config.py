@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     session_ttl_days: int = 30
     login_token_ttl_minutes: int = 15
     api_rate_limit_per_min: int = 600  # per API key, fixed-window
+    # Per-org quotas (Phase 3); 0 = unlimited (default — single-org deployments
+    # are unaffected). Enforced on creation.
+    quota_watchlists: int = 0
+    quota_api_keys: int = 0
+    quota_byol_docs: int = 0
+    quota_invites: int = 0
 
     # Provenance (M3): Ed25519 private key — a PEM string (serverless: set
     # OBLAG_SIGNING_KEY_PEM from `oblag keygen` output) or a file path.

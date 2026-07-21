@@ -128,4 +128,26 @@
   <span class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.04em">Identifiers</span><br>
   {% for k in item.join_keys %}<code>{{ k.type }}: {{ k.value }}</code> {% endfor %}
 </div></div>
+
+{% if ctx and ctx.is_admin %}
+<div class="panel">
+  <h3>Add a curated date <span style="text-transform:none; letter-spacing:0">— admin</span></h3>
+  <div class="pad">
+    <form method="post" action="/items/{{ item.id }}/assert-date" class="filters" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+      <select name="date_type" required>
+        {% for d in date_types %}<option value="{{ d }}">{{ d | human_date_type }}</option>{% endfor %}
+      </select>
+      <input name="value" type="date" required>
+      <select name="confidence" required>
+        {% for c in confidences %}<option value="{{ c }}">{{ c | human_conf }}</option>{% endfor %}
+      </select>
+      <input name="label" placeholder="label (optional)">
+      <button>Assert date</button>
+    </form>
+    <p class="muted" style="font-size:.82rem; margin:.5rem 0 0">Append-only: supersedes any
+    current value of the same milestone and emits a date-changed event.</p>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

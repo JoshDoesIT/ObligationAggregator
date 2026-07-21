@@ -191,8 +191,16 @@ def byol_add(
     init_db()
     try:
         with session_scope() as session:
+            from oblag.auth import get_default_org
+
+            org = get_default_org(session)
             doc = add_document(
-                session, obligation, version, Path(file), license_attested=attest_license
+                session,
+                obligation,
+                version,
+                Path(file),
+                license_attested=attest_license,
+                org_id=org.id,
             )
             typer.echo(f"stored {obligation} {version} sha256={doc.sha256[:16]}… (private)")
     except ByolError as exc:
@@ -210,7 +218,10 @@ def byol_diff(obligation: str, from_version: str, to_version: str) -> None:
     init_db()
     try:
         with session_scope() as session:
-            diff = diff_versions(session, obligation, from_version, to_version)
+            from oblag.auth import get_default_org
+
+            org = get_default_org(session)
+            diff = diff_versions(session, obligation, from_version, to_version, org_id=org.id)
     except ByolError as exc:
         typer.secho(str(exc), fg="red")
         raise typer.Exit(1) from None

@@ -87,6 +87,16 @@ def init_db(engine: Engine | None = None) -> None:
     if "signing_secret" not in wl_cols:
         with eng.begin() as conn:
             conn.execute(sql_text("ALTER TABLE watchlist ADD COLUMN signing_secret VARCHAR(64)"))
+    # v0.4.0 (spec 07 Phase 3): BYOL org isolation + per-org email prefs
+    pd_cols = {c["name"] for c in sa_inspect(eng).get_columns("private_document")}
+    if "org_id" not in pd_cols:
+        with eng.begin() as conn:
+            conn.execute(sql_text("ALTER TABLE private_document ADD COLUMN org_id INTEGER"))
+    org_cols = {c["name"] for c in sa_inspect(eng).get_columns("org")}
+    for col in ("notify_from_name", "notify_reply_to"):
+        if col not in org_cols:
+            with eng.begin() as conn:
+                conn.execute(sql_text(f"ALTER TABLE org ADD COLUMN {col} VARCHAR(320)"))
 
 
 @contextmanager

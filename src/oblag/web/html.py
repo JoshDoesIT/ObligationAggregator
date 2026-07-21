@@ -390,11 +390,54 @@ def item_page(
         .filter(KeyDate.pipeline_item_id == item_id, KeyDate.supersedes_id.isnot(None))
         .all()
     }
+    from oblag.db.models import Confidence, DateType
+
     return templates.TemplateResponse(
         request,
         "item_detail.html",
-        {"item": item_to_dict(db, item, detail=True), "superseded_ids": superseded_ids, "ctx": ctx},
+        {
+            "item": item_to_dict(db, item, detail=True),
+            "superseded_ids": superseded_ids,
+            "ctx": ctx,
+            "date_types": [d.value for d in DateType],
+            "confidences": [c.value for c in Confidence],
+        },
     )
+
+
+@router.post("/items/{item_id}/assert-date", response_class=HTMLResponse)
+async def assert_date_route(
+    item_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    """Curated date assertion from the UI. Writes SHARED pipeline data, so it's gated
+    to instance admins (single-org operators are admins)."""
+    from datetime import date as _date
+
+    from oblag.core.assertions import assert_date
+    from oblag.db.models import Confidence, DateType
+
+    if not ctx.is_admin:
+        raise HTTPException(403, "instance-admin only")
+    if db.get(PipelineItem, item_id) is None:
+        raise HTTPException(404, "item not found")
+    form = await request.form()
+    check_csrf(ctx, str(form.get("csrf_token", "")))
+    try:
+        assert_date(
+            db,
+            item_id,
+            DateType(str(form.get("date_type"))),
+            _date.fromisoformat(str(form.get("value"))),
+            Confidence(str(form.get("confidence"))),
+            label=str(form.get("label") or "") or None,
+            note=f"curated via UI by {ctx.user_email or 'operator'}",
+        )
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(422, f"invalid assertion: {exc}") from None
+    return RedirectResponse(f"/items/{item_id}", status_code=303)
 
 
 @router.post("/items/{item_id}/watch", response_class=HTMLResponse)

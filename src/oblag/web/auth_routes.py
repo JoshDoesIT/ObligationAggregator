@@ -178,6 +178,13 @@ def create_api_key(
     check_csrf(ctx, csrf_token)
     if not ctx.can_admin_org:
         return RedirectResponse("/settings", status_code=303)
+    try:
+        auth.enforce_quota(db, ctx.org.id, "api_keys")
+    except auth.QuotaError as exc:
+        data = _settings_data(db, ctx)
+        data["new_key"] = None
+        data["error"] = str(exc)
+        return templates.TemplateResponse(request, "settings.html", data)
     _key, raw = auth.create_api_key(db, ctx.org, name)
     data = _settings_data(db, ctx)
     data["new_key"] = raw  # shown exactly once
@@ -199,6 +206,28 @@ def revoke_api_key(
     return RedirectResponse("/settings", status_code=303)
 
 
+@router.post("/settings/email")
+def update_email_prefs(
+    notify_from_name: str = Form(""),
+    notify_reply_to: str = Form(""),
+    csrf_token: str = Form(""),
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    if not auth.auth_enabled() or ctx.org is None:
+        return RedirectResponse("/auth/login", status_code=303)
+    check_csrf(ctx, csrf_token)
+    if ctx.can_admin_org:
+        from oblag.db.models import Org
+
+        org = db.get(Org, ctx.org.id)
+        if org is not None:
+            org.notify_from_name = notify_from_name.strip() or None
+            reply = auth.normalize_email(notify_reply_to)
+            org.notify_reply_to = reply if auth.valid_email(reply) else None
+    return RedirectResponse("/settings", status_code=303)
+
+
 @router.post("/settings/invites")
 def invite_member(
     email: str = Form(""),
@@ -211,7 +240,11 @@ def invite_member(
         return RedirectResponse("/auth/login", status_code=303)
     check_csrf(ctx, csrf_token)
     if ctx.can_admin_org and auth.valid_email(auth.normalize_email(email)):
-        auth.create_invite(db, ctx.org, email, role)
+        try:
+            auth.enforce_quota(db, ctx.org.id, "invites")
+            auth.create_invite(db, ctx.org, email, role)
+        except auth.QuotaError:
+            pass  # silently ignore over-quota invite; settings page shows the cap
     return RedirectResponse("/settings", status_code=303)
 
 
