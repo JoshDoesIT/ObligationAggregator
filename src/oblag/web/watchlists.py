@@ -10,11 +10,19 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from oblag.config import get_settings
-from oblag.db.models import Event, PipelineItem, Watchlist
+from oblag.db.models import Event, Org, PipelineItem, Watchlist
 from oblag.notify import _event_summary, matches
-from oblag.web.deps import get_db
+from oblag.web.deps import Context, get_context, get_db
 
 router = APIRouter(prefix="/api/v1")
+
+
+def require_org(ctx: Context) -> Org:
+    """The tenant for this request. Present in single-org mode (default org); in
+    magic-link mode requires a logged-in user with an active org."""
+    if ctx.org is None:
+        raise HTTPException(401, "authentication required")
+    return ctx.org
 
 
 class WatchlistFilters(BaseModel):
@@ -48,18 +56,24 @@ def _to_dict(wl: Watchlist) -> dict:
 
 
 @router.get("/watchlists")
-def list_watchlists(db: Session = Depends(get_db)):
-    return {"watchlists": [_to_dict(w) for w in db.query(Watchlist).order_by(Watchlist.id)]}
+def list_watchlists(db: Session = Depends(get_db), ctx: Context = Depends(get_context)):
+    org = require_org(ctx)
+    rows = db.query(Watchlist).filter(Watchlist.org_id == org.id).order_by(Watchlist.id)
+    return {"watchlists": [_to_dict(w) for w in rows]}
 
 
 @router.post("/watchlists", status_code=201)
-def create_watchlist(body: WatchlistIn, db: Session = Depends(get_db)):
+def create_watchlist(
+    body: WatchlistIn, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
+    org = require_org(ctx)
     if body.channel in ("email", "webhook") and not body.target:
         raise HTTPException(422, f"{body.channel} watchlists require a target")
     target = body.target
     if body.channel == "rss":
         target = secrets.token_urlsafe(16)  # unguessable pull token
     wl = Watchlist(
+        org_id=org.id,
         name=body.name,
         channel=body.channel,
         target=target,
@@ -72,9 +86,12 @@ def create_watchlist(body: WatchlistIn, db: Session = Depends(get_db)):
 
 
 @router.delete("/watchlists/{watchlist_id}", status_code=204)
-def delete_watchlist(watchlist_id: int, db: Session = Depends(get_db)):
+def delete_watchlist(
+    watchlist_id: int, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
+    org = require_org(ctx)
     wl = db.get(Watchlist, watchlist_id)
-    if wl is None:
+    if wl is None or wl.org_id != org.id:  # never reveal other orgs' watchlists
         raise HTTPException(404, "watchlist not found")
     wl.active = False  # soft delete keeps the notification audit log intact
     return Response(status_code=204)

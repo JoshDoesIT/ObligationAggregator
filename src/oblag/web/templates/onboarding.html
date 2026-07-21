@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Create your org — ObligationAggregator{% endblock %}
+{% block content %}
+<div style="max-width:26rem; margin:2rem auto">
+  <h2 class="page">Name your organization</h2>
+  <p class="lede">Watchlists and notifications belong to your org. You can invite teammates later.</p>
+  <div class="panel"><div class="pad">
+    <form method="post" action="/auth/onboarding" style="display:flex; flex-direction:column; gap:.7rem">
+      <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+      <label for="org_name" style="font-size:.8rem; color:var(--muted)">Organization name</label>
+      <input id="org_name" name="org_name" required placeholder="Acme Compliance" autofocus>
+      <button>Create organization</button>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

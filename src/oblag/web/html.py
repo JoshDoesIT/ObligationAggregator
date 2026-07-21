@@ -3,17 +3,30 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from oblag.db.models import EventType, ItemState, KeyDate, PipelineItem
 from oblag.web import api
-from oblag.web.deps import get_db
+from oblag.web.deps import Context, check_csrf, get_context, get_db
 from oblag.web.serialize import item_to_dict
 
 router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+
+def _login_redirect(ctx: Context) -> RedirectResponse | None:
+    """In magic-link mode, send an unauthenticated visitor to sign-in and a logged-in
+    user without an org to onboarding. No-op in single-org mode."""
+    if not ctx.auth_on:
+        return None
+    if not ctx.authed:
+        return RedirectResponse("/auth/login", status_code=303)
+    if ctx.org is None:
+        return RedirectResponse("/auth/onboarding", status_code=303)
+    return None
+
 
 # ---- presentation helpers: raw enums/payloads never reach the user ----------
 
@@ -212,6 +225,7 @@ def items_page(
     obligation: str | None = None,
     q: str | None = None,
     page: int = 1,
+    ctx: Context = Depends(get_context),
 ):
     page = max(page, 1)
     page_size = 50
@@ -300,7 +314,9 @@ def items_page(
 
 
 @router.get("/obligations", response_class=HTMLResponse)
-def obligations_page(request: Request, db: Session = Depends(get_db)):
+def obligations_page(
+    request: Request, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
     """The actual obligation catalog: frameworks/regulations a GRC team is subject to,
     each with its live change activity. Items on the change feed are signals ABOUT
     these — never obligations themselves."""
@@ -359,7 +375,12 @@ def obligations_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/items/{item_id}", response_class=HTMLResponse)
-def item_page(item_id: int, request: Request, db: Session = Depends(get_db)):
+def item_page(
+    item_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
     item = db.get(PipelineItem, item_id)
     if item is None:
         raise HTTPException(404, "item not found")
@@ -372,17 +393,26 @@ def item_page(item_id: int, request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "item_detail.html",
-        {"item": item_to_dict(db, item, detail=True), "superseded_ids": superseded_ids},
+        {"item": item_to_dict(db, item, detail=True), "superseded_ids": superseded_ids, "ctx": ctx},
     )
 
 
 @router.post("/items/{item_id}/watch", response_class=HTMLResponse)
-def quick_watch(item_id: int, db: Session = Depends(get_db)):
+async def quick_watch(
+    item_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
     """One-click watch: RSS watchlist scoped to the item's obligation (or source)."""
-    from fastapi.responses import RedirectResponse
-
+    if r := _login_redirect(ctx):
+        return r
+    form = await request.form()
+    check_csrf(ctx, str(form.get("csrf_token", "")))
     from oblag.web import watchlists as wl_api
+    from oblag.web.watchlists import require_org
 
+    org = require_org(ctx)
     item = db.get(PipelineItem, item_id)
     if item is None:
         raise HTTPException(404, "item not found")
@@ -394,16 +424,23 @@ def quick_watch(item_id: int, db: Session = Depends(get_db)):
         filters = wl_api.WatchlistFilters(source_systems=[item.source_system])
     from oblag.db.models import Watchlist
 
-    exists = db.query(Watchlist).filter_by(name=name, active=True).first()
+    exists = db.query(Watchlist).filter_by(name=name, active=True, org_id=org.id).first()
     if exists is None:
         wl_api.create_watchlist(
-            wl_api.WatchlistIn(name=name, channel="rss", target=None, filters=filters), db=db
+            wl_api.WatchlistIn(name=name, channel="rss", target=None, filters=filters),
+            db=db,
+            ctx=ctx,
         )
     return RedirectResponse("/watchlists", status_code=303)
 
 
 @router.get("/events", response_class=HTMLResponse)
-def events_page(request: Request, db: Session = Depends(get_db), type: str | None = None):
+def events_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    type: str | None = None,
+    ctx: Context = Depends(get_context),
+):
     data = api.list_events(db=db, type=[type] if type else None, item_id=None, limit=200, offset=0)
     item_ids = {e["item_id"] for e in data["events"] if e.get("item_id")}
     titles = {}
@@ -431,7 +468,12 @@ def _ics_escape(text: str) -> str:
 
 
 @router.get("/deadlines.ics")
-def deadlines_ics(request: Request, db: Session = Depends(get_db), within_days: int = 365):
+def deadlines_ics(
+    request: Request,
+    db: Session = Depends(get_db),
+    within_days: int = 365,
+    ctx: Context = Depends(get_context),
+):
     """Deadlines as an iCalendar feed — subscribe from Outlook/Google/Apple Calendar."""
     from datetime import date, timedelta
 
@@ -473,31 +515,44 @@ def deadlines_ics(request: Request, db: Session = Depends(get_db), within_days: 
 
 
 @router.get("/deadlines", response_class=HTMLResponse)
-def deadlines_page(request: Request, db: Session = Depends(get_db), within_days: int = 365):
+def deadlines_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    within_days: int = 365,
+    ctx: Context = Depends(get_context),
+):
     data = api.upcoming_deadlines(db=db, date_type=None, within_days=within_days)
     return templates.TemplateResponse(request, "deadlines.html", data)
 
 
 @router.get("/watchlists", response_class=HTMLResponse)
-def watchlists_page(request: Request, db: Session = Depends(get_db)):
+def watchlists_page(
+    request: Request, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
+    if r := _login_redirect(ctx):
+        return r
     from oblag.db.models import Obligation
     from oblag.web import watchlists as wl_api
 
-    data = wl_api.list_watchlists(db=db)
+    data = wl_api.list_watchlists(db=db, ctx=ctx)
     data["obligations"] = [
         {"slug": slug, "name": name}
         for slug, name in db.query(Obligation.slug, Obligation.name).order_by(Obligation.name)
     ]
+    data["ctx"] = ctx
     return templates.TemplateResponse(request, "watchlists.html", data)
 
 
 @router.post("/watchlists", response_class=HTMLResponse)
-async def watchlists_create(request: Request, db: Session = Depends(get_db)):
-    from fastapi.responses import RedirectResponse
-
+async def watchlists_create(
+    request: Request, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
+    if r := _login_redirect(ctx):
+        return r
     from oblag.web import watchlists as wl_api
 
     form = await request.form()
+    check_csrf(ctx, str(form.get("csrf_token", "")))
     csv = lambda key: [s.strip() for s in str(form.get(key, "")).split(",") if s.strip()]  # noqa: E731
     body = wl_api.WatchlistIn(
         name=str(form.get("name", "unnamed")),
@@ -510,21 +565,30 @@ async def watchlists_create(request: Request, db: Session = Depends(get_db)):
             obligation_slugs=[str(v) for v in form.getlist("obligation_slugs")],
         ),
     )
-    wl_api.create_watchlist(body, db=db)
+    wl_api.create_watchlist(body, db=db, ctx=ctx)
     return RedirectResponse("/watchlists", status_code=303)
 
 
 @router.post("/watchlists/{watchlist_id}/delete", response_class=HTMLResponse)
-def watchlists_delete(watchlist_id: int, db: Session = Depends(get_db)):
-    from fastapi.responses import RedirectResponse
-
+async def watchlists_delete(
+    watchlist_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    if r := _login_redirect(ctx):
+        return r
     from oblag.web import watchlists as wl_api
 
-    wl_api.delete_watchlist(watchlist_id, db=db)
+    form = await request.form()
+    check_csrf(ctx, str(form.get("csrf_token", "")))
+    wl_api.delete_watchlist(watchlist_id, db=db, ctx=ctx)
     return RedirectResponse("/watchlists", status_code=303)
 
 
 @router.get("/health", response_class=HTMLResponse)
-def health_page(request: Request, db: Session = Depends(get_db)):
+def health_page(
+    request: Request, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
     data = api.adapter_health(db=db)
     return templates.TemplateResponse(request, "health.html", data)

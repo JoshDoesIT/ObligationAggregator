@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     smtp_from: str = "oblag@localhost"
     base_url: str = "http://localhost:8000"
 
+    # Multi-tenancy / auth (spec 07). Default "disabled" preserves single-org
+    # behavior: no login, every request pinned to the auto-provisioned default org.
+    # Set "magic-link" for a hosted multi-org deployment.
+    auth: str = "disabled"  # disabled | magic-link
+    instance_admins: str = ""  # csv of emails granted cross-tenant/admin operations
+    session_ttl_days: int = 30
+    login_token_ttl_minutes: int = 15
+
     # Provenance (M3): Ed25519 private key — a PEM string (serverless: set
     # OBLAG_SIGNING_KEY_PEM from `oblag keygen` output) or a file path.
     signing_key_pem: str | None = None
