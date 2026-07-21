@@ -83,6 +83,7 @@ def verify(request: Request, token: str = "", db: Session = Depends(get_db)):
             "login.html",
             {"ctx": None, "sent": False, "error": "That link is invalid or expired."},
         )
+    auth.accept_pending_invites(db, user)  # join any orgs that invited this email
     orgs = auth.user_orgs(db, user.id)
     active = orgs[0] if orgs else None
     info = auth.create_session(db, user, active)
@@ -130,6 +131,88 @@ def onboarding_submit(
     if sess is not None:
         sess.org_id = org.id
     return RedirectResponse("/watchlists", status_code=303)
+
+
+def _settings_data(db: Session, ctx: Context) -> dict:
+    from oblag.db.models import ApiKey, Invite, OrgMember, User
+
+    assert ctx.org is not None  # callers guard on ctx.org before invoking
+    org_id = ctx.org.id
+    keys = (
+        db.query(ApiKey).filter_by(org_id=org_id, revoked_at=None).order_by(ApiKey.id.desc()).all()
+    )
+    invites = (
+        db.query(Invite).filter_by(org_id=org_id, accepted_at=None).order_by(Invite.email).all()
+    )
+    members = [
+        {"email": email, "role": role}
+        for email, role in db.query(User.email, OrgMember.role)
+        .join(OrgMember, OrgMember.user_id == User.id)
+        .filter(OrgMember.org_id == org_id)
+        .order_by(User.email)
+    ]
+    return {"ctx": ctx, "keys": keys, "invites": invites, "members": members}
+
+
+@router.get("/settings", response_class=HTMLResponse)
+def settings_page(
+    request: Request, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+):
+    if not auth.auth_enabled() or ctx.org is None:
+        return RedirectResponse("/auth/login", status_code=303)
+    data = _settings_data(db, ctx)
+    data["new_key"] = None
+    return templates.TemplateResponse(request, "settings.html", data)
+
+
+@router.post("/settings/api-keys", response_class=HTMLResponse)
+def create_api_key(
+    request: Request,
+    name: str = Form("api key"),
+    csrf_token: str = Form(""),
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    if not auth.auth_enabled() or ctx.org is None:
+        return RedirectResponse("/auth/login", status_code=303)
+    check_csrf(ctx, csrf_token)
+    if not ctx.can_admin_org:
+        return RedirectResponse("/settings", status_code=303)
+    _key, raw = auth.create_api_key(db, ctx.org, name)
+    data = _settings_data(db, ctx)
+    data["new_key"] = raw  # shown exactly once
+    return templates.TemplateResponse(request, "settings.html", data)
+
+
+@router.post("/settings/api-keys/{key_id}/revoke")
+def revoke_api_key(
+    key_id: int,
+    csrf_token: str = Form(""),
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    if not auth.auth_enabled() or ctx.org is None:
+        return RedirectResponse("/auth/login", status_code=303)
+    check_csrf(ctx, csrf_token)
+    if ctx.can_admin_org:
+        auth.revoke_api_key(db, ctx.org, key_id)
+    return RedirectResponse("/settings", status_code=303)
+
+
+@router.post("/settings/invites")
+def invite_member(
+    email: str = Form(""),
+    role: str = Form("member"),
+    csrf_token: str = Form(""),
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    if not auth.auth_enabled() or ctx.org is None:
+        return RedirectResponse("/auth/login", status_code=303)
+    check_csrf(ctx, csrf_token)
+    if ctx.can_admin_org and auth.valid_email(auth.normalize_email(email)):
+        auth.create_invite(db, ctx.org, email, role)
+    return RedirectResponse("/settings", status_code=303)
 
 
 @router.post("/auth/switch-org")

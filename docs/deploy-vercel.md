@@ -37,6 +37,14 @@ watchlists open to anyone who can reach it — the current behavior. Set
 up by email, watchlists and notifications are scoped per org, and the change
 feed / obligations / deadlines stay public. See `docs/specs/07-multi-tenancy.md`.
 
+**Programmatic access (multi-org):** each org mints API keys under **Settings** and
+calls the JSON API with `Authorization: Bearer oblag_…`, scoped to that org and
+rate-limited (`OBLAG_API_RATE_LIMIT_PER_MIN`, default 600/min). Webhook watchlists get
+a per-watchlist HMAC secret; each delivery carries `X-Oblag-Signature: sha256=<hmac>`
+over the raw body for authenticity, and targets are SSRF-validated (no private /
+loopback / metadata hosts; redirects disabled). Org admins invite teammates by email
+under Settings; invitees join on first sign-in.
+
 ## 3. Deploy
 
 ```bash

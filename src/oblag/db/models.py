@@ -209,6 +209,9 @@ class Watchlist(Base):
     name: Mapped[str] = mapped_column(String(255))
     channel: Mapped[str] = mapped_column(String(16))  # rss | email | webhook
     target: Mapped[str | None] = mapped_column(Text)
+    # webhook HMAC secret (Phase 2): signs the X-Oblag-Signature header so the org's
+    # endpoint can verify authenticity. Set only for webhook channels.
+    signing_secret: Mapped[str | None] = mapped_column(String(64))
     filters: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -322,3 +325,35 @@ class UserSession(Base):
     csrf_token: Mapped[str] = mapped_column(String(64))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ApiKey(Base):
+    """Programmatic access token for an org (Phase 2). Raw key shown once at creation;
+    only the SHA-256 hash is stored. rl_* columns back a per-key fixed-window limiter."""
+
+    __tablename__ = "api_key"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("org.id"), index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    prefix: Mapped[str] = mapped_column(String(16))  # display-only, e.g. "oblag_ab12"
+    key_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rl_window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rl_count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Invite(Base):
+    """Pending org membership keyed by email; accepted on the invitee's first login."""
+
+    __tablename__ = "invite"
+    __table_args__ = (UniqueConstraint("org_id", "email", name="uq_invite_org_email"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    org_id: Mapped[int] = mapped_column(ForeignKey("org.id"), index=True)
+    email: Mapped[str] = mapped_column(String(320), index=True)  # lowercased
+    role: Mapped[str] = mapped_column(String(16), default="member")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
