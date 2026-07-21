@@ -1,53 +1,44 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Version review — ObligationAggregator{% endblock %}
+{% block title %}Version tracking — ObligationAggregator{% endblock %}
 {% block content %}
-<h2 class="page">Version review</h2>
-<p class="lede">When an issuing body publishes a newer version of a standard, it's detected
-from the change feed and queued here. Confirm the advance and the in-force version updates
-everywhere — no catalog edit, no deploy. Nothing changes until you accept.</p>
+<h2 class="page">Version tracking</h2>
+<p class="lede">Standards' in-force versions update <strong>automatically</strong> when a newer
+one is published in a tracked feed — no action needed. A detection that isn't a plausible
+successor (the fingerprint of a mis-parse) is flagged here instead of applied; correct it, if
+real, with a one-line catalog edit. This page is a read-only audit of what the tracker did.</p>
 
 <div class="panel">
-  <h3>Suggested version bumps</h3>
+  <h3>Recent version activity</h3>
   <div class="tablewrap">
   <table class="rows">
-    <thead><tr><th>Standard</th><th>In force</th><th>Detected</th><th>Source</th><th></th></tr></thead>
+    <thead><tr><th>Standard</th><th>In force</th><th>Detected</th><th>Result</th><th>Source</th><th>When</th></tr></thead>
     <tbody>
-    {% for s in suggestions %}
+    {% for r in log %}
     <tr>
-      <td><strong>{{ s.name }}</strong> <a class="tag" href="/?obligation={{ s.slug }}">{{ s.slug }}</a></td>
-      <td>{{ s.in_force or '—' }}</td>
-      <td><span class="badge info">{{ s.version }}</span></td>
+      <td><strong>{{ r.name or r.slug }}</strong> <a class="tag" href="/?obligation={{ r.slug }}">{{ r.slug }}</a></td>
+      <td>{{ r.in_force or '—' }}</td>
+      <td><span class="badge info">{{ r.version }}</span></td>
+      <td>
+        {% if r.decision == 'auto' %}<span class="badge ok">{{ icon('check', 12) }} applied</span>
+        {% else %}<span class="badge warn">flagged — not applied</span>{% endif %}
+      </td>
       <td class="muted">
-        {% if s.source_url %}<a href="{{ s.source_url }}" rel="noopener">{{ s.item_title }} {{ icon('external', 12) }}</a>
-        {% else %}<a href="/items/{{ s.item_id }}">{{ s.item_title }}</a>{% endif %}
+        {% if r.source_url %}<a href="{{ r.source_url }}" rel="noopener">{{ r.item_title or 'source' }} {{ icon('external', 12) }}</a>
+        {% elif r.item_id %}<a href="/items/{{ r.item_id }}">{{ r.item_title or 'item' }}</a>
+        {% else %}—{% endif %}
       </td>
-      <td style="white-space:nowrap">
-        <form method="post" action="/admin/versions/accept" style="display:inline">
-          <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
-          <input type="hidden" name="obligation_id" value="{{ s.obligation_id }}">
-          <input type="hidden" name="version" value="{{ s.version }}">
-          <input type="hidden" name="item_id" value="{{ s.item_id }}">
-          <button title="Set {{ s.slug }} in force to {{ s.version }}">Accept {{ s.version }}</button>
-        </form>
-        <form method="post" action="/admin/versions/dismiss" style="display:inline">
-          <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
-          <input type="hidden" name="obligation_id" value="{{ s.obligation_id }}">
-          <input type="hidden" name="version" value="{{ s.version }}">
-          <input type="hidden" name="item_id" value="{{ s.item_id }}">
-          <button class="quiet" title="Ignore this detection">Dismiss</button>
-        </form>
-      </td>
+      <td class="muted" style="white-space:nowrap">{{ r.decided_at[:10] if r.decided_at }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="5" class="empty">{{ icon('check', 40, 'big-ic') }}
-      No pending version bumps — every tracked standard matches its latest detected publication.</td></tr>
+    <tr><td colspan="6" class="empty">{{ icon('check', 40, 'big-ic') }}
+      No version changes detected yet — every tracked standard is at its latest published version.</td></tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
 </div>
 <p class="muted" style="font-size:.82rem">Detection covers sources that announce publications
-in a machine-readable feed (currently PCI SSC and ISO catalog pages). Accepting records an
-audit trail and writes a confirmed-version layer the catalog sync never overwrites.</p>
+in a machine-readable feed (currently PCI SSC and ISO catalog pages). A catalog edit always
+wins: changing a version in the catalog clears any auto-detected value for that standard.</p>
 {% endblock %}
