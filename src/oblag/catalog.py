@@ -274,7 +274,7 @@ CATALOG: list[dict] = [
         issuing_body="PCI SSC",
         jurisdiction="Global",
         canonical_url="https://www.pcisecuritystandards.org/document_library/",
-        current_version="6.2",
+        current_version="7.0",
         copyright_status=CopyrightStatus.copyrighted,
         display_policy=DisplayPolicy.ids_and_titles,
     ),
@@ -488,7 +488,7 @@ CATALOG: list[dict] = [
         issuing_body="HITRUST Alliance",
         jurisdiction="Global",
         canonical_url="https://hitrustalliance.net/hitrust-framework",
-        current_version="11.4",
+        current_version="11.8",
         copyright_status=CopyrightStatus.copyrighted,
         display_policy=DisplayPolicy.events_only,  # most restrictive licensing
     ),
