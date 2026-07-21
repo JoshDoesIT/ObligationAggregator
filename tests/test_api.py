@@ -141,13 +141,18 @@ def test_rfc_flavors_render_the_truthful_lifecycle(client, seeded, db):
     cur = _rfc_item(db, "pci-dss-401", "PCI SSC RFC: PCI DSS v4.0.1", "pci-dss")
     html = client.get(f"/items/{cur.id}").text
     assert "solicits feedback on the current version" in html
-    assert "remains in force" in html and "Revision published" in html
+    assert "remains in force" in html
+    # an RFC on the in-force version closes at the comment window; it does not itself
+    # become a published revision, so no "Revision published" node is shown
+    assert "Revision published" not in html
     assert "Final · pending effective" not in html
 
-    draft = _rfc_item(db, "pts-hsm-5", "PCI SSC RFC: PCI PTS HSM v5.0", "pci-pts-hsm")
+    draft = _rfc_item(db, "pin-4", "PCI SSC RFC: PCI PIN Security v4.0", "pci-pin")
     html = client.get(f"/items/{draft.id}").text
     assert "draft of the next" in html
-    assert "remains in force" in html and "(4.0)" in html
+    # a draft of the NEXT version does become the published revision (3.1 in force)
+    assert "remains in force" in html and "(3.1)" in html
+    assert "Revision published" in html
 
     first = _rfc_item(db, "kmo-1", "PCI SSC RFC: PCI KMO v1.0 Standard", "pci-kmo")
     html = client.get(f"/items/{first.id}").text

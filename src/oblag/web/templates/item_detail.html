@@ -43,9 +43,19 @@
       throughout the comment period — the feedback shapes a future revision.
     {% endif %}
   </div></div>
-  {% set rrank = {'proposed': -1, 'comment_open': 0, 'comment_closed': 1, 'final_pending_effective': 2, 'effective': 3} %}
+  {% if rflavor == 'current' %}
+    {# An RFC on the in-force version itself does NOT become a published revision — the
+       feedback informs a later draft, which gets its own RFC. So this lifecycle simply
+       closes when the comment window does; no "Revision published" node to overpromise.
+       (comment_closed → rank 2 marks both comment nodes done: the lifecycle is closed.) #}
+    {% set rrank = {'proposed': -1, 'comment_open': 0, 'comment_closed': 2} %}
+    {% set rstages = [('comment_open', 'Comment open'), ('comment_closed', 'Comment closed')] %}
+  {% else %}
+    {# A draft of the next version: after comments it becomes the published revision. #}
+    {% set rrank = {'proposed': -1, 'comment_open': 0, 'comment_closed': 1, 'final_pending_effective': 2, 'effective': 3} %}
+    {% set rstages = [('comment_open', 'Comment open'), ('comment_closed', 'Comment closed'), ('effective', 'Revision published')] %}
+  {% endif %}
   {% set rpos = rrank.get(item.state, 0) %}
-  {% set rstages = [('comment_open', 'Comment open'), ('comment_closed', 'Comment closed'), ('effective', 'Revision published')] %}
   <div class="steps">
     <div class="step done"><div class="node">✓</div>In force</div>
     {% for key, label in rstages %}
