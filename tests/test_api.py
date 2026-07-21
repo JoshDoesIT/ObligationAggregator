@@ -81,6 +81,31 @@ def _rfc_item(db, key: str, title: str, slug: str):
     return db.query(PipelineItem).filter_by(title=title).one()
 
 
+def test_boot_syncs_catalog_fields_into_existing_db(engine, db, monkeypatch):
+    """A database seeded before current_version existed must pick the values up on
+    boot — the old behavior (seed only when EMPTY) left live deployments stale."""
+    from sqlalchemy.orm import sessionmaker
+
+    import oblag.db.session as dbsession
+    from oblag.catalog import seed_obligations
+    from oblag.db.models import Obligation
+
+    seed_obligations(db)
+    db.query(Obligation).update({Obligation.current_version: None}, synchronize_session=False)
+    db.commit()
+
+    monkeypatch.setattr(dbsession, "_engine", engine)
+    monkeypatch.setattr(
+        dbsession, "_session_factory", sessionmaker(bind=engine, expire_on_commit=False)
+    )
+    from oblag.web.app import create_app
+
+    create_app()
+    db.expire_all()
+    assert db.query(Obligation).filter_by(slug="pci-dss").one().current_version == "4.0.1"
+    assert db.query(Obligation).filter_by(slug="pci-kmo").one().current_version is None
+
+
 def test_version_parts_normalization():
     from oblag.web.html import _version_parts
 
