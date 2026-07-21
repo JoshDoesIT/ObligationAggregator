@@ -102,6 +102,13 @@ def init_db(engine: Engine | None = None) -> None:
     if "current_version" not in ob_cols:
         with eng.begin() as conn:
             conn.execute(sql_text("ALTER TABLE obligation ADD COLUMN current_version VARCHAR(64)"))
+    # v0.5.0: obligation.confirmed_version — operator-confirmed advance from a
+    # publication signal (version_decision table is built fresh by create_all)
+    if "confirmed_version" not in ob_cols:
+        with eng.begin() as conn:
+            conn.execute(
+                sql_text("ALTER TABLE obligation ADD COLUMN confirmed_version VARCHAR(64)")
+            )
 
 
 @contextmanager

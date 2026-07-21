@@ -160,6 +160,7 @@
 <body>
 <a class="skip" href="#content">Skip to content</a>
 <header class="site">
+  {% set ctx = request.state.ctx if (request.state.ctx is defined) else none %}
   <a class="brand" href="/"><span class="logo">OA</span> ObligationAggregator</a>
   <nav class="site">
     {% set path = request.url.path %}
@@ -171,9 +172,10 @@
     <a href="/watchlists" class="{{ 'active' if path.startswith('/watchlists') }}">Watchlists</a>
     <a href="/byol" class="{{ 'active' if path.startswith('/byol') }}">Documents</a>
     <a href="/health" class="{{ 'active' if path.startswith('/health') }}">Sources</a>
+    {% if ctx and ctx.is_admin %}<a href="/admin/versions"
+       class="{{ 'active' if path.startswith('/admin/versions') }}">Versions</a>{% endif %}
     <a href="/docs" title="OpenAPI documentation">API</a>
   </nav>
-  {% set ctx = request.state.ctx if (request.state.ctx is defined) else none %}
   {% if ctx and ctx.auth_on %}
     {% if ctx.authed %}
     <div style="margin-left:auto; display:flex; align-items:center; gap:.6rem; font-size:.85rem">

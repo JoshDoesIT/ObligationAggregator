@@ -80,7 +80,10 @@ def item_to_dict(session: Session, item: PipelineItem, *, detail: bool = False) 
         "native_status": item.native_status,
         "url": item.url,
         "obligation": item.obligation.slug if item.obligation else None,
-        "obligation_current_version": item.obligation.current_version if item.obligation else None,
+        # the version treated as in force = newer of catalog baseline and confirmed advance
+        "obligation_current_version": item.obligation.effective_version
+        if item.obligation
+        else None,
         "resolved_change_id": item.resolved_change_id,
         "first_seen_at": item.first_seen_at.isoformat() if item.first_seen_at else None,
         "last_seen_at": item.last_seen_at.isoformat() if item.last_seen_at else None,

@@ -114,16 +114,23 @@ def test_boot_syncs_catalog_fields_into_existing_db(engine, db, monkeypatch):
     assert db.query(Obligation).filter_by(slug="pci-dss").one().current_version == "4.0.1"
 
 
-def test_version_parts_normalization():
-    from oblag.web.html import _version_parts
+def test_version_key_normalization():
+    from oblag.versions import is_newer, latest, version_key
 
-    assert _version_parts("PCI PTS HSM v5.0") == ("5",)
-    assert _version_parts("4.0") == _version_parts("v4")  # bare catalog value vs title token
-    assert _version_parts("PCI DSS v4.0.1") == _version_parts("4.0.1")
-    assert _version_parts("SP 800-53 Rev. 5.2.0") == ("5", "2")
-    assert _version_parts("Rev. 5") == ("5",)
-    assert _version_parts("ISO/IEC 27001 revision under development") is None
-    assert _version_parts(None) is None
+    assert version_key("PCI PTS HSM v5.0") == (5,)
+    assert version_key("4.0") == version_key("v4")  # bare catalog value vs title token
+    assert version_key("PCI DSS v4.0.1") == version_key("4.0.1")
+    assert version_key("SP 800-53 Rev. 5.2.0") == (5, 2)  # the Rev token, not "800"
+    assert version_key("Rev. 5") == (5,)
+    # a stray number in a title with no version lead-in is not a version
+    assert version_key("ISO/IEC 27001 revision under development") is None
+    assert version_key("no digits here") is None
+    assert version_key(None) is None
+    # forward-only comparison + latest
+    assert is_newer("5.0", "4.0") and not is_newer("4.0", "5.0")
+    assert is_newer("2.0", None) and not is_newer(None, "1.0")
+    assert latest("4.0", "5.0", None) == "5.0"
+    assert latest("2019", "2025") == "2025"
 
 
 def test_rfc_flavors_render_the_truthful_lifecycle(client, seeded, db):
