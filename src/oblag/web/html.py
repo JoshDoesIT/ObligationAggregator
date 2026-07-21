@@ -202,8 +202,31 @@ def _signal_kind(item: dict) -> str:
     return "Change signal"
 
 
+# Signal kinds that are MAINTENANCE of an already-published standard. A standards
+# body issues an RFC / revision / exposure draft / new version only for a document
+# it already publishes, so the current version stays in force throughout the comment
+# period — these never head toward a *first* effectiveness the way a bill or a
+# rulemaking does. Detached from `native_status` so it holds for every such source.
+_REVISION_SIGNAL_KINDS = {
+    "RFC",  # PCI SSC
+    "Standard revision",  # ISO
+    "Exposure draft",  # AICPA
+    "Version release",  # CIS, and any native "release"
+    "Draft standard",  # NIST CSRC drafts (of an existing SP)
+}
+
+
+def _revision_consultation(item: dict) -> bool:
+    """True when the item is a consultation/draft that REVISES a standard already in
+    our catalog. Requiring a known obligation keeps "the current version is in force"
+    a claim we can stand behind — a revision-kind signal with no cataloged standard
+    (e.g. a brand-new NIST draft) falls back to the ordinary proposed→effective track."""
+    return bool(item.get("obligation")) and _signal_kind(item) in _REVISION_SIGNAL_KINDS
+
+
 templates.env.filters.update(
     signal_kind=_signal_kind,
+    revision_consultation=_revision_consultation,
     human_event=_human_event,
     human_state=_human_state,
     human_date_type=_human_date_type,

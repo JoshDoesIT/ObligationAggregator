@@ -21,7 +21,29 @@
 {% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
 
 {% set mainline = ['proposed', 'comment_open', 'comment_closed', 'final_pending_effective', 'effective'] %}
-{% if item.state in mainline %}
+{% if item | revision_consultation %}
+  {# A revision consultation on an already-published standard: the current version stays
+     in force; the comment window feeds a future revision, not a first effectiveness. #}
+  <div class="panel"><div class="pad">
+    This is a <strong>{{ item | signal_kind }}</strong> on an already-published standard.
+    The current version{% if item.obligation %} of
+    <a href="/?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endif %}
+    <strong>remains in force</strong> throughout the comment period — the feedback shapes a
+    future revision and changes nothing until a revised version is published.
+  </div></div>
+  {% set rrank = {'proposed': -1, 'comment_open': 0, 'comment_closed': 1, 'final_pending_effective': 2, 'effective': 3} %}
+  {% set rpos = rrank.get(item.state, 0) %}
+  {% set rstages = [('comment_open', 'Comment open'), ('comment_closed', 'Comment closed'), ('effective', 'Revision published')] %}
+  <div class="steps">
+    <div class="step done"><div class="node">✓</div>In force</div>
+    {% for key, label in rstages %}
+    <div class="step {{ 'now' if loop.index0 == rpos else 'done' if loop.index0 < rpos }}">
+      <div class="node">{{ '✓' if loop.index0 < rpos else '●' }}</div>
+      {{ label }}
+    </div>
+    {% endfor %}
+  </div>
+{% elif item.state in mainline %}
   {% set pos = mainline.index(item.state) %}
   <div class="steps">
     {% for s in mainline %}
