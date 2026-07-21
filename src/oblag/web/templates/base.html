@@ -176,7 +176,7 @@
   {% if ctx and ctx.auth_on %}
     {% if ctx.authed %}
     <div style="margin-left:auto; display:flex; align-items:center; gap:.6rem; font-size:.85rem">
-      {% if ctx.org %}<span class="tag" title="active organization">{{ ctx.org.name }}</span>{% endif %}
+      {% if ctx.org %}<a href="/settings" title="organization settings"><span class="tag">{{ ctx.org.name }}</span></a>{% endif %}
       <span class="muted">{{ ctx.user_email }}</span>
       <form method="post" action="/auth/logout" style="display:inline">
         <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">

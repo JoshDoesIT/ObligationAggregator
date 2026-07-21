@@ -19,9 +19,19 @@ from email.message import EmailMessage
 from sqlalchemy.orm import Session
 
 from oblag.config import get_settings
-from oblag.db.models import LoginToken, Org, OrgMember, User, UserSession, utcnow
+from oblag.db.models import (
+    ApiKey,
+    Invite,
+    LoginToken,
+    Org,
+    OrgMember,
+    User,
+    UserSession,
+    utcnow,
+)
 
 SESSION_COOKIE = "oblag_session"
+API_KEY_PREFIX = "oblag_"
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -147,6 +157,11 @@ def destroy_session(session: Session, raw_token: str | None) -> None:
 # --- org membership ----------------------------------------------------------
 
 
+def member_role(session: Session, org_id: int, user_id: int) -> str | None:
+    row = session.query(OrgMember.role).filter_by(org_id=org_id, user_id=user_id).one_or_none()
+    return row[0] if row else None
+
+
 def user_orgs(session: Session, user_id: int) -> list[Org]:
     return (
         session.query(Org)
@@ -176,6 +191,95 @@ def _unique_slug(session: Session, name: str) -> str:
         slug = f"{base}-{n}"
         n += 1
     return slug
+
+
+# --- API keys (Phase 2) ------------------------------------------------------
+
+
+def create_api_key(session: Session, org: Org, name: str) -> tuple[ApiKey, str]:
+    """Create an org API key. Returns (row, RAW key) — the raw key is shown once."""
+    raw = API_KEY_PREFIX + secrets.token_urlsafe(32)
+    key = ApiKey(
+        org_id=org.id,
+        name=name.strip() or "api key",
+        prefix=raw[:12],
+        key_hash=_hash(raw),
+    )
+    session.add(key)
+    session.flush()
+    return key, raw
+
+
+def resolve_api_key(session: Session, raw: str | None) -> ApiKey | None:
+    """Active, non-revoked API key for a raw bearer token, or None."""
+    if not raw or not raw.startswith(API_KEY_PREFIX):
+        return None
+    key = session.query(ApiKey).filter_by(key_hash=_hash(raw)).one_or_none()
+    if key is None or key.revoked_at is not None:
+        return None
+    key.last_used_at = utcnow()
+    return key
+
+
+def revoke_api_key(session: Session, org: Org, key_id: int) -> bool:
+    key = session.get(ApiKey, key_id)
+    if key is None or key.org_id != org.id or key.revoked_at is not None:
+        return False
+    key.revoked_at = utcnow()
+    return True
+
+
+def within_rate_limit(session: Session, key: ApiKey) -> bool:
+    """Fixed-window per-minute limiter. Mutates the key's counter; returns False when
+    the window is exhausted."""
+    limit = get_settings().api_rate_limit_per_min
+    bucket = datetime.now(UTC).replace(second=0, microsecond=0)
+    start = key.rl_window_start
+    start = start.replace(tzinfo=UTC) if start is not None and start.tzinfo is None else start
+    if start is None or start != bucket:
+        key.rl_window_start = bucket
+        key.rl_count = 1
+        return True
+    key.rl_count += 1
+    return key.rl_count <= limit
+
+
+# --- org invites (Phase 2) ---------------------------------------------------
+
+
+def create_invite(session: Session, org: Org, email: str, role: str = "member") -> Invite:
+    addr = normalize_email(email)
+    inv = session.query(Invite).filter_by(org_id=org.id, email=addr).one_or_none()
+    if inv is None:
+        inv = Invite(org_id=org.id, email=addr, role=role if role in _ROLES else "member")
+        session.add(inv)
+        session.flush()
+    elif inv.accepted_at is None:
+        inv.role = role if role in _ROLES else inv.role
+    return inv
+
+
+def accept_pending_invites(session: Session, user: User) -> list[Org]:
+    """On login, turn any pending invites for the user's email into memberships."""
+    joined: list[Org] = []
+    invites = (
+        session.query(Invite).filter(Invite.email == user.email, Invite.accepted_at.is_(None)).all()
+    )
+    for inv in invites:
+        exists = (
+            session.query(OrgMember).filter_by(org_id=inv.org_id, user_id=user.id).one_or_none()
+        )
+        if exists is None:
+            session.add(OrgMember(org_id=inv.org_id, user_id=user.id, role=inv.role))
+        inv.accepted_at = utcnow()
+        org = session.get(Org, inv.org_id)
+        if org is not None:
+            joined.append(org)
+    session.flush()
+    return joined
+
+
+_ROLES = ("owner", "admin", "member")
 
 
 # --- email -------------------------------------------------------------------

@@ -173,3 +173,157 @@ def test_instance_admin_flag(ml):
     assert is_instance_admin("admin@oblag.test") is True
     assert is_instance_admin("ADMIN@OBLAG.TEST") is True
     assert is_instance_admin("random@x.test") is False
+
+
+# --- Phase 2: API keys, rate limiting, webhooks, invites ---------------------
+
+
+def _make_key(ml, client, name="ci"):
+    csrf = _csrf(client, "/settings")
+    r = client.post(
+        "/settings/api-keys", data={"name": name, "csrf_token": csrf}, follow_redirects=True
+    )
+    import re as _re
+
+    m = _re.search(r"won't be shown again:.*?<code[^>]*>([^<]+)</code>", r.text, _re.S)
+    assert m, "raw key not surfaced once"
+    return m.group(1).strip()
+
+
+def test_api_key_grants_org_scoped_access(ml):
+    from fastapi.testclient import TestClient
+
+    owner = _login_with_org(ml, "owner@keys.test", "KeysOrg")
+    raw = _make_key(ml, owner)
+    # a fresh client (no cookies) authenticates with the bearer key
+    api = TestClient(ml.app)
+    h = {"Authorization": f"Bearer {raw}"}
+    assert api.get("/api/v1/watchlists", headers=h).status_code == 200
+    made = api.post("/api/v1/watchlists", json={"name": "via-key", "channel": "rss"}, headers=h)
+    assert made.status_code == 201
+    # scoped to the owner's org — visible in the browser session too
+    assert "via-key" in owner.get("/api/v1/watchlists").text
+    # no key / bad key → 401
+    assert api.get("/api/v1/watchlists").status_code == 401
+    assert (
+        api.get("/api/v1/watchlists", headers={"Authorization": "Bearer oblag_nope"}).status_code
+        == 401
+    )
+
+
+def test_api_key_revocation(ml):
+    from fastapi.testclient import TestClient
+
+    owner = _login_with_org(ml, "o@rev.test", "RevOrg")
+    raw = _make_key(ml, owner)
+    api = TestClient(ml.app)
+    h = {"Authorization": f"Bearer {raw}"}
+    assert api.get("/api/v1/watchlists", headers=h).status_code == 200
+    # revoke via UI
+    page = owner.get("/settings").text
+    import re as _re
+
+    kid = _re.search(r"/settings/api-keys/(\d+)/revoke", page).group(1)
+    csrf = _csrf(owner, "/settings")
+    owner.post(f"/settings/api-keys/{kid}/revoke", data={"csrf_token": csrf})
+    assert api.get("/api/v1/watchlists", headers=h).status_code == 401
+
+
+def test_api_key_rate_limit(ml, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setenv("OBLAG_API_RATE_LIMIT_PER_MIN", "3")
+    from oblag.config import get_settings
+
+    get_settings.cache_clear()
+    owner = _login_with_org(ml, "o@rl.test", "RLOrg")
+    raw = _make_key(ml, owner)
+    api = TestClient(ml.app)
+    h = {"Authorization": f"Bearer {raw}"}
+    codes = [api.get("/api/v1/watchlists", headers=h).status_code for _ in range(5)]
+    assert codes[:3] == [200, 200, 200]
+    assert 429 in codes[3:]
+
+
+def test_webhook_ssrf_blocked_and_signed(ml, monkeypatch):
+    owner = _login_with_org(ml, "o@wh.test", "WHOrg")
+    # SSRF: internal/loopback targets rejected at creation
+    bad = owner.post(
+        "/api/v1/watchlists",
+        json={"name": "evil", "channel": "webhook", "target": "http://169.254.169.254/latest"},
+    )
+    assert bad.status_code == 422
+    localh = owner.post(
+        "/api/v1/watchlists",
+        json={"name": "evil2", "channel": "webhook", "target": "http://localhost:8000/x"},
+    )
+    assert localh.status_code == 422
+
+    # a public target is accepted and gets a signing secret; delivery signs the body
+    import oblag.netguard as ng
+
+    monkeypatch.setattr(ng, "assert_safe_url", lambda url: None)  # allow example.com in test
+    ok = owner.post(
+        "/api/v1/watchlists",
+        json={"name": "good", "channel": "webhook", "target": "https://hooks.example.com/x"},
+    )
+    assert ok.status_code == 201
+
+    from oblag.db.models import Event, EventType, Watchlist
+    from oblag.db.session import session_scope
+    from oblag.notify import _deliver_webhook
+
+    captured = {}
+
+    def fake_post(url, content, headers, timeout, follow_redirects):
+        captured["headers"] = headers
+        captured["body"] = content
+
+        class R:
+            def raise_for_status(self):
+                return None
+
+        return R()
+
+    import oblag.notify as notif
+
+    monkeypatch.setattr(notif.httpx, "post", fake_post)
+    with session_scope() as db:
+        wl = db.query(Watchlist).filter_by(name="good").one()
+        ev = Event(type=EventType.item_created, payload={})
+        db.add(ev)
+        db.flush()
+        _deliver_webhook(wl, [(ev, None)])
+    assert captured["headers"]["X-Oblag-Signature"].startswith("sha256=")
+
+
+def test_org_invite_auto_accepts_on_login(ml):
+    owner = _login_with_org(ml, "boss@inv.test", "InvOrg")
+    csrf = _csrf(owner, "/settings")
+    owner.post(
+        "/settings/invites",
+        data={"email": "teammate@inv.test", "role": "admin", "csrf_token": csrf},
+    )
+    # invited teammate signs in → joins InvOrg, skips onboarding
+    mate = _login(ml, "teammate@inv.test")
+    page = mate.get("/watchlists")
+    assert page.status_code == 200 and "InvOrg" in page.text
+    # they can see the org's watchlists namespace (empty but authorized, not 401)
+    assert mate.get("/api/v1/watchlists").status_code == 200
+
+
+def test_members_only_admin_manages_keys(ml):
+    owner = _login_with_org(ml, "owner2@role.test", "RoleOrg")
+    csrf = _csrf(owner, "/settings")
+    owner.post(
+        "/settings/invites",
+        data={"email": "member@role.test", "role": "member", "csrf_token": csrf},
+    )
+    member = _login(ml, "member@role.test")
+    # member sees settings read-only: no create-key form
+    page = member.get("/settings").text
+    assert "Create API key" not in page
+    # and a forced POST is a no-op (redirect, no key created)
+    csrf2 = _csrf(member, "/settings")
+    member.post("/settings/api-keys", data={"name": "x", "csrf_token": csrf2})
+    assert "won't be shown again" not in member.get("/settings").text

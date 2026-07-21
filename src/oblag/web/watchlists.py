@@ -70,13 +70,23 @@ def create_watchlist(
     if body.channel in ("email", "webhook") and not body.target:
         raise HTTPException(422, f"{body.channel} watchlists require a target")
     target = body.target
+    signing_secret = None
     if body.channel == "rss":
         target = secrets.token_urlsafe(16)  # unguessable pull token
+    elif body.channel == "webhook":
+        from oblag.netguard import UnsafeUrlError, assert_safe_url
+
+        try:
+            assert_safe_url(body.target or "")
+        except UnsafeUrlError as exc:
+            raise HTTPException(422, str(exc)) from None
+        signing_secret = secrets.token_hex(32)  # HMAC key for X-Oblag-Signature
     wl = Watchlist(
         org_id=org.id,
         name=body.name,
         channel=body.channel,
         target=target,
+        signing_secret=signing_secret,
         filters=body.filters.model_dump(),
         active=True,
     )

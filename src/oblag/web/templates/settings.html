@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Settings — ObligationAggregator{% endblock %}
+{% block content %}
+<h2 class="page">Organization settings</h2>
+<p class="lede">Manage API keys, teammates and invites for <strong>{{ ctx.org.name }}</strong>.
+{% if not ctx.can_admin_org %}You have read-only access — ask an owner or admin to make changes.{% endif %}</p>
+
+{% if new_key %}
+<div class="panel"><div class="pad" style="border-left:3px solid var(--ok)">
+  <strong>New API key — copy it now, it won't be shown again:</strong>
+  <div style="margin-top:.5rem"><code style="font-size:.95em; user-select:all">{{ new_key }}</code></div>
+  <p class="muted" style="font-size:.82rem; margin:.5rem 0 0">Use it as a bearer token:
+    <code>Authorization: Bearer {{ new_key[:12] }}…</code> against <code>/api/v1/…</code></p>
+</div></div>
+{% endif %}
+
+<div class="panel">
+  <h3>API keys</h3>
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Name</th><th>Prefix</th><th>Created</th><th>Last used</th><th></th></tr></thead>
+    <tbody>
+    {% for k in keys %}
+    <tr>
+      <td><strong>{{ k.name }}</strong></td>
+      <td><code>{{ k.prefix }}…</code></td>
+      <td class="muted">{{ k.created_at.strftime('%Y-%m-%d') if k.created_at }}</td>
+      <td class="muted">{{ k.last_used_at.strftime('%Y-%m-%d') if k.last_used_at else 'never' }}</td>
+      <td>{% if ctx.can_admin_org %}
+        <form method="post" action="/settings/api-keys/{{ k.id }}/revoke" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+          <button class="quiet">Revoke</button>
+        </form>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="muted">No API keys yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if ctx.can_admin_org %}
+  <div class="pad" style="border-top:1px solid var(--line2)">
+    <form method="post" action="/settings/api-keys" class="filters" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+      <input name="name" placeholder="Key name (e.g. “CI pipeline”)" required>
+      <button>Create API key</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h3>Team</h3>
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>Member</th><th>Role</th></tr></thead>
+    <tbody>
+    {% for m in members %}
+    <tr><td>{{ m.email }}</td><td><span class="tag">{{ m.role }}</span></td></tr>
+    {% endfor %}
+    {% for i in invites %}
+    <tr><td>{{ i.email }} <span class="muted" style="font-size:.8rem">(invited)</span></td>
+        <td><span class="tag">{{ i.role }}</span></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if ctx.can_admin_org %}
+  <div class="pad" style="border-top:1px solid var(--line2)">
+    <form method="post" action="/settings/invites" class="filters" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
+      <input name="email" type="email" placeholder="teammate@company.com" required>
+      <select name="role"><option value="member">member</option><option value="admin">admin</option></select>
+      <button>Send invite</button>
+    </form>
+    <p class="muted" style="font-size:.82rem; margin:.5rem 0 0">Invited teammates join
+    automatically the first time they sign in with that email.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

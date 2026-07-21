@@ -83,6 +83,10 @@ def init_db(engine: Engine | None = None) -> None:
     if "org_id" not in wl_cols:
         with eng.begin() as conn:
             conn.execute(sql_text("ALTER TABLE watchlist ADD COLUMN org_id INTEGER"))
+    # v0.3.0 (spec 07 Phase 2): watchlist.signing_secret for webhook HMAC
+    if "signing_secret" not in wl_cols:
+        with eng.begin() as conn:
+            conn.execute(sql_text("ALTER TABLE watchlist ADD COLUMN signing_secret VARCHAR(64)"))
 
 
 @contextmanager

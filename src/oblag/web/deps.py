@@ -34,10 +34,16 @@ class Context:
     csrf_token: str
     raw_session: str | None
     auth_on: bool = False
+    role: str | None = None  # the user's role in the active org (owner|admin|member)
 
     @property
     def authed(self) -> bool:
         return self.user is not None
+
+    @property
+    def can_admin_org(self) -> bool:
+        """Manage keys, invites, members — org owners/admins (or instance admins)."""
+        return self.is_admin or self.role in ("owner", "admin")
 
     @property
     def user_email(self) -> str | None:
@@ -51,6 +57,23 @@ def get_context(request: Request, db: Session = Depends(get_db)) -> Context:
             user=None, org=org, is_admin=True, csrf_token="", raw_session=None, auth_on=False
         )
     else:
+        bearer = request.headers.get("authorization", "")
+        raw_key = bearer[7:] if bearer.lower().startswith("bearer ") else ""
+        key = auth.resolve_api_key(db, raw_key) if raw_key else None
+        if key is not None:
+            if not auth.within_rate_limit(db, key):
+                raise HTTPException(429, "rate limit exceeded")
+            key_org = db.get(Org, key.org_id)
+            ctx = Context(
+                user=None,
+                org=key_org,
+                is_admin=False,
+                csrf_token="",
+                raw_session=None,
+                auth_on=True,
+            )
+            request.state.ctx = ctx
+            return ctx
         raw = request.cookies.get(auth.SESSION_COOKIE)
         sess = auth.resolve_session(db, raw)
         if sess is None:
@@ -60,6 +83,11 @@ def get_context(request: Request, db: Session = Depends(get_db)) -> Context:
         else:
             user = db.get(User, sess.user_id)
             active_org = db.get(Org, sess.org_id) if sess.org_id else None
+            role = (
+                auth.member_role(db, active_org.id, user.id)
+                if active_org is not None and user is not None
+                else None
+            )
             ctx = Context(
                 user=user,
                 org=active_org,
@@ -67,6 +95,7 @@ def get_context(request: Request, db: Session = Depends(get_db)) -> Context:
                 csrf_token=sess.csrf_token,
                 raw_session=raw,
                 auth_on=True,
+                role=role,
             )
     request.state.ctx = ctx  # base.html reads this for the nav
     return ctx

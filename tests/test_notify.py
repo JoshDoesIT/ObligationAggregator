@@ -12,6 +12,15 @@ from oblag.db.models import Confidence, DateType, NotificationLog, Watchlist
 from oblag.notify import dispatch_pending
 
 
+@pytest.fixture(autouse=True)
+def _allow_example_webhooks(monkeypatch):
+    # these tests mock the HTTP layer with respx; the SSRF guard's real DNS lookup of
+    # example.com is not what's under test here, so neutralize it.
+    import oblag.netguard as ng
+
+    monkeypatch.setattr(ng, "assert_safe_url", lambda url: None)
+
+
 @pytest.fixture()
 def circia_item(db):
     res = reduce_item(

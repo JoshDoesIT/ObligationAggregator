@@ -62,6 +62,9 @@ def _event_summary(event: Event, item: PipelineItem | None) -> str:
 def _deliver_webhook(watchlist: Watchlist, events: list[tuple[Event, PipelineItem | None]]) -> None:
     if not watchlist.target:
         raise ValueError("webhook watchlist has no target URL")
+    from oblag.netguard import assert_safe_url
+
+    assert_safe_url(watchlist.target)  # re-check at delivery time (DNS rebinding)
     base = get_settings().base_url.rstrip("/")
     payload = {
         "watchlist": watchlist.name,
@@ -84,11 +87,22 @@ def _deliver_webhook(watchlist: Watchlist, events: list[tuple[Event, PipelineIte
             for ev, item in events
         ],
     }
+    body = json.dumps(payload)
+    headers = {"Content-Type": "application/json"}
+    if watchlist.signing_secret:
+        import hashlib
+        import hmac
+
+        digest = hmac.new(
+            watchlist.signing_secret.encode(), body.encode(), hashlib.sha256
+        ).hexdigest()
+        headers["X-Oblag-Signature"] = f"sha256={digest}"
     resp = httpx.post(
         watchlist.target,
-        content=json.dumps(payload),
-        headers={"Content-Type": "application/json"},
+        content=body,
+        headers=headers,
         timeout=15.0,
+        follow_redirects=False,  # a 302 to an internal host would defeat the SSRF guard
     )
     resp.raise_for_status()
 
