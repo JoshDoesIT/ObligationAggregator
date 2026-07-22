@@ -158,19 +158,56 @@ def test_eba_disabled_without_browser(monkeypatch):
 # --- NERC ---
 
 
-def test_nerc_projects_extracted(db):
-    items = _normalize(NercAdapter(), "nerc", "under_development.html")
-    numbers = {i.external_key[1] for i in items}
-    assert {"2025-03", "2025-04"} <= numbers
-    assert all(i.obligation_slug == "nerc-cip" for i in items)
-    res = reduce_item(db, items[0], today=date(2026, 7, 18))
-    assert res.item.state is ItemState.proposed
+def test_nerc_listing_selects_recent_cyber_projects_only():
+    """Project selection: CIP/cyber slugs only, 2020+ only — never the webinar prose
+    that fabricated 'Project 2025-03: and Project 2025-04' titles (observed live)."""
+    from oblag.adapters.nerc import _cyber_projects
+
+    listing = load_fixture("nerc", "listing.html").decode()
+    numbers = [n for n, _ in _cyber_projects(listing)]
+    assert numbers == ["2022-05", "2023-03", "2023-09", "2025-06"]
+    # excluded: 2025-03 (Order 901 studies — not cyber), 2026-02 (computational
+    # loads), 2008-06 (cyber but long-completed, below the year floor)
+
+
+def test_nerc_project_page_normalize_and_state(db):
+    raw = RawDocument(
+        url="https://www.nerc.com/standards/reliability-standards-under-development/2022-05-modifications-to-cip-008-reporting-threshold",
+        content=load_fixture("nerc", "project_page.html"),
+        meta={
+            "kind": "project",
+            "slug": "2022-05-modifications-to-cip-008-reporting-threshold",
+            "number": "2022-05",
+        },
+    )
+    (item,) = NercAdapter().normalize(raw)
+    assert item.title == "NERC Project 2022-05: Modifications to CIP-008 reporting threshold"
+    assert item.native_status == "45-day formal comment period with initial ballot"
+    assert item.obligation_slug == "nerc-cip"
+    res = reduce_item(db, item, today=date(2026, 7, 22))
+    assert res.item.state is ItemState.comment_open
+
+
+def test_nerc_statemap_status_texts():
+    from oblag.core.statemap import nerc_statemap
+
+    cases = {
+        "Board adopted and filed with FERC": ItemState.final_pending_effective,
+        "45-day formal comment period with initial ballot": ItemState.comment_open,
+        "Final ballot": ItemState.comment_closed,
+        "Drafting team formation": ItemState.proposed,
+    }
+    for text, want in cases.items():
+        assert nerc_statemap(text, {}, {}, date(2026, 7, 22)) is want, text
 
 
 def test_nerc_restructured_page_is_anomaly_not_silence():
-    (sentinel,) = list(
-        NercAdapter().normalize(RawDocument(url="https://t", content=b"<html>nothing</html>"))
+    raw = RawDocument(
+        url="https://t",
+        content=b"<html>nothing</html>",
+        meta={"kind": "listing", "projects_found": "0"},
     )
+    (sentinel,) = list(NercAdapter().normalize(raw))
     assert sentinel.anomalies
 
 

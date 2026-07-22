@@ -165,13 +165,41 @@ def cis_statemap(
 def nerc_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
 ) -> ItemState | None:
-    return ItemState.proposed if native_status == "under_development" else None
+    """Project-page status text → state. NERC's development flow: drafting/SAR →
+    comment periods (+ concurrent ballots) → board adoption → FERC filing/approval."""
+    s = native_status.lower()
+    if not s:
+        return None
+    if s == "unknown":
+        # status block missing/restructured — the project IS under development
+        # (that's the listing's premise); an anomaly already flagged the parse
+        return ItemState.proposed
+    if "board adopted" in s or "filed with ferc" in s:
+        # adopted; effectiveness awaits FERC approval + the standard's effective date,
+        # which the status text does not carry
+        return ItemState.final_pending_effective
+    if "comment" in s and ("concluded" in s or "closed" in s or "ended" in s):
+        return ItemState.comment_closed
+    if "comment" in s and ("open" in s or "period" in s):
+        return ItemState.comment_open
+    if "ballot" in s:
+        return ItemState.comment_closed
+    return ItemState.proposed  # drafting, SAR development, team formation, …
 
 
 @register_statemap("have_your_say")
 def have_your_say_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
 ) -> ItemState | None:
+    # The portal never closes out initiatives whose proposals became law (observed
+    # live: the 2022 CRA consultation still reports ADOPTION_WORKFLOW two years after
+    # Regulation 2024/2847 entered force). A curated `adopted` assertion records the
+    # outcome; once present, the consultation's lifecycle is complete. Any label
+    # counts — curated adoptions are labeled with the resulting act ("Regulation (EU)
+    # 2024/2847"), which the unlabeled-only _get helper would miss.
+    adopted = next((v for (dt, _label), v in dates.items() if dt is DateType.adopted), None)
+    if adopted is not None and adopted <= today:
+        return ItemState.effective
     cc = _get(dates, DateType.comment_close)
     if cc is None:
         return ItemState.proposed

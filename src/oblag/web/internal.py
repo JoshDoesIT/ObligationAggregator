@@ -65,7 +65,7 @@ def purge_items(ids: str, request: Request, db: Session = Depends(get_db)):
     and events) so the next ingestion run re-creates them cleanly. Built for the
     umbrella-join-key merge corruption; usable for any bad-data repair."""
     _authorize(request)
-    from oblag.db.models import Event, JoinKey, KeyDate, NotificationLog, PipelineItem
+    from oblag.maintenance import purge_items as _purge
 
     try:
         item_ids = sorted({int(x) for x in ids.split(",") if x.strip()})
@@ -73,35 +73,11 @@ def purge_items(ids: str, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(422, "ids must be a comma-separated list of integers") from exc
     if not item_ids:
         raise HTTPException(422, "no ids given")
-    found = [i for (i,) in db.query(PipelineItem.id).filter(PipelineItem.id.in_(item_ids)).all()]
-    event_ids = [e for (e,) in db.query(Event.id).filter(Event.pipeline_item_id.in_(found)).all()]
-    deleted_notifications = 0
-    if event_ids:
-        deleted_notifications = (
-            db.query(NotificationLog)
-            .filter(NotificationLog.event_id.in_(event_ids))
-            .delete(synchronize_session=False)
-        )
-    deleted_events = (
-        db.query(Event).filter(Event.pipeline_item_id.in_(found)).delete(synchronize_session=False)
-    )
-    db.query(KeyDate).filter(KeyDate.pipeline_item_id.in_(found)).delete(synchronize_session=False)
-    db.query(JoinKey).filter(JoinKey.pipeline_item_id.in_(found)).delete(synchronize_session=False)
-    # unlink survivors pointing at purged items before the rows disappear
-    db.query(PipelineItem).filter(PipelineItem.resolved_change_id.in_(found)).update(
-        {PipelineItem.resolved_change_id: None}, synchronize_session=False
-    )
-    deleted_items = (
-        db.query(PipelineItem).filter(PipelineItem.id.in_(found)).delete(synchronize_session=False)
-    )
+    result = _purge(db, item_ids)
     db.commit()
-    return {
-        "purged_items": found,
-        "not_found": sorted(set(item_ids) - set(found)),
-        "deleted_events": deleted_events,
-        "deleted_notifications": deleted_notifications,
-        "deleted_item_rows": deleted_items,
-    }
+    found = result["purged_items"]
+    assert isinstance(found, list)
+    return {**result, "not_found": sorted(set(item_ids) - set(found))}
 
 
 @router.get("/seed")

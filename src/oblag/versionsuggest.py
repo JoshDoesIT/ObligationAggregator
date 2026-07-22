@@ -25,6 +25,8 @@ def _published_version(item: PipelineItem) -> str | None:
     meta = item.native_meta or {}
     if item.source_system == "pci_ssc" and item.native_status == "publication":
         return meta.get("published_version")
+    if item.source_system == "hitrust" and item.native_status == "release":
+        return meta.get("published_version")
     if item.source_system == "iso_catalog" and item.state == ItemState.effective:
         # an ISO edition's version IS its publication year
         m = re.match(r"(\d{4})", meta.get("publication_date") or "")

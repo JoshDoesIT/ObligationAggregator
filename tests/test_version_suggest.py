@@ -368,6 +368,90 @@ def test_closed_current_version_consultation_uses_past_tense(client, db):
     assert "solicits feedback" not in html
 
 
+def test_hys_adopted_assertion_completes_consultation_lifecycle(db):
+    """The EU portal never closes initiatives whose proposals became law (the 2022 CRA
+    consultation still reports ADOPTION_WORKFLOW). A curated `adopted` date completes
+    the lifecycle on the next re-reduce."""
+    from oblag.core.assertions import assert_date
+    from oblag.db.models import PipelineItem
+
+    seed_obligations(db)
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="have_your_say",
+            external_key=("hys_initiative", "13410"),
+            jurisdiction="EU",
+            title="Cyber Resilience Act",
+            native_status="ADOPTION_WORKFLOW",
+            track="proposed",
+            obligation_slug="eu-cra",
+            dates=[
+                NormalizedDate(DateType.comment_open, date(2022, 9, 19), Confidence.published_firm),
+                NormalizedDate(
+                    DateType.comment_close, date(2023, 1, 23), Confidence.published_firm
+                ),
+            ],
+        ),
+    )
+    db.commit()
+    item = db.query(PipelineItem).filter_by(title="Cyber Resilience Act").one()
+    assert item.state == ItemState.comment_closed
+
+    assert_date(
+        db,
+        item.id,
+        DateType.adopted,
+        date(2024, 10, 23),
+        Confidence.published_firm,
+        label="Regulation (EU) 2024/2847",
+        note="audit: act adopted; portal never closes the initiative",
+    )
+    db.commit()
+    # the next feed re-read re-reduces the item; the adopted date completes it
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="have_your_say",
+            external_key=("hys_initiative", "13410"),
+            jurisdiction="EU",
+            title="Cyber Resilience Act",
+            native_status="ADOPTION_WORKFLOW",
+            track="proposed",
+            obligation_slug="eu-cra",
+        ),
+    )
+    db.expire_all()
+    assert db.query(PipelineItem).filter_by(title="Cyber Resilience Act").one().state == (
+        ItemState.effective
+    )
+
+
+def test_boot_purges_known_bad_items(db):
+    from oblag.db.models import Event, PipelineItem
+    from oblag.maintenance import purge_known_bad
+
+    seed_obligations(db)
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="nerc",
+            external_key=("nerc_project", "2025-04"),
+            jurisdiction="US-Federal",
+            title="NERC Project 2025-04: Breakout Session",
+            native_status="under_development",
+            track="proposed",
+            obligation_slug="nerc-cip",
+        ),
+    )
+    db.commit()
+    assert purge_known_bad(db) == 1
+    db.commit()
+    assert db.query(PipelineItem).filter_by(source_system="nerc").count() == 0
+    assert db.query(Event).count() == 0
+    assert purge_known_bad(db) == 0  # idempotent
+
+
 def test_admin_versions_page_shows_audit_log(client, db):
     seed_obligations(db)
     db.query(Obligation).filter_by(slug="pci-pts-hsm").update({Obligation.current_version: "4.0"})
