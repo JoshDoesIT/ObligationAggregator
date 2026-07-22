@@ -23,8 +23,29 @@
 {% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
 
 {% set mainline = ['proposed', 'comment_open', 'comment_closed', 'final_pending_effective', 'effective'] %}
+{% set rstatus = item | release_status %}
 {% set rflavor = item | revision_flavor %}
-{% if rflavor %}
+{% if rstatus %}
+  {# A published release/edition (or an advisory) about a cataloged standard: state the
+     fact of where that version stands today — no comment-window stepper, because these
+     items never were consultations. #}
+  <div class="panel"><div class="pad">
+    {% set oblink %}<a href="/?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
+    {% set cur = item.obligation_current_version %}
+    {% if rstatus == 'informational' %}
+      This is an <strong>advisory</strong> from the issuing body — informational, not a
+      lifecycle change to {{ 'the standard itself' if not item.obligation else oblink }}.
+    {% elif rstatus == 'current' %}
+      This announces the <strong>current version</strong> of {{ oblink }} — published and
+      <strong>in force</strong> ({{ cur }}).
+    {% elif rstatus == 'superseded' %}
+      This release has since been <strong>superseded</strong> — the current version of
+      {{ oblink }} is <strong>{{ cur }}</strong>.
+    {% else %}
+      {{ oblink }} is published; the current version in force is <strong>{{ cur }}</strong>.
+    {% endif %}
+  </div></div>
+{% elif rflavor %}
   {# Standards maintenance on a published standard: the current version stays in force;
      the comment window feeds a future revision, not a first effectiveness. The flavor
      says WHAT is under review — the in-force version itself, or a draft of the next. #}

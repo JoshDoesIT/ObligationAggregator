@@ -171,6 +171,188 @@ def test_confirmed_version_untouched_when_baseline_matches(engine, db, monkeypat
     assert db.query(Obligation).filter_by(slug="pci-mpoc").one().confirmed_version == "1.2"
 
 
+def test_flagged_newest_does_not_block_plausible_advance(db):
+    """A mis-parse (v12.0, flagged) must not shadow the real advance (v5.0) behind it."""
+    seed_obligations(db)
+    db.query(Obligation).filter_by(slug="pci-pts-hsm").update({Obligation.current_version: "4.0"})
+    db.commit()
+    _publish(db, "pci-pts-hsm", "PCI SSC Publishes PCI PTS HSM v12.0", "12.0")
+    _publish(db, "pci-pts-hsm", "PCI SSC Publishes PCI PTS HSM v5.0", "5.0")
+
+    actions = {(a["version"], a["applied"]) for a in versionsuggest.auto_apply(db)}
+    assert actions == {("12.0", False), ("5.0", True)}
+    assert db.query(Obligation).filter_by(slug="pci-pts-hsm").one().effective_version == "5.0"
+
+
+def test_supporting_document_posts_are_not_publications():
+    """SAQ/AOC/translation posts name a standard + version without BEING one."""
+    rss = b"""<?xml version="1.0"?><rss><channel>
+    <item><title>Just Published: PCI DSS v4.0.1 SAQ A</title>
+      <link>https://x/saq</link><pubDate>Mon, 01 Jul 2024 00:00:00 GMT</pubDate></item>
+    <item><title>PCI DSS v4.0 Summary of Changes now available</title>
+      <link>https://x/soc</link><pubDate>Mon, 01 Jul 2024 00:00:00 GMT</pubDate></item>
+    <item><title>PCI DSS v4.0 Now Available in Spanish</title>
+      <link>https://x/es</link><pubDate>Mon, 01 Jul 2024 00:00:00 GMT</pubDate></item>
+    </channel></rss>"""
+    assert list(PciSscAdapter().normalize(RawDocument(url="https://t", content=rss))) == []
+
+
+def _rfc(db, slug: str, title: str, opened: date, closed: date):
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="pci_ssc",
+            external_key=("pci_doc", title.lower().replace(" ", "-")),
+            jurisdiction="Global",
+            title=title,
+            native_status="rfc",
+            track="proposed",
+            obligation_slug=slug,
+            dates=[
+                NormalizedDate(DateType.comment_open, opened, Confidence.published_firm),
+                NormalizedDate(DateType.comment_close, closed, Confidence.published_firm),
+            ],
+        ),
+    )
+    db.commit()
+
+
+def test_publication_resolves_the_consultation_that_drafted_it(db):
+    """Once v5.0 is published, the 'PTS HSM v5.0' RFC has concluded → superseded,
+    linked to the publication item. But an RFC ON the current version (subject equals
+    a version published BEFORE the RFC opened) is never claimed as resolved."""
+    from oblag.db.models import PipelineItem
+
+    seed_obligations(db)
+    db.query(Obligation).filter_by(slug="pci-pts-hsm").update({Obligation.current_version: "4.0"})
+    db.query(Obligation).filter_by(slug="pci-dss").update({Obligation.current_version: "4.0.1"})
+    db.commit()
+
+    # draft RFC (Oct–Dec 2025), then the version publishes May 2026 → resolved
+    _rfc(db, "pci-pts-hsm", "PCI SSC RFC: PCI PTS HSM v5.0", date(2025, 10, 30), date(2025, 12, 15))
+    _publish(db, "pci-pts-hsm", "PCI SSC Publishes PCI PTS HSM v5.0", "5.0")  # eff 2026-05-18
+
+    # feedback-on-current RFC (June 2026) on v4.0.1, which published back in 2024
+    _rfc(db, "pci-dss", "PCI SSC RFC: PCI DSS v4.0.1", date(2026, 6, 3), date(2026, 7, 20))
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="pci_ssc",
+            external_key=("pci_pub", "pci-dss-4.0.1"),
+            jurisdiction="Global",
+            title="Just Published PCI DSS v4.0.1",
+            native_status="publication",
+            track="final",
+            obligation_slug="pci-dss",
+            dates=[
+                NormalizedDate(DateType.effective, date(2024, 6, 11), Confidence.published_firm)
+            ],
+            native_meta={"published_version": "4.0.1"},
+        ),
+    )
+    db.commit()
+
+    versionsuggest.resolve_concluded_consultations(db)
+    db.commit()
+
+    hsm_rfc = db.query(PipelineItem).filter_by(title="PCI SSC RFC: PCI PTS HSM v5.0").one()
+    assert hsm_rfc.state == ItemState.superseded
+    assert hsm_rfc.resolved_change_id is not None
+    dss_rfc = db.query(PipelineItem).filter_by(title="PCI SSC RFC: PCI DSS v4.0.1").one()
+    assert dss_rfc.state != ItemState.superseded  # older publication is not its outcome
+    assert dss_rfc.resolved_change_id is None
+
+
+def test_superseded_item_reingest_is_noop_not_anomaly(db):
+    """The RFC post stays in the blog feed for months after resolution; re-reducing it
+    must not spam illegal-transition anomalies."""
+    from oblag.db.models import Event, EventType, PipelineItem
+
+    seed_obligations(db)
+    db.query(Obligation).filter_by(slug="pci-pts-hsm").update({Obligation.current_version: "4.0"})
+    db.commit()
+    _rfc(db, "pci-pts-hsm", "PCI SSC RFC: PCI PTS HSM v5.0", date(2025, 10, 30), date(2025, 12, 15))
+    _publish(db, "pci-pts-hsm", "PCI SSC Publishes PCI PTS HSM v5.0", "5.0")
+    versionsuggest.resolve_concluded_consultations(db)
+    db.commit()
+
+    before = db.query(Event).filter_by(type=EventType.anomaly).count()
+    # same RFC arrives again from the still-live feed
+    _rfc(db, "pci-pts-hsm", "PCI SSC RFC: PCI PTS HSM v5.0", date(2025, 10, 30), date(2025, 12, 15))
+    assert db.query(Event).filter_by(type=EventType.anomaly).count() == before
+    item = db.query(PipelineItem).filter_by(title="PCI SSC RFC: PCI PTS HSM v5.0").one()
+    assert item.state == ItemState.superseded  # resolution sticks
+
+
+def test_release_items_get_factual_banners_not_consultation_wording(client, db):
+    """Effective release items must state where the version stands — never 'draft of
+    the next version' (live bug: HITRUST CSF v11.4.0 with 11.8 in force)."""
+    seed_obligations(db)  # hitrust-csf ships with current_version 11.8
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="hitrust",
+            external_key=("hitrust_url", "csf-v11-4-launch"),
+            jurisdiction="Global",
+            title="HITRUST CSF v11.4.0",
+            native_status="release",
+            track="default",
+            obligation_slug="hitrust-csf",
+        ),
+    )
+    db.commit()
+    from oblag.db.models import PipelineItem
+
+    old = db.query(PipelineItem).filter_by(title="HITRUST CSF v11.4.0").one()
+    assert old.state == ItemState.effective
+    html = client.get(f"/items/{old.id}").text
+    assert "superseded" in html and "11.8" in html
+    assert "draft of the next" not in html and "solicits feedback" not in html
+    assert "Comment open" not in html  # no fabricated comment lifecycle
+
+    # a release OF the current version reads as current, not superseded
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="hitrust",
+            external_key=("hitrust_url", "csf-v11-8-launch"),
+            jurisdiction="Global",
+            title="HITRUST CSF v11.8.0",
+            native_status="release",
+            track="default",
+            obligation_slug="hitrust-csf",
+        ),
+    )
+    db.commit()
+    cur = db.query(PipelineItem).filter_by(title="HITRUST CSF v11.8.0").one()
+    html = client.get(f"/items/{cur.id}").text
+    assert "current version" in html and "in force" in html
+    assert "superseded" not in html
+
+
+def test_advisory_items_are_informational_without_lifecycle_claims(client, db):
+    seed_obligations(db)
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="hitrust",
+            external_key=("hitrust_url", "haa-2026-002"),
+            jurisdiction="Global",
+            title="HITRUST advisory HAA-2026-002",
+            native_status="advisory",
+            track="default",
+            obligation_slug="hitrust-csf",
+        ),
+    )
+    db.commit()
+    from oblag.db.models import PipelineItem
+
+    adv = db.query(PipelineItem).filter_by(title="HITRUST advisory HAA-2026-002").one()
+    html = client.get(f"/items/{adv.id}").text
+    assert "advisory" in html and "informational" in html
+    assert "Comment open" not in html and "remains in force" not in html
+
+
 def test_admin_versions_page_shows_audit_log(client, db):
     seed_obligations(db)
     db.query(Obligation).filter_by(slug="pci-pts-hsm").update({Obligation.current_version: "4.0"})
