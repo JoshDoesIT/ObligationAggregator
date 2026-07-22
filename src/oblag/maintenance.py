@@ -53,6 +53,42 @@ KNOWN_BAD_ITEMS: list[tuple[str, str]] = [
 ]
 
 
+def complete_concluded_consultations(db: Session) -> int:
+    """Flip comment_closed consultations with a recorded (past) `adopted` date to
+    effective. The statemap does this on re-reduce, but re-reduction only happens when
+    the source feed still lists the item — old initiatives may never re-appear, so a
+    curated adoption could otherwise leave the state stale forever. Idempotent."""
+    from datetime import date as _date
+
+    from oblag.core.reducer import current_dates
+    from oblag.db.models import DateType, Event, EventType, ItemState
+
+    flipped = 0
+    candidates = db.query(PipelineItem).filter(PipelineItem.state == ItemState.comment_closed)
+    for item in candidates.all():
+        adopted = next(
+            (
+                kd.value
+                for (dt, _label), kd in current_dates(db, item.id).items()
+                if dt is DateType.adopted
+            ),
+            None,
+        )
+        if adopted is None or adopted > _date.today():
+            continue
+        item.state = ItemState.effective
+        db.add(
+            Event(
+                pipeline_item_id=item.id,
+                type=EventType.state_changed,
+                payload={"from": ItemState.comment_closed.value, "to": ItemState.effective.value},
+            )
+        )
+        flipped += 1
+    db.flush()
+    return flipped
+
+
 def purge_known_bad(db: Session) -> int:
     ids: set[int] = set()
     for source, pattern in KNOWN_BAD_ITEMS:
