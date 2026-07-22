@@ -266,6 +266,17 @@ class NotificationLog(Base):
     detail: Mapped[str | None] = mapped_column(Text)
 
 
+class KVMeta(Base):
+    """Tiny key/value store for boot bookkeeping (the deployment-version stamp that
+    lets warm cold-starts skip idempotent boot work) and cron cursors."""
+
+    __tablename__ = "kv_meta"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class AdapterHealth(Base):
     __tablename__ = "adapter_health"
 

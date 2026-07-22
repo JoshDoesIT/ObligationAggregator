@@ -29,11 +29,18 @@ def get_engine() -> Engine:
     global _engine
     if _engine is None:
         url = get_settings().database_url
+        kwargs: dict = {}
         if url.startswith("sqlite:///"):
             db_path = Path(url.removeprefix("sqlite:///"))
             if db_path.parent != Path("."):
                 db_path.parent.mkdir(parents=True, exist_ok=True)
-        _engine = create_engine(url)
+        else:
+            # Serverless keeps the engine cached across warm invocations while the DB
+            # (Neon) closes idle connections — the next request would reuse a dead
+            # socket ("SSL connection has been closed unexpectedly", observed live).
+            # pre_ping validates a connection before use; recycle caps its age.
+            kwargs = {"pool_pre_ping": True, "pool_recycle": 300}
+        _engine = create_engine(url, **kwargs)
         _configure_sqlite(_engine)
     return _engine
 
