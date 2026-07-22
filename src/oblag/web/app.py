@@ -144,4 +144,28 @@ def create_app() -> FastAPI:
     app.include_router(auth_routes.router)
     app.include_router(byol_routes.router)
     app.include_router(html.router)
+
+    _NO_CACHE_PREFIXES = ("/api/internal", "/admin", "/auth")
+
+    @app.middleware("http")
+    async def _cdn_cache(request, call_next):
+        resp = await call_next(request)
+        # The read surface is global and single-writer (crons) in single-org mode — let
+        # Vercel's CDN absorb reads (≤60s stale is nothing for regulatory data), so Neon
+        # sees near-zero load between crons. Skip when auth is on (per-user/org content),
+        # on writes, on non-200, and whenever a cookie is being set.
+        from oblag.auth import auth_enabled
+
+        if (
+            request.method == "GET"
+            and resp.status_code == 200
+            and not auth_enabled()
+            and "set-cookie" not in resp.headers
+            and not request.url.path.startswith(_NO_CACHE_PREFIXES)
+        ):
+            resp.headers.setdefault(
+                "Cache-Control", "public, s-maxage=60, stale-while-revalidate=300"
+            )
+        return resp
+
     return app

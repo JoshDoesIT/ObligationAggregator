@@ -4,7 +4,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from oblag.core.reducer import current_dates
+from oblag.core.reducer import current_dates, current_dates_bulk
 from oblag.db.models import Event, KeyDate, PipelineItem, Snapshot
 
 
@@ -69,7 +69,16 @@ def event_to_dict(session: Session, ev: Event, *, provenance: bool = False) -> d
     return d
 
 
-def item_to_dict(session: Session, item: PipelineItem, *, detail: bool = False) -> dict[str, Any]:
+def item_to_dict(
+    session: Session,
+    item: PipelineItem,
+    *,
+    detail: bool = False,
+    live_dates: dict[tuple, KeyDate] | None = None,
+) -> dict[str, Any]:
+    # live_dates lets callers precompute the supersession resolution in one bulk query
+    # (items_to_dicts) instead of one query per item
+    dates = current_dates(session, item.id) if live_dates is None else live_dates
     d: dict[str, Any] = {
         "id": item.id,
         "source_system": item.source_system,
@@ -89,8 +98,7 @@ def item_to_dict(session: Session, item: PipelineItem, *, detail: bool = False) 
         "last_seen_at": item.last_seen_at.isoformat() if item.last_seen_at else None,
         "join_keys": [{"type": k.type, "value": k.value} for k in item.join_keys],
         "current_dates": [
-            key_date_to_dict(session, kd, provenance=detail)
-            for kd in current_dates(session, item.id).values()
+            key_date_to_dict(session, kd, provenance=detail) for kd in dates.values()
         ],
     }
     if detail:
@@ -105,3 +113,11 @@ def item_to_dict(session: Session, item: PipelineItem, *, detail: bool = False) 
             for ev in sorted(item.events, key=lambda e: e.id)
         ]
     return d
+
+
+def items_to_dicts(session: Session, items: list[PipelineItem]) -> list[dict[str, Any]]:
+    """Serialize a page of items with the per-item date N+1 collapsed into one query.
+    Pair with selectinload(join_keys)/joinedload(obligation) on the items query to make
+    a list render ~3 queries instead of ~3×N."""
+    dates_by_item = current_dates_bulk(session, [i.id for i in items])
+    return [item_to_dict(session, i, live_dates=dates_by_item.get(i.id, {})) for i in items]

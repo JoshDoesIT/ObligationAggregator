@@ -75,11 +75,18 @@ def list_items(
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None
     total = query.count()
-    items = query.order_by(PipelineItem.last_seen_at.desc()).limit(limit).offset(offset).all()
-    return {
-        "total": total,
-        "items": [item_to_dict(db, i) for i in items],
-    }
+    from sqlalchemy.orm import joinedload, selectinload
+
+    from oblag.web.serialize import items_to_dicts
+
+    items = (
+        query.options(selectinload(PipelineItem.join_keys), joinedload(PipelineItem.obligation))
+        .order_by(PipelineItem.last_seen_at.desc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+    return {"total": total, "items": items_to_dicts(db, items)}
 
 
 @router.get("/items/{item_id}")

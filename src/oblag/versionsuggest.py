@@ -49,14 +49,15 @@ def _candidates_newest_first(ob: Obligation) -> list[tuple[str, PipelineItem]]:
     return [found[k] for k in sorted(found, reverse=True)]
 
 
-def _versioned(db: Session) -> list[Obligation]:
-    return (
-        db.query(Obligation)
-        .filter(
-            (Obligation.current_version.isnot(None)) | (Obligation.confirmed_version.isnot(None))
-        )
-        .all()
+def _versioned(db: Session, only_ids: set[int] | None = None) -> list[Obligation]:
+    q = db.query(Obligation).filter(
+        (Obligation.current_version.isnot(None)) | (Obligation.confirmed_version.isnot(None))
     )
+    if only_ids is not None:
+        # scope to the obligations an ingestion run actually touched — the version pass
+        # runs after every adapter, so a full 50-obligation scan each time is wasteful
+        q = q.filter(Obligation.id.in_(only_ids))
+    return q.all()
 
 
 def _record(db: Session, ob: Obligation, version: str, decision: str, item_id: int | None) -> None:
@@ -75,14 +76,14 @@ def _record(db: Session, ob: Obligation, version: str, decision: str, item_id: i
         row.decision, row.source_item_id = decision, item_id
 
 
-def auto_apply(db: Session) -> list[dict[str, Any]]:
+def auto_apply(db: Session, only_ids: set[int] | None = None) -> list[dict[str, Any]]:
     """Advance every obligation to the newest plausibly-newer published version detected
     in the feed. Idempotent: a version already ruled on (applied or flagged) is skipped,
     so re-running never double-acts. Implausible candidates are flagged, not applied.
-    Returns the actions taken this pass. Safe to call after every ingestion run."""
+    only_ids scopes the pass to obligations a run touched. Safe after every ingestion run."""
     ruled = {(d.obligation_id, version_key(d.version)) for d in db.query(VersionDecision).all()}
     actions: list[dict[str, Any]] = []
-    for ob in _versioned(db):
+    for ob in _versioned(db, only_ids):
         # walk newest → oldest: apply the newest plausible advance; flag implausible
         # ones along the way WITHOUT letting them block a real advance behind them
         for version, item in _candidates_newest_first(ob):
@@ -101,7 +102,7 @@ def auto_apply(db: Session) -> list[dict[str, Any]]:
     return actions
 
 
-def resolve_concluded_consultations(db: Session) -> list[Any]:
+def resolve_concluded_consultations(db: Session, only_ids: set[int] | None = None) -> list[Any]:
     """Mark consultations as superseded once the version they drafted is published.
 
     A proposed-track RFC/draft whose subject version matches an EFFECTIVE publication
@@ -121,7 +122,7 @@ def resolve_concluded_consultations(db: Session) -> list[Any]:
         return item.first_seen_at.date() if item.first_seen_at else None
 
     events: list[Any] = []
-    for ob in _versioned(db):
+    for ob in _versioned(db, only_ids):
         pubs = [
             (version_key(pv), it)
             for pv, it in ((_published_version(it), it) for it in ob.items)

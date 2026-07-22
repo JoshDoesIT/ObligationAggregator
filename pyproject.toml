@@ -1,6 +1,6 @@
 [project]
 name = "oblag"
-version = "0.7.1"
+version = "0.7.2"
 description = "ObligationAggregator: open-source regulatory & framework change-intelligence for GRC engineers"
 readme = "README.md"
 license = { text = "Apache-2.0" }
