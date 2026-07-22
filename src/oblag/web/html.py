@@ -506,9 +506,9 @@ def admin_unlock_page(request: Request, ctx: Context = Depends(get_context)):
     """Operator sign-in for single-org deployments guarded by OBLAG_ADMIN_TOKEN.
     404 when no token is configured (open mode) or auth is on (use the login flow)."""
     from oblag.auth import auth_enabled
-    from oblag.config import get_settings
+    from oblag.web.deps import admin_gate_token
 
-    if auth_enabled() or not get_settings().admin_token:
+    if auth_enabled() or not admin_gate_token():
         raise HTTPException(404, "not found")
     return templates.TemplateResponse(
         request, "admin_unlock.html", {"ctx": ctx, "already": ctx.is_admin}
@@ -520,10 +520,9 @@ async def admin_unlock(request: Request):
     import secrets as _secrets
 
     from oblag.auth import auth_enabled
-    from oblag.config import get_settings
-    from oblag.web.deps import ADMIN_COOKIE
+    from oblag.web.deps import ADMIN_COOKIE, admin_gate_token
 
-    token = get_settings().admin_token
+    token = admin_gate_token()
     if auth_enabled() or not token:
         raise HTTPException(404, "not found")
     form = await request.form()

@@ -109,12 +109,17 @@ Until that is set, previews are safe by default: a deployment where
 
 ### Operator hardening (public single-org deployments)
 
-With `OBLAG_AUTH` unset (single-org), the UI has no login. Set
-**`OBLAG_ADMIN_TOKEN`** to a random secret so the shared-data write (curated date
-assertions) is gated: visit `/admin/unlock`, enter the token once (sets a 12-hour
-httponly cookie), and the admin form appears. Unset = open mode (fine for
-local/private use). For full multi-user isolation, set `OBLAG_AUTH=magic-link`
-instead (requires SMTP).
+With `OBLAG_AUTH` unset (single-org), the UI has no login. The shared-data write
+(curated date assertions) is gated behind an operator token: visit `/admin/unlock`,
+enter it once (sets a 12-hour httponly cookie), and the admin form appears.
+
+The gate token is **`OBLAG_ADMIN_TOKEN`** if set, otherwise it falls back to
+**`OBLAG_CRON_SECRET`** — so any deployment that runs scheduled fetches (which requires
+a cron secret) is locked automatically with no extra configuration; unlock with the
+cron secret you already have. The write is fully open only when *neither* is set (fine
+for local/private use). Set `OBLAG_ADMIN_TOKEN` when you want a distinct operator
+secret separate from the cron secret. For full multi-user isolation, set
+`OBLAG_AUTH=magic-link` instead (requires SMTP).
 
 ### Failure alerts
 

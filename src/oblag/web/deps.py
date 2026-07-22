@@ -53,18 +53,29 @@ class Context:
 ADMIN_COOKIE = "oblag_admin"
 
 
-def _single_org_admin(request: Request) -> tuple[bool, str]:
-    """Admin status + CSRF token for single-org mode. If OBLAG_ADMIN_TOKEN is set, a
-    request is admin only when it presents that token (an `oblag_admin` cookie set via
-    /admin/unlock, or an X-Admin-Token header) — this locks the shared-data writes
-    (assert-date) on a public deployment. Unset (the default) keeps the open,
-    convenient behavior for private/local use. CSRF is derived from the token so
-    admin-write forms can be validated without a server session."""
-    import hashlib
-
+def admin_gate_token() -> str | None:
+    """The secret that locks single-org admin writes. Prefer an explicit
+    OBLAG_ADMIN_TOKEN, but fall back to OBLAG_CRON_SECRET so that any real
+    deployment (which must set a cron secret for scheduled fetches) is locked
+    automatically — no separate dashboard step needed. Only truly open when
+    neither is set (local/private use)."""
     from oblag.config import get_settings
 
-    token = get_settings().admin_token
+    settings = get_settings()
+    return settings.admin_token or settings.cron_secret
+
+
+def _single_org_admin(request: Request) -> tuple[bool, str]:
+    """Admin status + CSRF token for single-org mode. If a gate token is configured
+    (OBLAG_ADMIN_TOKEN, or OBLAG_CRON_SECRET as a fallback), a request is admin only
+    when it presents that token (an `oblag_admin` cookie set via /admin/unlock, or an
+    X-Admin-Token header) — this locks the shared-data writes (assert-date) on a public
+    deployment. Neither set (the default) keeps the open, convenient behavior for
+    private/local use. CSRF is derived from the token so admin-write forms can be
+    validated without a server session."""
+    import hashlib
+
+    token = admin_gate_token()
     if not token:
         return True, ""  # open mode (unchanged); no CSRF (no cookie to protect)
     presented = request.cookies.get(ADMIN_COOKIE) or request.headers.get("x-admin-token", "")
