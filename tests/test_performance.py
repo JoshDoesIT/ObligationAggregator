@@ -68,11 +68,14 @@ def test_item_list_query_count_is_bounded(client, db):
 
 
 def test_cdn_cache_header_when_auth_disabled(client, seeded):
-    # single-org (auth off): global read pages are CDN-cacheable
-    assert "s-maxage" in client.get("/").headers.get("cache-control", "")
-    assert "s-maxage" in client.get("/api/v1/items").headers.get("cache-control", "")
-    # internal/admin never cached
-    assert "s-maxage" not in client.get("/admin/versions").headers.get("cache-control", "")
+    # single-org (auth off): global read pages are edge-cacheable via the Vercel-specific
+    # header (plain Cache-Control s-maxage is ignored by Vercel's Python runtime)
+    def edge(path):
+        return client.get(path).headers.get("vercel-cdn-cache-control", "")
+
+    assert "max-age=60" in edge("/")
+    assert "max-age=60" in edge("/api/v1/items")
+    assert "max-age=60" not in edge("/admin/versions")  # internal/admin never cached
 
 
 def test_scoped_version_pass_only_touches_given_obligations(db):
