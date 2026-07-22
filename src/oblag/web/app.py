@@ -161,6 +161,8 @@ def create_app() -> FastAPI:
             and resp.status_code == 200
             and not auth_enabled()
             and "set-cookie" not in resp.headers
+            and not request.cookies  # a cookied request may be an unlocked operator —
+            # its page carries the admin form/CSRF token and must not hit a shared cache
             and not request.url.path.startswith(_NO_CACHE_PREFIXES)
         ):
             resp.headers.setdefault(

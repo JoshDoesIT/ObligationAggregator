@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     # Set "magic-link" for a hosted multi-org deployment.
     auth: str = "disabled"  # disabled | magic-link
     instance_admins: str = ""  # csv of emails granted cross-tenant/admin operations
+    # Single-org hardening: when set, admin-only writes (curated date assertions) require
+    # this token via /admin/unlock (cookie) or an X-Admin-Token header. Unset = open
+    # (convenient for local/private use). A PUBLIC single-org deployment should set it.
+    admin_token: str | None = None
     session_ttl_days: int = 30
     login_token_ttl_minutes: int = 15
     api_rate_limit_per_min: int = 600  # per API key, fixed-window

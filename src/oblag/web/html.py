@@ -501,6 +501,54 @@ def item_page(
     )
 
 
+@router.get("/admin/unlock", response_class=HTMLResponse)
+def admin_unlock_page(request: Request, ctx: Context = Depends(get_context)):
+    """Operator sign-in for single-org deployments guarded by OBLAG_ADMIN_TOKEN.
+    404 when no token is configured (open mode) or auth is on (use the login flow)."""
+    from oblag.auth import auth_enabled
+    from oblag.config import get_settings
+
+    if auth_enabled() or not get_settings().admin_token:
+        raise HTTPException(404, "not found")
+    return templates.TemplateResponse(
+        request, "admin_unlock.html", {"ctx": ctx, "already": ctx.is_admin}
+    )
+
+
+@router.post("/admin/unlock", response_class=HTMLResponse)
+async def admin_unlock(request: Request):
+    import secrets as _secrets
+
+    from oblag.auth import auth_enabled
+    from oblag.config import get_settings
+    from oblag.web.deps import ADMIN_COOKIE
+
+    token = get_settings().admin_token
+    if auth_enabled() or not token:
+        raise HTTPException(404, "not found")
+    form = await request.form()
+    if not _secrets.compare_digest(str(form.get("token", "")), token):
+        return templates.TemplateResponse(
+            request,
+            "admin_unlock.html",
+            {"ctx": None, "error": "Incorrect token."},
+            status_code=403,
+        )
+    resp = RedirectResponse("/", status_code=303)
+    # httponly so JS can't read it; the operator presents it on subsequent writes
+    resp.set_cookie(ADMIN_COOKIE, token, httponly=True, samesite="lax", max_age=60 * 60 * 12)
+    return resp
+
+
+@router.post("/admin/lock", response_class=HTMLResponse)
+async def admin_lock():
+    from oblag.web.deps import ADMIN_COOKIE
+
+    resp = RedirectResponse("/", status_code=303)
+    resp.delete_cookie(ADMIN_COOKIE)
+    return resp
+
+
 @router.post("/items/{item_id}/assert-date", response_class=HTMLResponse)
 async def assert_date_route(
     item_id: int,
