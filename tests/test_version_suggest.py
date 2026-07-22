@@ -353,6 +353,21 @@ def test_advisory_items_are_informational_without_lifecycle_claims(client, db):
     assert "Comment open" not in html and "remains in force" not in html
 
 
+def test_closed_current_version_consultation_uses_past_tense(client, db):
+    """A CLOSED consultation whose subject equals the in-force version must not claim
+    to be soliciting feedback — true for both a closed feedback-on-current RFC and a
+    historical draft RFC whose version has since published (item 275 live case)."""
+    from oblag.db.models import PipelineItem
+
+    seed_obligations(db)  # pts-hsm ships with current_version 5.0
+    _rfc(db, "pci-pts-hsm", "PCI SSC RFC: PCI PTS HSM v5.0", date(2025, 10, 30), date(2025, 12, 15))
+    rfc = db.query(PipelineItem).filter_by(title="PCI SSC RFC: PCI PTS HSM v5.0").one()
+    assert rfc.state == ItemState.comment_closed
+    html = client.get(f"/items/{rfc.id}").text
+    assert "currently in force" in html and "comment window has closed" in html
+    assert "solicits feedback" not in html
+
+
 def test_admin_versions_page_shows_audit_log(client, db):
     seed_obligations(db)
     db.query(Obligation).filter_by(slug="pci-pts-hsm").update({Obligation.current_version: "4.0"})

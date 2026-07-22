@@ -53,9 +53,19 @@
     {% set oblink %}<a href="/?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
     {% set cur = item.obligation_current_version %}
     {% if rflavor == 'current' %}
-      This <strong>{{ item | signal_kind }}</strong> solicits feedback on the current version
-      of {{ oblink }} ({{ cur }}), which <strong>remains in force</strong> — the feedback
-      shapes a future revision and changes nothing until a revised version is published.
+      {% if item.state == 'comment_closed' %}
+        {# Past tense, and no claim about what the feedback becomes: this covers both a
+           closed feedback-on-current RFC and a historical draft consultation whose
+           subject has SINCE become the in-force version (publication post no longer in
+           the feed, so no publication item exists to resolve it). #}
+        This <strong>{{ item | signal_kind }}</strong> concerned {{ oblink }} ({{ cur }})
+        — the version <strong>currently in force</strong>. The comment window has closed;
+        nothing changes until a revised version is published.
+      {% else %}
+        This <strong>{{ item | signal_kind }}</strong> solicits feedback on the current version
+        of {{ oblink }} ({{ cur }}), which <strong>remains in force</strong> — the feedback
+        shapes a future revision and changes nothing until a revised version is published.
+      {% endif %}
     {% elif rflavor == 'draft' %}
       This <strong>{{ item | signal_kind }}</strong> covers a <strong>draft of the next
       version</strong> of {{ oblink }}. The current version ({{ cur }})
