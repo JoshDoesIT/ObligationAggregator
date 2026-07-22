@@ -86,6 +86,47 @@ def test_cdn_cache_skipped_for_unlocked_operator(client, seeded, monkeypatch):
     get_settings_clear(monkeypatch)
 
 
+def test_cron_secret_locks_writes_without_admin_token(client, seeded, db, monkeypatch):
+    """A real deployment sets OBLAG_CRON_SECRET (for scheduled fetches) but need not set a
+    separate OBLAG_ADMIN_TOKEN — the cron secret alone must lock shared-data writes and
+    unlock via /admin/unlock, so production is hardened with zero extra config."""
+    from oblag.config import get_settings
+    from oblag.db.models import PipelineItem
+
+    secret = "cr0n-s3cret"
+    monkeypatch.setenv("OBLAG_CRON_SECRET", secret)
+    get_settings.cache_clear()
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+
+    # locked: anonymous write is rejected and the unlock page is reachable
+    r = client.post(
+        f"/items/{item.id}/assert-date",
+        data={"date_type": "effective", "value": "2027-01-01", "confidence": "published_firm"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 403
+    assert client.get("/admin/unlock").status_code == 200
+
+    # unlock with the cron secret, then the write succeeds with the derived CSRF token
+    assert (
+        client.post("/admin/unlock", data={"token": secret}, follow_redirects=False).status_code
+        == 303
+    )
+    ok = client.post(
+        f"/items/{item.id}/assert-date",
+        data={
+            "date_type": "effective",
+            "value": "2027-01-01",
+            "confidence": "published_firm",
+            "csrf_token": _csrf(secret),
+        },
+        follow_redirects=False,
+    )
+    assert ok.status_code == 303
+    monkeypatch.delenv("OBLAG_CRON_SECRET", raising=False)
+    get_settings.cache_clear()
+
+
 def get_settings_clear(monkeypatch):
     from oblag.config import get_settings
 
