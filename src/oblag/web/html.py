@@ -186,7 +186,7 @@ def _signal_kind(item: dict) -> str:
     if src == "cppa":
         return "Rulemaking" if native == "proposed" else "Rulemaking package"
     if src == "pci_ssc":
-        return "RFC"
+        return "Publication" if native == "publication" else "RFC"
     if src == "iso_catalog":
         return "Standard revision"
     if src == "legiscan":
@@ -202,27 +202,33 @@ def _signal_kind(item: dict) -> str:
     return "Change signal"
 
 
-# Signal kinds that are MAINTENANCE of a standard: RFCs, revisions, exposure drafts,
-# new versions. Whether the item revises an in-force standard (vs drafting a first
-# version) is decided against the catalog's `current_version` — never assumed.
+# Signal kinds that are CONSULTATIONS on maintenance of a standard: RFCs, revision
+# projects, exposure drafts, draft revisions. Whether one revises an in-force standard
+# (vs drafting a first version) is decided against the catalog — never assumed.
 _REVISION_SIGNAL_KINDS = {
     "RFC",  # PCI SSC
     "Standard revision",  # ISO
     "Exposure draft",  # AICPA
-    "Version release",  # CIS, and any native "release"
+    "Version release",  # CIS, and any native "release" (pre-effective stages only)
     "Draft standard",  # NIST CSRC drafts (of an existing SP)
 }
+# Signal kinds that announce a PUBLISHED document. Once effective, these are facts
+# about a released version — a consultation banner ("solicits feedback", "draft of
+# the next version") on them misstates what the item is.
+_RELEASE_SIGNAL_KINDS = {"Version release", "Publication", "Standard revision", "RFC"}
+_CONSULT_STATES = ("proposed", "comment_open", "comment_closed")
 
 
 def _revision_flavor(item: dict) -> str | None:
-    """Which standards-maintenance lifecycle an item gets, if any.
+    """Which standards-maintenance CONSULTATION lifecycle an item gets, if any.
 
     PCI (and others) run consultations in three flavors, and only the catalog knows
-    which: `Obligation.current_version` records what is actually in force.
+    which: the obligation's in-force version.
 
-    - None: not a maintenance signal, or the obligation has no published version
-      (e.g. PCI KMO v1.0, still in RFC) — the ordinary proposed→effective lifecycle
-      is the truthful one, since a first version IS heading toward first effectiveness.
+    - None: not a maintenance consultation (wrong kind, no cataloged obligation, no
+      published version — a first-version draft keeps the ordinary lifecycle — or the
+      item is no longer in a consultation state: released/superseded/withdrawn items
+      must not carry consultation wording).
     - "current": feedback solicited on the in-force version itself (PCI DSS v4.0.1 RFC).
     - "draft": the document under review is a draft of the NEXT version (PTS HSM v5.0
       RFC while v4.0 is in force) — the current version stays in force regardless.
@@ -230,6 +236,8 @@ def _revision_flavor(item: dict) -> str | None:
       comparable version token (ISO revisions, most NIST drafts) — the in-force claim
       holds; which flavor of it is unknown.
     """
+    if item.get("state") not in _CONSULT_STATES:
+        return None
     if _signal_kind(item) not in _REVISION_SIGNAL_KINDS:
         return None
     if not item.get("obligation"):
@@ -245,9 +253,50 @@ def _revision_flavor(item: dict) -> str | None:
     return "current" if subject == version_key(current) else "draft"
 
 
+def _release_status(item: dict) -> str | None:
+    """Truthful framing for EFFECTIVE items about a cataloged standard.
+
+    A published release/edition is a fact, not a consultation — the banner must say
+    where that version stands today, and no comment-window stepper applies:
+
+    - "informational": an advisory — commentary from the issuing body, not a
+      lifecycle change to the standard itself.
+    - "current": this item announces the version that is in force right now.
+    - "superseded": it announced an older version; the in-force one is newer.
+    - "published": version relationship unknown (no comparable tokens) — say only
+      that the standard is published and what the current version is.
+    - None: not an effective release-kind item about a versioned obligation.
+    """
+    if item.get("state") != "effective":
+        return None
+    kind = _signal_kind(item)
+    if kind == "Advisory":
+        return "informational"
+    if kind not in _RELEASE_SIGNAL_KINDS:
+        return None
+    if not item.get("obligation") or not item.get("obligation_current_version"):
+        return None
+    from oblag.versions import version_key
+
+    meta = item.get("native_meta") or {}
+    subject = (
+        version_key(meta.get("published_version"))
+        # ISO publication dates look like "2022" or "2022-10": the year is the edition
+        or version_key(str(meta.get("publication_date") or "")[:4])
+        or version_key(item.get("title"))
+    )
+    current = version_key(item.get("obligation_current_version"))
+    if subject is None or current is None:
+        return "published"
+    if subject == current:
+        return "current"
+    return "superseded" if subject < current else "published"
+
+
 templates.env.filters.update(
     signal_kind=_signal_kind,
     revision_flavor=_revision_flavor,
+    release_status=_release_status,
     human_event=_human_event,
     human_state=_human_state,
     human_date_type=_human_date_type,

@@ -34,6 +34,15 @@ _PUB_LEADIN_RE = re.compile(
     re.IGNORECASE,
 )
 _PUB_VERSION_RE = re.compile(r"\b(?:version\s+|v)(\d+(?:\.\d+)*)\b", re.IGNORECASE)
+# Supporting-document announcements name a standard + version without BEING one:
+# "Just Published: PCI DSS v4.0.1 SAQ A", "…Summary of Changes", translations. These
+# must never become publication items — they'd claim a standard release that already
+# happened (or misdate it).
+_PUB_EXCLUDE_RE = re.compile(
+    r"\b(?:saq|aoc|roc|faq|template|guidance|supporting|translation|infographic|glossary"
+    r"|at-a-glance|summary of changes|program guide|now available in)\b",
+    re.IGNORECASE,
+)
 
 # Announcement bodies state the real window: "From 3 June to 20 July, eligible
 # PCI SSC stakeholders are invited…". Day-first, month by name, no year.
@@ -142,7 +151,7 @@ def _publication_item(
 ) -> NormalizedItem | None:
     """A 'new version published' announcement → an effective publication item, or None
     when the post isn't a recognized standard publication. Drives version suggestions."""
-    if not _PUB_LEADIN_RE.search(title):
+    if not _PUB_LEADIN_RE.search(title) or _PUB_EXCLUDE_RE.search(title):
         return None
     vm = _PUB_VERSION_RE.search(title)
     slug = _pci_obligation(title)

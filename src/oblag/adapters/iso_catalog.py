@@ -60,6 +60,15 @@ class IsoCatalogAdapter(SourceAdapter):
         stage = stage_match.group(1) if stage_match else "unknown"
         if stage == "unknown":
             anomalies.append(f"could not parse ISO stage code for {slug}")
+        elif stage.startswith("95"):
+            # The tracked page is an edition-pinned URL whose edition was withdrawn —
+            # a NEW edition exists that this URL no longer shows. Without this alert
+            # the new edition (and its year) would silently go untracked.
+            anomalies.append(
+                f"ISO page for {slug} reports stage {stage} (edition withdrawn/replaced): "
+                "a newer edition exists — update the obligation's canonical_url to the "
+                "new edition page"
+            )
 
         title_match = _TITLE_RE.search(html)
         title = title_match.group(1).strip() if title_match else f"ISO catalog: {slug}"

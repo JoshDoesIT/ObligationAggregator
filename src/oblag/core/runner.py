@@ -88,11 +88,21 @@ def run_adapter(
                         log.exception(msg)
                         stats.errors.append(msg)
         stats.events.extend(link_resolved_items(session))
-        # advance any standard whose newer version this run just ingested (automatic;
-        # implausible parses are flagged, not applied — see oblag.versionsuggest)
-        from oblag.versionsuggest import auto_apply
+        # advance any standard whose newer version this run just ingested, and close out
+        # consultations that publication resolved (automatic; implausible parses are
+        # flagged, not applied — see oblag.versionsuggest). Isolated: a version-tracking
+        # bug must not fail the ingestion run that carried the data.
+        try:
+            from oblag.versionsuggest import auto_apply, resolve_concluded_consultations
 
-        auto_apply(session)
+            auto_apply(session)
+            stats.events.extend(resolve_concluded_consultations(session))
+            session.commit()
+        except Exception as exc:  # noqa: BLE001 — tracking is best-effort per run
+            session.rollback()
+            msg = f"version tracking pass failed: {exc}"
+            log.exception(msg)
+            stats.errors.append(msg)
     except Exception as exc:  # fetch-level failure
         session.rollback()
         health = _health(session, name)

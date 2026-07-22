@@ -31,8 +31,12 @@ from oblag.db.models import ItemState as S
         (S.effective, S.proposed, Verdict.anomaly),
         # terminal states never transition
         (S.withdrawn, S.comment_open, Verdict.anomaly),
-        (S.superseded, S.effective, Verdict.anomaly),
         (S.withdrawn, S.stalled, Verdict.anomaly),
+        # …but a superseded item's source doc lingers in feeds: re-deriving its old
+        # mainline state is a stale echo (noop), not a contradiction worth an anomaly
+        (S.superseded, S.effective, Verdict.noop),
+        (S.superseded, S.comment_closed, Verdict.noop),
+        (S.superseded, S.stalled, Verdict.anomaly),
     ],
 )
 def test_transition_matrix(cur, new, verdict):

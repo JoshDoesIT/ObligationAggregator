@@ -32,16 +32,19 @@ def _published_version(item: PipelineItem) -> str | None:
     return None
 
 
-def _newest_candidate(ob: Obligation) -> tuple[str, PipelineItem] | None:
-    """The newest published version among this obligation's ingested items, if any."""
-    best: tuple[str, PipelineItem] | None = None
+def _candidates_newest_first(ob: Obligation) -> list[tuple[str, PipelineItem]]:
+    """All published versions among this obligation's ingested items, newest first.
+    The full list matters: if the newest is implausible (flagged), a smaller but
+    plausible advance behind it must still get applied."""
+    found: dict[tuple[int, ...], tuple[str, PipelineItem]] = {}
     for it in ob.items:
         pv = _published_version(it)
         if pv is None:
             continue
-        if best is None or is_newer(pv, best[0]):
-            best = (pv, it)
-    return best
+        k = version_key(pv)
+        if k is not None:
+            found.setdefault(k, (pv, it))
+    return [found[k] for k in sorted(found, reverse=True)]
 
 
 def _versioned(db: Session) -> list[Obligation]:
@@ -78,21 +81,91 @@ def auto_apply(db: Session) -> list[dict[str, Any]]:
     ruled = {(d.obligation_id, version_key(d.version)) for d in db.query(VersionDecision).all()}
     actions: list[dict[str, Any]] = []
     for ob in _versioned(db):
-        cand = _newest_candidate(ob)
-        if cand is None:
-            continue
-        version, item = cand
-        if not is_newer(version, ob.effective_version):
-            continue
-        if (ob.id, version_key(version)) in ruled:
-            continue
-        applied = plausible_successor(ob.effective_version, version)
-        if applied:
-            ob.confirmed_version = latest(ob.confirmed_version, version)
-        _record(db, ob, version, "auto" if applied else "flagged", item.id)
-        actions.append({"slug": ob.slug, "version": version, "applied": applied})
+        # walk newest → oldest: apply the newest plausible advance; flag implausible
+        # ones along the way WITHOUT letting them block a real advance behind them
+        for version, item in _candidates_newest_first(ob):
+            if not is_newer(version, ob.effective_version):
+                break  # sorted: nothing older can be newer than in-force
+            if (ob.id, version_key(version)) in ruled:
+                continue
+            applied = plausible_successor(ob.effective_version, version)
+            if applied:
+                ob.confirmed_version = latest(ob.confirmed_version, version)
+            _record(db, ob, version, "auto" if applied else "flagged", item.id)
+            actions.append({"slug": ob.slug, "version": version, "applied": applied})
+            if applied:
+                break  # in-force advanced; older candidates are now behind it
     db.commit()
     return actions
+
+
+def resolve_concluded_consultations(db: Session) -> list[Any]:
+    """Mark consultations as superseded once the version they drafted is published.
+
+    A proposed-track RFC/draft whose subject version matches an EFFECTIVE publication
+    item on the same obligation has concluded — leaving it "comment closed" forever
+    implies the consultation is still pending an outcome. Time-order guard: the
+    publication must postdate the consultation's opening, so an RFC soliciting
+    feedback ON the current version (whose subject equals a version published long
+    before it) is never claimed to be "resolved" by that older publication."""
+    from oblag.core.reducer import current_dates
+    from oblag.db.models import DateType, Event, EventType
+
+    def _live_date(item: PipelineItem, dtype: DateType) -> Any:
+        # current_dates keys are (date_type, label) tuples — match on type alone
+        for (dt, _label), kd in current_dates(db, item.id).items():
+            if dt is dtype:
+                return kd.value
+        return item.first_seen_at.date() if item.first_seen_at else None
+
+    events: list[Any] = []
+    for ob in _versioned(db):
+        pubs = [
+            (version_key(pv), it)
+            for pv, it in ((_published_version(it), it) for it in ob.items)
+            if pv is not None and it.state == ItemState.effective and it.track == "final"
+        ]
+        if not pubs:
+            continue
+        for cand in ob.items:
+            if (
+                cand.track != "proposed"
+                or cand.state not in (ItemState.comment_open, ItemState.comment_closed)
+                or cand.resolved_change_id is not None
+            ):
+                continue
+            subject = version_key(cand.title)
+            if subject is None:
+                continue
+            for pub_key, pub in pubs:
+                if pub_key != subject:
+                    continue
+                pub_date = _live_date(pub, DateType.effective)
+                opened = _live_date(cand, DateType.comment_open)
+                if pub_date is None or opened is None or pub_date < opened:
+                    continue  # publication predates the consultation — not its outcome
+                old_state = cand.state
+                cand.resolved_change_id = pub.id
+                cand.state = ItemState.superseded
+                ev = Event(
+                    pipeline_item_id=cand.id,
+                    type=EventType.item_resolved,
+                    payload={
+                        "resolved_to": pub.id,
+                        "final_title": pub.title,
+                        "via": "published version matches consultation subject",
+                    },
+                )
+                ev2 = Event(
+                    pipeline_item_id=cand.id,
+                    type=EventType.state_changed,
+                    payload={"from": old_state.value, "to": ItemState.superseded.value},
+                )
+                db.add_all([ev, ev2])
+                events.extend([ev, ev2])
+                break
+    db.flush()
+    return events
 
 
 def version_log(db: Session, limit: int = 100) -> list[dict[str, Any]]:

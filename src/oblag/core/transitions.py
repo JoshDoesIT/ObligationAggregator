@@ -30,6 +30,11 @@ class Verdict(enum.Enum):
 def classify_transition(current: S, new: S) -> Verdict:
     if current == new:
         return Verdict.noop
+    if current is S.superseded and new in _RANK:
+        # A superseded item's source document usually stays in its feed for months;
+        # re-reads keep deriving the old mainline state. That's a stale echo of a
+        # resolved item, not a contradiction — anomaly spam would drown real ones.
+        return Verdict.noop
     if current in _TERMINAL:
         return Verdict.anomaly
     if new in _SIDE:
