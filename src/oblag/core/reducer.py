@@ -58,13 +58,8 @@ def _emit(
     return ev
 
 
-def current_dates(session: Session, item_id: int) -> dict[tuple, KeyDate]:
-    """Resolve supersession chains: for each (date_type, label) return the live KeyDate
-    (the row no other row supersedes; ties broken by latest asserted_at/id).
-
-    A chain ending in a retraction means the source withdrew the date — no current
-    value exists for that (date_type, label)."""
-    rows = session.query(KeyDate).filter_by(pipeline_item_id=item_id).all()
+def _resolve_live(rows: list[KeyDate]) -> dict[tuple, KeyDate]:
+    """Supersession resolution over one item's KeyDate rows (see current_dates)."""
     superseded_ids = {r.supersedes_id for r in rows if r.supersedes_id is not None}
     live: dict[tuple, KeyDate] = {}
     for row in rows:
@@ -75,6 +70,28 @@ def current_dates(session: Session, item_id: int) -> dict[tuple, KeyDate]:
         if prev is None or row.id > prev.id:  # id is monotonic; avoids naive/aware tz compares
             live[key] = row
     return {k: v for k, v in live.items() if not v.retracted}
+
+
+def current_dates(session: Session, item_id: int) -> dict[tuple, KeyDate]:
+    """Resolve supersession chains: for each (date_type, label) return the live KeyDate
+    (the row no other row supersedes; ties broken by latest asserted_at/id).
+
+    A chain ending in a retraction means the source withdrew the date — no current
+    value exists for that (date_type, label)."""
+    return _resolve_live(session.query(KeyDate).filter_by(pipeline_item_id=item_id).all())
+
+
+def current_dates_bulk(session: Session, item_ids: list[int]) -> dict[int, dict[tuple, KeyDate]]:
+    """current_dates for many items in ONE query — kills the per-item N+1 on list pages
+    (the home feed cost ~50 date queries + lazy loads; observed as request latency)."""
+    from collections import defaultdict
+
+    if not item_ids:
+        return {}
+    grouped: dict[int, list[KeyDate]] = defaultdict(list)
+    for kd in session.query(KeyDate).filter(KeyDate.pipeline_item_id.in_(item_ids)).all():
+        grouped[kd.pipeline_item_id].append(kd)
+    return {iid: _resolve_live(rows) for iid, rows in grouped.items()}
 
 
 def _date_values(live: dict[tuple, KeyDate]) -> CurrentDateMap:

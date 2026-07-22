@@ -57,6 +57,7 @@ def run_adapter(
     store = SnapshotStore.from_settings()
     health = _health(session, name)
     health.last_run_at = datetime.now(UTC)
+    touched: set[int] = set()  # obligation ids this run reduced — scopes the version pass
     try:
         with make_client() as client:
             ctx = FetchContext(client=client, since=since, window=window, params=params or {})
@@ -82,6 +83,8 @@ def run_adapter(
                         stats.items += 1
                         stats.created += int(res.created)
                         stats.events.extend(res.events)
+                        if res.item.obligation_id is not None:
+                            touched.add(res.item.obligation_id)
                     except Exception as exc:  # noqa: BLE001 — per-item isolation
                         session.rollback()
                         msg = f"reduce failed for {ni.external_key}: {exc}"
@@ -90,13 +93,14 @@ def run_adapter(
         stats.events.extend(link_resolved_items(session))
         # advance any standard whose newer version this run just ingested, and close out
         # consultations that publication resolved (automatic; implausible parses are
-        # flagged, not applied — see oblag.versionsuggest). Isolated: a version-tracking
-        # bug must not fail the ingestion run that carried the data.
+        # flagged, not applied — see oblag.versionsuggest). Scoped to the obligations
+        # this run touched. Isolated: a version-tracking bug must not fail the run.
         try:
             from oblag.versionsuggest import auto_apply, resolve_concluded_consultations
 
-            auto_apply(session)
-            stats.events.extend(resolve_concluded_consultations(session))
+            scope = touched or None
+            auto_apply(session, scope)
+            stats.events.extend(resolve_concluded_consultations(session, scope))
             session.commit()
         except Exception as exc:  # noqa: BLE001 — tracking is best-effort per run
             session.rollback()
