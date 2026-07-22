@@ -116,18 +116,20 @@ def test_boot_syncs_catalog_fields_into_existing_db(engine, db, monkeypatch):
     monkeypatch.setattr(
         dbsession, "_session_factory", sessionmaker(bind=engine, expire_on_commit=False)
     )
-    from oblag.web.app import create_app
+    from oblag.web import app as appmod
 
-    create_app()
+    appmod.create_app()
     db.expire_all()
     assert db.query(Obligation).filter_by(slug="pci-dss").one().current_version == "4.0.1"
     assert db.query(Obligation).filter_by(slug="pci-kmo").one().current_version is None
 
-    # value drift (catalog edit, e.g. a standards body publishes a new version)
-    # also re-syncs — not just missing rows/fields
+    # value drift (catalog edit, e.g. a standards body publishes a new version) re-syncs
+    # on the deploy that carries it — which always bumps the version, so the boot guard
+    # re-runs the sync rather than taking the fast path.
     db.query(Obligation).filter_by(slug="pci-dss").update({Obligation.current_version: "0.9"})
     db.commit()
-    create_app()
+    monkeypatch.setattr(appmod, "__version__", "999.0.0-drift")
+    appmod.create_app()
     db.expire_all()
     assert db.query(Obligation).filter_by(slug="pci-dss").one().current_version == "4.0.1"
 

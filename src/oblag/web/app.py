@@ -1,9 +1,55 @@
 from __future__ import annotations
 
+import logging
+import os
+
 from fastapi import FastAPI
 
 from oblag import __version__
 from oblag.db.session import init_db, session_scope
+
+log = logging.getLogger(__name__)
+
+_BOOT_STAMP_KEY = "boot_version"
+
+
+def _preview_env() -> bool:
+    """A Vercel PREVIEW deployment. Previews may point at the production database, so
+    they must not run the mutating boot steps unless explicitly allowed (a preview with
+    its own Neon branch sets OBLAG_ALLOW_PREVIEW_BOOT_WRITES=true). Guards against a
+    branch's boot code silently editing prod data (observed live)."""
+    from oblag.config import get_settings
+
+    if os.environ.get("VERCEL_ENV") != "preview":
+        return False
+    return not get_settings().allow_preview_boot_writes
+
+
+def _boot_done_for_this_version() -> bool:
+    """True when this deployment version already ran its boot work — the fast path for
+    warm cold starts: a single SELECT instead of ~30 migration/sync round trips.
+    Missing table / different version / any error → run the full boot."""
+
+    from oblag.db.models import KVMeta
+
+    try:
+        with session_scope() as session:
+            row = session.get(KVMeta, _BOOT_STAMP_KEY)
+            return row is not None and row.value == __version__
+    except Exception:  # noqa: BLE001 — table absent on a fresh DB, or DB unreachable
+        return False
+
+
+def _stamp_boot() -> None:
+    from oblag.db.models import KVMeta, utcnow
+
+    with session_scope() as session:
+        row = session.get(KVMeta, _BOOT_STAMP_KEY)
+        if row is None:
+            session.add(KVMeta(key=_BOOT_STAMP_KEY, value=__version__))
+        else:
+            row.value = __version__
+            row.updated_at = utcnow()
 
 
 def _sync_catalog() -> None:
@@ -74,11 +120,20 @@ def create_app() -> FastAPI:
         version=__version__,
         description="Open-source regulatory & framework change-intelligence for GRC engineers.",
     )
-    init_db()
-    _sync_catalog()
-    _provision_tenancy()
-    _repair_data()
-    _seed_milestones()
+    # Boot work is idempotent but costs ~30 DB round trips (migrations, catalog sync,
+    # tenancy, repairs, milestones). Run it once per deployment version; every other
+    # warm cold-start takes the 1-query fast path. init_db (create_all + additive
+    # migrations) is safe and cheap-ish, but still gated so warm starts skip reflection.
+    if not _boot_done_for_this_version():
+        init_db()
+        if _preview_env():
+            log.info("preview deployment: skipping mutating boot steps")
+        else:
+            _sync_catalog()
+            _provision_tenancy()
+            _repair_data()
+            _seed_milestones()
+            _stamp_boot()
 
     from oblag.web import api, auth_routes, byol_routes, html, internal, watchlists
 

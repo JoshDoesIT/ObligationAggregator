@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime, timedelta
+from time import monotonic
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -16,8 +17,8 @@ from oblag.adapters import available_adapters, get_adapter
 from oblag.config import get_settings
 from oblag.core.reducer import tick as run_tick
 from oblag.core.runner import run_adapter
-from oblag.notify import dispatch_pending
-from oblag.scheduler import ADAPTER_GROUPS
+from oblag.notify import alert_unhealthy_adapters, dispatch_pending
+from oblag.scheduler import ADAPTER_GROUPS, weekly_due_today
 from oblag.web.deps import get_db
 
 log = logging.getLogger(__name__)
@@ -111,6 +112,12 @@ def relink_items(request: Request, db: Session = Depends(get_db)):
     return {"linked": linked, "count": len(linked)}
 
 
+# Leave headroom under the function's maxDuration (vercel.json: 300s) so the invocation
+# returns cleanly — committing what ran and recording the rest as deferred — instead of
+# being killed mid-write. Deferred adapters run on the next daily invocation.
+_GROUP_TIME_BUDGET_S = 240.0
+
+
 @router.get("/run-group/{group}")
 def run_group(group: str, request: Request, db: Session = Depends(get_db)):
     _authorize(request)
@@ -120,14 +127,22 @@ def run_group(group: str, request: Request, db: Session = Depends(get_db)):
     # weekly runs use a longer overlap window so a missed invocation never loses items
     since_days = 3 if group == "daily" else 10
     work = [(name, since_days) for name in names]
-    weekly_included = False
-    if group == "daily" and datetime.now(UTC).weekday() == 0:
-        # Vercel Hobby allows only 2 cron jobs, so the weekly group has no schedule
-        # of its own — it piggybacks on Monday's daily invocation instead.
-        weekly_included = True
-        work += [(name, 10) for name in ADAPTER_GROUPS.get("weekly", []) if name not in names]
+    weekly_included: list[str] = []
+    if group == "daily":
+        # Weekly sources are spread Mon–Fri (scheduler.WEEKLY_ADAPTERS) so each daily
+        # invocation only adds the ~1–2 due today — no Monday pile-up that risks the
+        # function timeout. (Vercel Hobby's 2-cron limit means weekly has no schedule
+        # of its own.)
+        weekly_included = weekly_due_today(datetime.now(UTC).weekday())
+        work += [(name, 10) for name in weekly_included if name not in names]
+
+    start = monotonic()
     results = []
+    deferred = []
     for name, days in work:
+        if monotonic() - start > _GROUP_TIME_BUDGET_S:
+            deferred.append(name)
+            continue
         if name not in available_adapters() or not get_adapter(name).enabled():
             results.append({"adapter": name, "skipped": True})
             continue
@@ -137,11 +152,14 @@ def run_group(group: str, request: Request, db: Session = Depends(get_db)):
             log.exception("cron run failed for %s", name)
             results.append({"adapter": name, "error": str(exc)[:200]})
     delivered = dispatch_pending(db)
+    alerted = alert_unhealthy_adapters(db)
     return {
         "group": group,
         "runs": results,
         "weekly_included": weekly_included,
+        "deferred": deferred,
         "notifications_delivered": delivered,
+        "ops_alerted": alerted,
     }
 
 

@@ -329,40 +329,64 @@ def test_purge_items_deletes_item_and_dependents(cron_client):
         assert surv is not None and surv.resolved_change_id is None
 
 
-def test_cron_daily_piggybacks_weekly_on_mondays(cron_client, monkeypatch):
+def _cron_day(monkeypatch, internal, y, m, d):
     from datetime import UTC, datetime
 
+    class _Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(y, m, d, 5, 10, tzinfo=UTC)
+
+    monkeypatch.setattr(internal, "datetime", _Clock)
+
+
+def test_cron_daily_spreads_weekly_across_weekdays(cron_client, monkeypatch):
+    """Weekly sources are spread Mon–Fri, not piled onto Monday — a daily invocation
+    only ever adds the ~1–2 due today, avoiding the 300s function-timeout risk."""
     import oblag.browserfetch as bf
     import oblag.web.internal as internal
-    from oblag.scheduler import ADAPTER_GROUPS
+    from oblag.scheduler import ADAPTER_GROUPS, weekly_due_today
 
     monkeypatch.setattr(
         internal, "_run_one", lambda db, name, since_days: {"adapter": name, "items": 0}
     )
     monkeypatch.setattr(bf, "browser_available", lambda: False)
 
-    class _Monday:
-        @staticmethod
-        def now(tz):
-            return datetime(2026, 7, 20, 5, 10, tzinfo=UTC)  # a Monday
-
-    monkeypatch.setattr(internal, "datetime", _Monday)
-    r = cron_client.get("/api/internal/run-group/daily", headers={"Authorization": "Bearer s3cret"})
-    assert r.status_code == 200
-    body = r.json()
-    assert body["weekly_included"] is True
+    hdr = {"Authorization": "Bearer s3cret"}
+    _cron_day(monkeypatch, internal, 2026, 7, 20)  # Monday
+    body = cron_client.get("/api/internal/run-group/daily", headers=hdr).json()
+    assert body["weekly_included"] == weekly_due_today(0) == ["pci_ssc"]
     ran = {x["adapter"] for x in body["runs"]}
-    assert set(ADAPTER_GROUPS["daily"]) <= ran
-    assert set(ADAPTER_GROUPS["weekly"]) <= ran
+    assert set(ADAPTER_GROUPS["daily"]) <= ran and "pci_ssc" in ran
+    assert "hitrust" not in ran  # due Friday, not today
 
-    class _Tuesday:
-        @staticmethod
-        def now(tz):
-            return datetime(2026, 7, 21, 5, 10, tzinfo=UTC)
+    _cron_day(monkeypatch, internal, 2026, 7, 25)  # Saturday — no weekly due
+    assert (
+        cron_client.get("/api/internal/run-group/daily", headers=hdr).json()["weekly_included"]
+        == []
+    )
 
-    monkeypatch.setattr(internal, "datetime", _Tuesday)
-    r = cron_client.get("/api/internal/run-group/daily", headers={"Authorization": "Bearer s3cret"})
-    assert r.json()["weekly_included"] is False
+    # every weekly adapter is scheduled on exactly one weekday
+    from oblag.scheduler import WEEKLY_ADAPTERS
+
+    covered = [a for wd in range(7) for a in weekly_due_today(wd)]
+    assert sorted(covered) == sorted(WEEKLY_ADAPTERS)
+
+
+def test_cron_run_group_respects_time_budget(cron_client, monkeypatch):
+    """When the per-invocation time budget is exhausted, remaining adapters are deferred
+    (recorded, not run) so the function returns cleanly instead of being killed."""
+    import oblag.web.internal as internal
+
+    monkeypatch.setattr(internal, "_GROUP_TIME_BUDGET_S", -1.0)  # already over budget
+    _cron_day(monkeypatch, internal, 2026, 7, 25)  # Saturday: daily group only
+    body = cron_client.get(
+        "/api/internal/run-group/daily", headers={"Authorization": "Bearer s3cret"}
+    ).json()
+    from oblag.scheduler import ADAPTER_GROUPS
+
+    assert body["runs"] == []
+    assert set(body["deferred"]) == set(ADAPTER_GROUPS["daily"])
 
 
 # --- remote CDP browser availability ---

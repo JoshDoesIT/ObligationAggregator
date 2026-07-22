@@ -145,6 +145,86 @@ def _deliver_email(
         smtp.send_message(msg)
 
 
+def _ops_recipients() -> list[str]:
+    settings = get_settings()
+    for csv in (settings.ops_alert_emails, settings.instance_admins, settings.smtp_from):
+        addrs = [a.strip() for a in (csv or "").split(",") if a.strip() and "@" in a]
+        if addrs:
+            return addrs
+    return []
+
+
+def _send_plain_email(recipients: list[str], subject: str, body: str) -> None:
+    settings = get_settings()
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = settings.smtp_from
+    msg["To"] = ", ".join(recipients)
+    msg.set_content(body)
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:  # type: ignore[arg-type]
+        if settings.smtp_user and settings.smtp_password:
+            smtp.starttls()
+            smtp.login(settings.smtp_user, settings.smtp_password)
+        smtp.send_message(msg)
+
+
+# Alert once per calendar day per adapter — a persistently-broken source becomes a
+# daily nudge, not per-invocation spam. Tracked in kv_meta so it survives cold starts.
+_ALERT_STATE_KEY = "ops_alert_last"
+
+
+def alert_unhealthy_adapters(session: Session, *, min_failures: int = 2) -> int:
+    """Email operators about adapters stuck failing (consecutive_failures >= threshold),
+    at most once per adapter per day. Returns the number newly alerted. No-op without
+    SMTP or recipients — the July-2026 blob-storage outage sat undetected in logs;
+    this turns it into a same-day email."""
+    from datetime import UTC, datetime
+
+    from oblag.db.models import AdapterHealth, KVMeta
+
+    settings = get_settings()
+    recipients = _ops_recipients()
+    if not settings.smtp_host or not recipients:
+        return 0
+    unhealthy = (
+        session.query(AdapterHealth)
+        .filter(AdapterHealth.consecutive_failures >= min_failures)
+        .all()
+    )
+    if not unhealthy:
+        return 0
+    today = datetime.now(UTC).date().isoformat()
+    state = session.get(KVMeta, _ALERT_STATE_KEY)
+    # keep only today's entries so the stamp stays bounded (yesterday's re-alert today)
+    already = {e for e in (state.value if state else "").split(",") if e.endswith(f":{today}")}
+    fresh = [h for h in unhealthy if f"{h.adapter}:{today}" not in already]
+    if not fresh:
+        return 0
+    base = settings.base_url.rstrip("/")
+    lines = [
+        f"{len(fresh)} data source(s) are failing on ObligationAggregator:",
+        "",
+    ]
+    for h in fresh:
+        last = (h.last_error or "").strip().splitlines()[0][:160] if h.last_error else "—"
+        lines.append(f"• {h.adapter}: {h.consecutive_failures} consecutive failures — {last}")
+    lines += ["", f"Source health: {base}/health"]
+    try:
+        _send_plain_email(
+            recipients, f"[oblag] {len(fresh)} data source(s) failing", "\n".join(lines)
+        )
+    except Exception:  # noqa: BLE001 — alerting must never break the cron run
+        log.exception("ops alert email failed")
+        return 0
+    stamp = ",".join(sorted(already | {f"{h.adapter}:{today}" for h in fresh}))  # today-only
+    if state is None:
+        session.add(KVMeta(key=_ALERT_STATE_KEY, value=stamp))
+    else:
+        state.value = stamp
+    session.commit()
+    return len(fresh)
+
+
 def dispatch_pending(session: Session) -> int:
     """Deliver undelivered events to matching push watchlists. Returns deliveries made."""
     watchlists = (

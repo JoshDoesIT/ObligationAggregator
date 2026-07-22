@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     # (Vercel injects CRON_SECRET as the Authorization bearer on cron invocations).
     storage_backend: str = "local"
     cron_secret: str | None = None
+    # A Vercel preview deployment skips mutating boot steps by default so a branch's
+    # boot code can't edit the production DB it may be pointed at. Set true only on a
+    # preview environment that has its OWN database (a Neon branch).
+    allow_preview_boot_writes: bool = False
+    # Ops alerting: when a cron run leaves adapters unhealthy, email these recipients
+    # (csv). Falls back to instance_admins, then smtp_from. Needs SMTP configured.
+    ops_alert_emails: str = ""
 
     # Browser tier: remote Chromium over CDP (e.g. wss://…browserless…?token=…) for
     # serverless platforms that cannot run a local browser.

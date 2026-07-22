@@ -26,15 +26,19 @@ DAILY_ADAPTERS = {
     "edpb": "07:50",
     "esma": "08:00",
 }
-WEEKLY_ADAPTERS: dict[str, str] = {
-    "pci_ssc": "08:10",
-    "iso_catalog": "08:30",
-    "cppa": "08:45",
-    "eba": "09:00",  # browser-rendered; self-disables without playwright
-    "nerc": "09:15",
-    "cis": "09:30",
-    "aicpa": "09:45",  # sitemap-based (the landing SPA is broken upstream — spec 06)
-    "hitrust": "09:55",  # sitemap-based (no feed, WP REST disabled)
+# Weekly sources: (weekday, HH:MM). Spread Mon–Fri (0–4) rather than piled onto Monday
+# so the serverless daily cron only ever adds ~1–2 weekly runs to its window — a single
+# invocation running all 18 adapters risks the 300s function timeout (some pull 10+
+# pages). weekly_due_today() selects the ones due on a given weekday.
+WEEKLY_ADAPTERS: dict[str, tuple[int, str]] = {
+    "pci_ssc": (0, "08:10"),
+    "iso_catalog": (1, "08:30"),
+    "cppa": (1, "08:45"),
+    "eba": (2, "09:00"),  # browser-rendered; self-disables without playwright
+    "nerc": (2, "09:15"),
+    "cis": (3, "09:30"),
+    "aicpa": (3, "09:45"),  # sitemap-based (the landing SPA is broken upstream — spec 06)
+    "hitrust": (4, "09:55"),  # sitemap-based (no feed, WP REST disabled)
 }
 
 # Groups reused by the serverless cron endpoints (web/internal.py)
@@ -42,6 +46,11 @@ ADAPTER_GROUPS: dict[str, list[str]] = {
     "daily": list(DAILY_ADAPTERS),
     "weekly": list(WEEKLY_ADAPTERS),
 }
+
+
+def weekly_due_today(weekday: int) -> list[str]:
+    """Weekly adapters scheduled for the given weekday (0=Mon)."""
+    return [name for name, (wd, _hhmm) in WEEKLY_ADAPTERS.items() if wd == weekday]
 
 
 def _run(name: str) -> None:
@@ -84,13 +93,14 @@ def build_scheduler() -> BackgroundScheduler:
         scheduler.add_job(
             _run, CronTrigger(hour=hour, minute=minute), args=[name], id=f"fetch-{name}"
         )
-    for name, hhmm in WEEKLY_ADAPTERS.items():
+    _weekday_names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    for name, (weekday, hhmm) in WEEKLY_ADAPTERS.items():
         if name not in available or not get_adapter(name).enabled():
             continue
         hour, minute = hhmm.split(":")
         scheduler.add_job(
             _run,
-            CronTrigger(day_of_week="mon", hour=hour, minute=minute),
+            CronTrigger(day_of_week=_weekday_names[weekday], hour=hour, minute=minute),
             args=[name],
             id=f"fetch-{name}",
         )
