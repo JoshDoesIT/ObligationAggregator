@@ -16,6 +16,18 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 @pytest.fixture()
 def engine():
+    # OBLAG_TEST_DATABASE_URL runs the suite against a real Postgres (CI parity job) to
+    # catch dialect-only bugs SQLite hides (JSON equality, varchar overflow, SSL) — all
+    # three prod-only failures observed live. Fresh schema per test for isolation.
+    pg_url = os.environ.get("OBLAG_TEST_DATABASE_URL")
+    if pg_url:
+        eng = create_engine(pg_url)
+        Base.metadata.drop_all(eng)
+        Base.metadata.create_all(eng)
+        yield eng
+        Base.metadata.drop_all(eng)
+        eng.dispose()
+        return
     # StaticPool: one shared connection so the TestClient's worker threads see the same
     # in-memory database as the test's own session.
     eng = create_engine(

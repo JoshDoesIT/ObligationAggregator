@@ -55,6 +55,9 @@ def get_session_factory() -> sessionmaker[Session]:
 _TEXT_UPGRADES = [
     ("obligation", "canonical_url"),
     ("pipeline_item", "url"),
+    # source-controlled free text that outgrew its original varchar (v0.7.1):
+    ("pipeline_item", "native_status"),  # NERC full status sentences
+    ("key_date", "label"),  # adapter/milestone labels
     ("join_key", "value"),
     ("snapshot", "source_url"),
     ("snapshot", "storage_ref"),
