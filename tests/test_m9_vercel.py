@@ -92,6 +92,55 @@ def test_hitrust_advisory_title_not_duplicated():
 # --- HITRUST (sitemap) ---
 
 
+def test_hitrust_slugged_advisory_release_classified_as_release():
+    """'haa-2026-002-csf-version-11.8.0-release' is a version RELEASE announcement
+    posted as an advisory — it must become a release item (missed live: v11.8)."""
+    sitemap = b"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://hitrustalliance.net/advisories/haa-2026-002-csf-version-11.8.0-release</loc></url>
+<url><loc>https://hitrustalliance.net/advisories/haa-2026-003-csf-v11.7-creation-deadline-for-e1-and-i1-assessments</loc></url>
+</urlset>"""
+    items = list(HitrustAdapter().normalize(RawDocument(url="https://t", content=sitemap)))
+    by_key = {i.external_key: i for i in items}
+    release = by_key[("hitrust_release", "11.8.0")]
+    assert release.title == "HITRUST CSF v11.8.0"
+    assert release.native_meta["published_version"] == "11.8.0"
+    # the deadline advisory stays an advisory
+    assert ("hitrust_advisory", "haa-2026-003") in by_key
+
+
+def test_hitrust_bare_advisory_page_classified_from_title():
+    """Bare-id advisory URLs carry the subject only in the page <title> — release
+    pages become release items; versionless pages are noise (missed live: v11.5–11.7)."""
+    release_page = RawDocument(
+        url="https://hitrustalliance.net/advisories/haa-2025-001",
+        content=b"<html><head><title>HAA 2025-001 HITRUST CSF Version 11.5.0 Release"
+        b"</title></head></html>",
+        meta={"advisory_id": "haa-2025-001"},
+    )
+    (item,) = HitrustAdapter().normalize(release_page)
+    assert item.external_key == ("hitrust_release", "11.5.0")
+    assert item.title == "HITRUST CSF v11.5.0"
+
+    deadline_page = RawDocument(
+        url="https://hitrustalliance.net/advisories/haa-2025-004",
+        content=b"<html><head><title>HAA 2025-004 HITRUST CSF v11.5 Creation Deadline"
+        b"</title></head></html>",
+        meta={"advisory_id": "haa-2025-004"},
+    )
+    (adv,) = HitrustAdapter().normalize(deadline_page)
+    assert adv.external_key == ("hitrust_advisory", "haa-2025-004")
+    assert adv.native_status == "advisory"
+
+    noise_page = RawDocument(
+        url="https://hitrustalliance.net/advisories/haa-2026-004",
+        content=b"<html><head><title>HAA 2026-004 HITRUST Report Center Release"
+        b"</title></head></html>",
+        meta={"advisory_id": "haa-2026-004"},
+    )
+    assert list(HitrustAdapter().normalize(noise_page)) == []
+
+
 def test_hitrust_version_releases_and_advisories(db):
     items = _items(HitrustAdapter(), "hitrust", "sitemap.xml")
     by_key = {i.external_key: i for i in items}

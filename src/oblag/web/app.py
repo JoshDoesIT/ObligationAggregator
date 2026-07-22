@@ -49,6 +49,15 @@ def _provision_tenancy() -> None:
         )
 
 
+def _repair_data() -> None:
+    """Purge rows produced by since-fixed parser defects (oblag.maintenance) so live
+    deployments heal on deploy. Idempotent; no-op once the rows are gone."""
+    from oblag.maintenance import purge_known_bad
+
+    with session_scope() as session:
+        purge_known_bad(session)
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ObligationAggregator",
@@ -58,6 +67,7 @@ def create_app() -> FastAPI:
     init_db()
     _sync_catalog()
     _provision_tenancy()
+    _repair_data()
 
     from oblag.web import api, auth_routes, byol_routes, html, internal, watchlists
 
