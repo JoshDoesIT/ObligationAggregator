@@ -165,9 +165,13 @@ def create_app() -> FastAPI:
             # its page carries the admin form/CSRF token and must not hit a shared cache
             and not request.url.path.startswith(_NO_CACHE_PREFIXES)
         ):
-            resp.headers.setdefault(
-                "Cache-Control", "public, s-maxage=60, stale-while-revalidate=300"
-            )
+            # Vercel ignores plain Cache-Control s-maxage from Python functions (verified
+            # live: x-vercel-cache stayed MISS). Vercel-CDN-Cache-Control is the edge-only
+            # control it honors and never forwards to the browser; CDN-Cache-Control is
+            # the multi-CDN standard. Keep a browser Cache-Control too.
+            resp.headers["Vercel-CDN-Cache-Control"] = "max-age=60, stale-while-revalidate=300"
+            resp.headers["CDN-Cache-Control"] = "max-age=60, stale-while-revalidate=300"
+            resp.headers.setdefault("Cache-Control", "public, max-age=0, must-revalidate")
         return resp
 
     return app

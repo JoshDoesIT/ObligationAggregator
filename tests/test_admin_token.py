@@ -79,10 +79,10 @@ def test_cdn_cache_skipped_for_unlocked_operator(client, seeded, monkeypatch):
     token = "s3cr3t-op"
     c = _token_client(client, monkeypatch, token)
     # anonymous (cookieless) read is CDN-cacheable
-    assert "s-maxage" in c.get("/").headers.get("cache-control", "")
+    assert "max-age=60" in c.get("/").headers.get("vercel-cdn-cache-control", "")
     c.post("/admin/unlock", data={"token": token}, follow_redirects=False)
     # once the admin cookie is present, the response must NOT be publicly cached
-    assert "s-maxage" not in c.get("/").headers.get("cache-control", "")
+    assert "max-age=60" not in c.get("/").headers.get("vercel-cdn-cache-control", "")
     get_settings_clear(monkeypatch)
 
 
