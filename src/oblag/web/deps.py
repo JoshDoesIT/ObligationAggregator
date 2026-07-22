@@ -50,11 +50,37 @@ class Context:
         return self.user.email if self.user else None
 
 
+ADMIN_COOKIE = "oblag_admin"
+
+
+def _single_org_admin(request: Request) -> tuple[bool, str]:
+    """Admin status + CSRF token for single-org mode. If OBLAG_ADMIN_TOKEN is set, a
+    request is admin only when it presents that token (an `oblag_admin` cookie set via
+    /admin/unlock, or an X-Admin-Token header) — this locks the shared-data writes
+    (assert-date) on a public deployment. Unset (the default) keeps the open,
+    convenient behavior for private/local use. CSRF is derived from the token so
+    admin-write forms can be validated without a server session."""
+    import hashlib
+
+    from oblag.config import get_settings
+
+    token = get_settings().admin_token
+    if not token:
+        return True, ""  # open mode (unchanged); no CSRF (no cookie to protect)
+    presented = request.cookies.get(ADMIN_COOKIE) or request.headers.get("x-admin-token", "")
+    import secrets as _secrets
+
+    is_admin = bool(presented) and _secrets.compare_digest(presented, token)
+    csrf = hashlib.sha256(f"csrf:{token}".encode()).hexdigest() if is_admin else ""
+    return is_admin, csrf
+
+
 def get_context(request: Request, db: Session = Depends(get_db)) -> Context:
     if not auth.auth_enabled():
         org = auth.get_default_org(db)
+        is_admin, csrf = _single_org_admin(request)
         ctx = Context(
-            user=None, org=org, is_admin=True, csrf_token="", raw_session=None, auth_on=False
+            user=None, org=org, is_admin=is_admin, csrf_token=csrf, raw_session=None, auth_on=False
         )
     else:
         bearer = request.headers.get("authorization", "")
@@ -117,8 +143,9 @@ def login_redirect(ctx: Context):
 
 def check_csrf(ctx: Context, submitted: str | None) -> None:
     """Reject a state-changing form POST whose CSRF token doesn't match the session.
-    No-op in single-org mode (no cookie session to protect)."""
-    if not auth.auth_enabled():
+    No-op only in fully-open single-org mode (no admin token, so no cookie to protect);
+    once an admin token gate is active ctx.csrf_token is set and is enforced."""
+    if not auth.auth_enabled() and not ctx.csrf_token:
         return
     import secrets as _secrets
 

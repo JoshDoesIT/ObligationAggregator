@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Operator unlock — ObligationAggregator{% endblock %}
+{% block content %}
+<h2 class="page">Operator unlock</h2>
+<p class="lede">Curated date assertions write shared, user-visible data, so they're gated
+behind the operator token on this deployment. Enter it to unlock admin actions for this
+browser (12 hours).</p>
+
+{% if already %}
+<div class="panel"><div class="pad">You're already unlocked.
+  <form method="post" action="/admin/lock" style="display:inline; margin-left:.5rem">
+    <button class="quiet">Lock again</button>
+  </form>
+</div></div>
+{% else %}
+{% if error %}<div class="panel"><div class="pad" style="color:var(--bad)">{{ error }}</div></div>{% endif %}
+<div class="panel"><div class="pad">
+  <form method="post" action="/admin/unlock" style="display:flex; gap:.5rem; align-items:center">
+    <input type="password" name="token" placeholder="operator token" autofocus
+           style="min-width:260px" autocomplete="current-password">
+    <button>Unlock</button>
+  </form>
+</div></div>
+{% endif %}
+{% endblock %}

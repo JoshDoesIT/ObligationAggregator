@@ -89,3 +89,51 @@ The endpoints are 404 unless `OBLAG_CRON_SECRET` is set and 401 without the bear
   uploaded to shared storage (spec 06).
 - **APScheduler is not used on Vercel** — do not run `oblag serve --with-scheduler`
   there; Vercel Cron replaces it. Self-hosting keeps working unchanged.
+
+## Reliability & operations (v0.7.x)
+
+### Environment separation (recommended)
+
+Preview deployments boot the same code as production. To keep a branch's boot code
+(catalog sync, repairs, milestone seeding) from ever touching production data,
+give previews their own database:
+
+1. Create a Neon **branch** of the production database (near-instant, copy-on-write).
+2. In Vercel → Project → Settings → Environment Variables, set
+   `OBLAG_DATABASE_URL` for the **Preview** environment to the branch's connection
+   string, and set `OBLAG_ALLOW_PREVIEW_BOOT_WRITES=true` for Preview only.
+
+Until that is set, previews are safe by default: a deployment where
+`VERCEL_ENV=preview` **skips all mutating boot steps** unless
+`OBLAG_ALLOW_PREVIEW_BOOT_WRITES=true`.
+
+### Operator hardening (public single-org deployments)
+
+With `OBLAG_AUTH` unset (single-org), the UI has no login. Set
+**`OBLAG_ADMIN_TOKEN`** to a random secret so the shared-data write (curated date
+assertions) is gated: visit `/admin/unlock`, enter the token once (sets a 12-hour
+httponly cookie), and the admin form appears. Unset = open mode (fine for
+local/private use). For full multi-user isolation, set `OBLAG_AUTH=magic-link`
+instead (requires SMTP).
+
+### Failure alerts
+
+Set `OBLAG_SMTP_*` and `OBLAG_OPS_ALERT_EMAILS` (csv; falls back to
+`OBLAG_INSTANCE_ADMINS`, then `OBLAG_SMTP_FROM`). After each cron group, any data
+source stuck failing (`consecutive_failures ≥ 2`) triggers one email per source
+per day. Source health is always visible at `/health`.
+
+### Backup & restore drill
+
+Snapshots live in Vercel Blob and all structured data in Neon Postgres. Neon keeps
+point-in-time recovery automatically. **Exercise the restore path before you need
+it**: create a Neon branch from a PITR timestamp, point a preview at it
+(`OBLAG_DATABASE_URL`), and confirm `GET /api/v1/items` returns the expected count.
+A restore you have never run is not a backup.
+
+### Deployment verification
+
+The `deploy-verify` GitHub Action polls production `/openapi.json` for the merged
+`__version__` after each push to `main` and fails loudly if it never appears —
+catching a merge whose production deploy silently never started. Override the URL
+with a `PROD_URL` repository variable if it changes.
