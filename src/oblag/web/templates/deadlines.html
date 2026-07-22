@@ -40,4 +40,28 @@ Hover a confidence label to see what it means — an
   </table>
   </div>
 </div>
+
+{% if watch %}
+<div class="panel">
+  <h3>Watching — no date announced yet</h3>
+  <div class="tablewrap">
+  <table class="rows">
+    <thead><tr><th>What</th><th>Why it's here</th><th>Obligation</th></tr></thead>
+    <tbody>
+    {% for w in watch %}
+    <tr>
+      <td class="titlecell"><a href="/items/{{ w.item_id }}">{{ w.title }}</a></td>
+      <td class="muted">{{ w.detail }}</td>
+      <td>{% if w.obligation %}<a class="tag" href="/?obligation={{ w.obligation }}">{{ w.obligation }}</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted" style="font-size:.8rem; padding:0 1rem .7rem">Derived live from pipeline
+  state: closed consultations awaiting an outcome, adopted documents without an effective
+  date, and standards with a revision underway. Entries clear themselves when the outcome
+  lands (a publication, an announced date, a new edition).</p>
+</div>
+{% endif %}
 {% endblock %}

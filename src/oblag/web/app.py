@@ -58,6 +58,15 @@ def _repair_data() -> None:
         purge_known_bad(session)
 
 
+def _seed_milestones() -> None:
+    """Curated milestone timelines (act application dates no feed carries). Runs
+    through the reducer, so re-seeding is idempotent and edits supersede cleanly."""
+    from oblag.milestones import seed_milestones
+
+    with session_scope() as session:
+        seed_milestones(session)
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ObligationAggregator",
@@ -68,6 +77,7 @@ def create_app() -> FastAPI:
     _sync_catalog()
     _provision_tenancy()
     _repair_data()
+    _seed_milestones()
 
     from oblag.web import api, auth_routes, byol_routes, html, internal, watchlists
 

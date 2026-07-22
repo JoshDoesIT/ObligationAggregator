@@ -5,11 +5,11 @@ def test_items_list_and_filters(client, seeded):
     r = client.get("/api/v1/items")
     assert r.status_code == 200
     body = r.json()
-    assert body["total"] == 1
-    assert body["items"][0]["state"] == "comment_open"
+    # the seeded CIRCIA item + the boot-seeded curated AI Act timeline
+    assert body["total"] == 2
 
     assert client.get("/api/v1/items?state=comment_open").json()["total"] == 1
-    assert client.get("/api/v1/items?state=effective").json()["total"] == 0
+    assert client.get("/api/v1/items?state=effective").json()["total"] == 1  # the timeline
     assert client.get("/api/v1/items?q=circia").json()["total"] == 1
     assert client.get("/api/v1/items?state=bogus").status_code == 422
 
@@ -204,7 +204,7 @@ def test_deadlines_ics_export(client, seeded):
 def test_quick_watch_creates_obligation_watchlist(client, seeded, db):
     from oblag.db.models import PipelineItem, Watchlist
 
-    item = db.query(PipelineItem).first()
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
     r = client.post(f"/items/{item.id}/watch", follow_redirects=False)
     assert r.status_code == 303
     wl = db.query(Watchlist).filter(Watchlist.name.like("Watch:%")).one()

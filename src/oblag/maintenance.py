@@ -47,6 +47,9 @@ KNOWN_BAD_ITEMS: list[tuple[str, str]] = [
     # the projects themselves were also non-CIP and out of scope
     ("nerc", "%Breakout Session%"),
     ("nerc", "%: and Project%"),
+    # BIS export-controls rule admitted by the scope gate via an "AI" mention in the
+    # abstract — export policy, not a security/privacy obligation (operator-reviewed)
+    ("federal_register", "%United Arab Emirates Under the Export Administration%"),
 ]
 
 

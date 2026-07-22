@@ -82,6 +82,7 @@ SOURCE_LABELS = {
     "cis": "CIS",
     "aicpa": "AICPA",
     "hitrust": "HITRUST",
+    "curated": "Curated",
 }
 EVENT_LABELS = {
     "item_created": "Created",
@@ -199,6 +200,8 @@ def _signal_kind(item: dict) -> str:
         return "Version release"
     if native == "advisory":
         return "Advisory"
+    if src == "curated" and native == "timeline":
+        return "Timeline"
     return "Change signal"
 
 
@@ -674,7 +677,10 @@ def deadlines_page(
     within_days: int = 365,
     ctx: Context = Depends(get_context),
 ):
+    from oblag.watch import pending_outcomes
+
     data = api.upcoming_deadlines(db=db, date_type=None, within_days=within_days)
+    data["watch"] = pending_outcomes(db)
     return templates.TemplateResponse(request, "deadlines.html", data)
 
 

@@ -187,6 +187,24 @@ def nerc_statemap(
     return ItemState.proposed  # drafting, SAR development, team formation, …
 
 
+@register_statemap("curated")
+def curated_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """Curated milestone timelines (oblag.milestones): in force once entry-into-force
+    or the earliest application date has passed; pending before that."""
+    if native_status != "timeline":
+        return None
+    starts = [
+        v
+        for (dt, _label), v in dates.items()
+        if dt in (DateType.entry_into_force, DateType.effective, DateType.application)
+    ]
+    if starts and min(starts) <= today:
+        return ItemState.effective
+    return ItemState.final_pending_effective
+
+
 @register_statemap("have_your_say")
 def have_your_say_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
