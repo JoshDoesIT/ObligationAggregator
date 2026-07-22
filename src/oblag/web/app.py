@@ -52,10 +52,11 @@ def _provision_tenancy() -> None:
 def _repair_data() -> None:
     """Purge rows produced by since-fixed parser defects (oblag.maintenance) so live
     deployments heal on deploy. Idempotent; no-op once the rows are gone."""
-    from oblag.maintenance import purge_known_bad
+    from oblag.maintenance import complete_concluded_consultations, purge_known_bad
 
     with session_scope() as session:
         purge_known_bad(session)
+        complete_concluded_consultations(session)
 
 
 def _seed_milestones() -> None:

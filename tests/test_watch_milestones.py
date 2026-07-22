@@ -109,6 +109,100 @@ def test_pending_outcomes_derivation(db, client):
     assert "PCI KMO v1.0" in html
 
 
+def test_watch_excludes_concluded_and_in_force_subjects(db):
+    """Not pending: a consultation with a recorded adoption, and an RFC whose subject
+    version is already in force (feedback-on-current, or a since-published draft)."""
+    from oblag.core.assertions import assert_date
+    from oblag.db.models import Obligation
+
+    seed_obligations(db)
+    db.query(Obligation).filter_by(slug="pci-dss").update({Obligation.current_version: "4.0.1"})
+    db.commit()
+    # feedback-on-current RFC (subject == in force) → not pending
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="pci_ssc",
+            external_key=("pci_doc", "dss-rfc"),
+            jurisdiction="Global",
+            title="PCI SSC RFC: PCI DSS v4.0.1",
+            native_status="rfc",
+            track="proposed",
+            obligation_slug="pci-dss",
+            dates=[
+                NormalizedDate(DateType.comment_close, date(2026, 7, 20), Confidence.published_firm)
+            ],
+        ),
+    )
+    # concluded consultation (adopted date recorded) → not pending
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="have_your_say",
+            external_key=("hys_initiative", "13410"),
+            jurisdiction="EU",
+            title="Cyber Resilience Act",
+            native_status="ADOPTION_WORKFLOW",
+            track="proposed",
+            obligation_slug="eu-cra",
+            dates=[
+                NormalizedDate(DateType.comment_close, date(2023, 1, 23), Confidence.published_firm)
+            ],
+        ),
+    )
+    db.commit()
+    cra = db.query(PipelineItem).filter_by(title="Cyber Resilience Act").one()
+    assert_date(
+        db,
+        cra.id,
+        DateType.adopted,
+        date(2024, 10, 23),
+        Confidence.published_firm,
+        label="Regulation (EU) 2024/2847",
+    )
+    db.commit()
+    assert pending_outcomes(db) == []
+
+
+def test_boot_completes_concluded_consultations(db):
+    from oblag.core.assertions import assert_date
+    from oblag.maintenance import complete_concluded_consultations
+
+    seed_obligations(db)
+    reduce_item(
+        db,
+        NormalizedItem(
+            source_system="have_your_say",
+            external_key=("hys_initiative", "12527"),
+            jurisdiction="EU",
+            title="Requirements for Artificial Intelligence",
+            native_status="ADOPTION_WORKFLOW",
+            track="proposed",
+            obligation_slug="eu-ai-act",
+            dates=[
+                NormalizedDate(DateType.comment_close, date(2021, 8, 6), Confidence.published_firm)
+            ],
+        ),
+    )
+    db.commit()
+    item = db.query(PipelineItem).filter_by(title="Requirements for Artificial Intelligence").one()
+    assert item.state == ItemState.comment_closed
+    assert_date(
+        db,
+        item.id,
+        DateType.adopted,
+        date(2024, 6, 13),
+        Confidence.published_firm,
+        label="Regulation (EU) 2024/1689",
+    )
+    db.commit()
+    assert complete_concluded_consultations(db) == 1
+    db.commit()
+    db.expire_all()
+    assert item.state == ItemState.effective
+    assert complete_concluded_consultations(db) == 0  # idempotent
+
+
 def test_uae_export_rule_is_known_bad(db):
     from oblag.maintenance import purge_known_bad
 

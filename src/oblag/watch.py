@@ -45,6 +45,22 @@ def pending_outcomes(db: Session) -> list[dict[str, Any]]:
         if item.state == ItemState.comment_closed:
             if item.source_system not in _CONSULTATION_SOURCES:
                 continue
+            if item.resolved_change_id is not None:
+                continue
+            if _live(db, item, DateType.adopted) is not None:
+                # concluded — the outcome (an adopted act) is already recorded; the
+                # state flips to effective on the next re-reduce
+                continue
+            if ob is not None and ob.effective_version:
+                from oblag.versions import version_key
+
+                subject = version_key(item.title)
+                cur = version_key(ob.effective_version)
+                if subject is not None and cur is not None and subject <= cur:
+                    # the consultation's subject version is already in force: either a
+                    # feedback-on-current RFC (no promised outcome) or a draft whose
+                    # version has since published — nothing is pending
+                    continue
             closed = _live(db, item, DateType.comment_close)
             out.append(
                 {
