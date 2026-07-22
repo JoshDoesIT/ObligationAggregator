@@ -146,7 +146,10 @@ class PipelineItem(Base):
     abstract: Mapped[str | None] = mapped_column(Text)
     url: Mapped[str | None] = mapped_column(Text)
     state: Mapped[ItemState] = mapped_column(Enum(ItemState), index=True)
-    native_status: Mapped[str | None] = mapped_column(String(255))
+    # source-controlled: mostly short codes, but NERC now stores full status sentences
+    # ("The formal comment period for Project … concluded at 8 p.m. …") — Text, not
+    # a fixed varchar that would truncate/error (cf. the varchar(1024) SPARQL overflow)
+    native_status: Mapped[str | None] = mapped_column(Text)
     track: Mapped[str] = mapped_column(String(16), default="default")
     native_meta: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     content_fingerprint: Mapped[str | None] = mapped_column(String(64))
@@ -206,7 +209,8 @@ class KeyDate(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     pipeline_item_id: Mapped[int] = mapped_column(ForeignKey("pipeline_item.id"), index=True)
     date_type: Mapped[DateType] = mapped_column(Enum(DateType))
-    label: Mapped[str | None] = mapped_column(String(255))
+    # source-derived free text (adapter/milestone labels) — Text, not a fixed varchar
+    label: Mapped[str | None] = mapped_column(Text)
     value: Mapped[date] = mapped_column(Date)
     confidence: Mapped[Confidence] = mapped_column(Enum(Confidence))
     retracted: Mapped[bool] = mapped_column(Boolean, default=False)

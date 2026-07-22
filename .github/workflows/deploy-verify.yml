@@ -1,0 +1,34 @@
+name: Deploy verify
+
+# Catches the "merged but never deployed" failure mode observed live (the v0.6.0
+# production deploy silently never started on Vercel's side). Polls production for
+# the merged version and fails loudly if it never appears.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Poll production for the merged version
+        env:
+          # override with a repo variable if the production URL changes
+          PROD_URL: ${{ vars.PROD_URL || 'https://obligation-aggregator.vercel.app' }}
+        run: |
+          expected=$(grep -oP '__version__ = "\K[^"]+' src/oblag/__init__.py)
+          echo "Expecting version $expected at $PROD_URL"
+          for i in $(seq 1 30); do
+            live=$(curl -sf "$PROD_URL/openapi.json" \
+              | python3 -c 'import sys,json; print(json.load(sys.stdin)["info"]["version"])' \
+              2>/dev/null || echo "unreachable")
+            echo "attempt $i: live=$live"
+            if [ "$live" = "$expected" ]; then
+              echo "Production is serving $expected."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::Production never reported version $expected after ~10 minutes — the deploy may not have started."
+          exit 1

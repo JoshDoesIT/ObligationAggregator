@@ -70,8 +70,13 @@ def test_key_date_supersession_chain(db):
 
 
 def test_private_document_version_unique_per_obligation(db):
+    from oblag.db.models import Org
+
     ob = Obligation(slug="pci-dss", name="PCI DSS", issuing_body="PCI SSC", jurisdiction="Global")
     db.add(ob)
+    # real Org rows so the org_id FK holds (Postgres enforces it; SQLite's test engine
+    # doesn't — the Postgres CI parity job is what surfaced the missing rows)
+    db.add_all([Org(id=1, slug="org1", name="Org 1"), Org(id=2, slug="org2", name="Org 2")])
     db.flush()
     # uniqueness is per (org, obligation, version): same org+version clashes...
     db.add(
@@ -89,7 +94,7 @@ def test_private_document_version_unique_per_obligation(db):
         db.flush()
     db.rollback()
     # ...but a DIFFERENT org may hold the same obligation+version independently
-    db.add(ob)
+    db.add_all([ob, Org(id=1, slug="org1", name="Org 1"), Org(id=2, slug="org2", name="Org 2")])
     db.add(
         PrivateDocument(
             org_id=1, obligation_id=ob.id, version_label="4.0.1", sha256="ab" * 32, storage_ref="x"
@@ -110,6 +115,31 @@ def test_obligation_defaults_are_conservative_enough(db):
     # defaults exist; copyrighted obligations must be set explicitly by seed data
     assert ob.display_policy.value == "full_text"
     assert ob.copyright_status.value == "public_domain"
+
+
+def test_long_source_text_fits_widened_columns(db):
+    """native_status (NERC status sentences) and key_date.label are Text now, not a
+    fixed varchar — long source values must not overflow (this errored on Postgres,
+    not SQLite; the Postgres parity CI job is what actually exercises the limit)."""
+    long_status = (
+        "The formal comment period for the Project 2021-03 CIP-002 Standard "
+        "Authorization Request (SAR) concluded at 8 p.m. Eastern, Wednesday, "
+        "July 9, 2025, and the drafting team is reviewing responses. " * 4
+    )
+    item = make_item(native_status=long_status)
+    db.add(item)
+    db.flush()
+    db.add(
+        KeyDate(
+            pipeline_item_id=item.id,
+            date_type=DateType.phased_compliance,
+            value=date(2027, 12, 2),
+            confidence=Confidence.published_firm,
+            label="high-risk AI systems (Annex III) — deferred by the Digital Omnibus " * 3,
+        )
+    )
+    db.flush()
+    assert db.get(PipelineItem, item.id).native_status == long_status
 
 
 def test_init_db_backfills_current_version_column(tmp_path):

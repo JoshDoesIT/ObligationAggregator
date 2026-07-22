@@ -18,3 +18,32 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest --cov=oblag --cov-report=term-missing
+
+  # Dialect-parity: run the suite against a real Postgres. SQLite hid all three
+  # production-only failures observed live (JSON equality in the linker, varchar
+  # overflow on long URLs, and connection handling). Fresh schema per test
+  # (conftest honors OBLAG_TEST_DATABASE_URL).
+  test-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: oblag_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      OBLAG_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/oblag_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+      - run: uv sync --all-extras
+      - run: uv run pytest -q
