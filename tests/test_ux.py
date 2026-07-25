@@ -16,7 +16,7 @@ def _nav(html: str) -> str:
 def test_primary_nav_is_daily_use_only_with_utility_menu(client, seeded):
     """Only daily-use destinations at top level; operator/reference surfaces stay
     reachable but demoted into the More menu."""
-    nav = _nav(client.get("/").text)
+    nav = _nav(client.get("/changes").text)
     primary = re.findall(r"<a href=\"([^\"]+)\" class=\"\{?[^\"]*\"[^>]*>([^<]+)</a>", nav)
     top = [label.strip() for href, label in primary if 'class="' not in href]
     # the primary labels appear outside the utility menu
@@ -32,8 +32,8 @@ def test_primary_nav_is_daily_use_only_with_utility_menu(client, seeded):
         assert label not in head, f"{label} should not be a primary nav item"
 
 
-def test_landing_page_leads_with_needs_attention(client, seeded):
-    html = client.get("/").text
+def test_feed_page_leads_with_needs_attention(client, seeded):
+    html = client.get("/changes").text
     assert 'aria-label="Needs attention"' in html
     for label in ("comment windows closing", "deadlines in 30 days", "awaiting outcome"):
         assert label in html
@@ -44,7 +44,7 @@ def test_landing_page_leads_with_needs_attention(client, seeded):
 def test_feed_rows_are_three_columns(client, seeded):
     """Kind and Source no longer own columns — they ride a muted subtitle so the row
     scans Change → State → Key dates."""
-    html = client.get("/").text
+    html = client.get("/changes").text
     header = re.search(r"<table class=\"rows feed[^\"]*\">.*?<thead>(.*?)</thead>", html, re.S)
     assert header
     cols = re.findall(r"<th>([^<]*)</th>", header.group(1))
@@ -120,7 +120,15 @@ def test_confidence_renders_two_tiers(client, seeded):
 
 
 def test_all_pages_render(client, seeded):
-    for path in ("/", "/obligations", "/deadlines", "/watchlists", "/events", "/health"):
+    for path in (
+        "/",
+        "/changes",
+        "/obligations",
+        "/deadlines",
+        "/watchlists",
+        "/events",
+        "/health",
+    ):
         assert client.get(path).status_code == 200, path
 
 
@@ -164,10 +172,34 @@ def test_every_data_table_is_stackable_on_mobile(client, seeded, db):
 def test_mobile_viewport_and_touch_rules_present(client, seeded):
     """The responsive rules are inline in base.html — assert the load-bearing ones so a
     future edit can't silently drop mobile support."""
-    html = client.get("/").text
+    html = client.get("/changes").text
     assert 'name="viewport"' in html and "width=device-width" in html
     assert "@media (max-width:720px)" in html
     assert "@media (pointer:coarse)" in html  # 44px touch targets
     assert "table.stack" in html
     # the More menu must escape the horizontally-scrolling nav on mobile
     assert "position:fixed" in html
+
+
+def test_homepage_is_a_live_landing_page(client, seeded):
+    """/ is the front door (v0.10.0): a hero radar drawn from real deadline data, live
+    stat links into the app, and the obligations ticker. Not a mock — the dots must be
+    real item links."""
+    html = client.get("/").text
+    assert "Regulation moves." in html
+    assert 'aria-label="Live regulatory horizon"' in html
+    assert 'class="sweep"' in html and "prefers-reduced-motion" in html
+    # radar dots link to real items (seeded data has future deadlines)
+    assert re.search(r'<a href="/items/\d+" aria-label=', html), "radar should plot live deadlines"
+    assert "tracked changes" in html and "obligations watched" in html
+
+
+def test_feed_moved_to_changes_with_legacy_redirects(client, seeded):
+    """Old bookmarks (/?obligation=…) must keep working: bare / is the homepage, but any
+    feed query param 301s to /changes with the query intact."""
+    assert "Change feed" in client.get("/changes").text
+    r = client.get("/?obligation=circia", follow_redirects=False)
+    assert r.status_code == 301
+    assert r.headers["location"] == "/changes?obligation=circia"
+    # and the nav's Changes entry points at the feed, not the homepage
+    assert 'href="/changes"' in client.get("/").text

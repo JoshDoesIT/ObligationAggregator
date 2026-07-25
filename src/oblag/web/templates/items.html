@@ -19,7 +19,7 @@
         {% endfor %}
       </ul>
       {% if attention.closing | length > 3 %}
-      <div class="more"><a href="/?state=comment_open">See all {{ attention.closing | length }}</a></div>
+      <div class="more"><a href="/changes?state=comment_open">See all {{ attention.closing | length }}</a></div>
       {% endif %}
     {% else %}<div class="none">Nothing closing in the next 14 days.</div>{% endif %}
   </div>
@@ -51,7 +51,7 @@
   </div>
 </section>
 
-<form class="filters" method="get" action="/" data-autosubmit>
+<form class="filters" method="get" action="/changes" data-autosubmit>
   <input type="search" name="q" placeholder="Search title or abstract…" value="{{ q or '' }}">
   <select name="state" aria-label="Filter by state">
     <option value="">All states</option>
@@ -72,7 +72,7 @@
     {% endfor %}
   </select>
   <button class="js-apply">Apply</button>
-  {% if q or state or source or obligation %}<a href="/" class="muted" style="font-size:.85rem">clear</a>{% endif %}
+  {% if q or state or source or obligation %}<a href="/changes" class="muted" style="font-size:.85rem">clear</a>{% endif %}
   <span class="muted" style="margin-left:auto; font-size:.85rem">{{ total }} result{{ '' if total == 1 else 's' }}</span>
 </form>
 
@@ -85,7 +85,7 @@
     <tr>
       <td class="titlecell">
         <a href="/items/{{ item.id }}">{{ item.title }}</a>
-        {% if item.obligation %}<a class="tag" href="/?obligation={{ item.obligation }}"
+        {% if item.obligation %}<a class="tag" href="/changes?obligation={{ item.obligation }}"
           title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
         <div class="sub">{{ item | signal_kind }}<span class="sep">·</span>{{
           item.source_system | human_source }}<span class="sep">·</span>{{ item.jurisdiction }}</div>
@@ -108,7 +108,7 @@
     </tr>
     {% else %}
     <tr><td colspan="3"><div class="empty">{{ icon('search', 40, 'big-ic') }}
-      No items match these filters.<br><a href="/">Show everything</a></div></td></tr>
+      No items match these filters.<br><a href="/changes">Show everything</a></div></td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -118,9 +118,9 @@
 {% set qs = (('&q=' ~ (q | urlencode)) if q else '') ~ (('&state=' ~ state) if state else '')
    ~ (('&source=' ~ source) if source else '') ~ (('&obligation=' ~ obligation) if obligation else '') %}
 <div style="display:flex; gap:.8rem; align-items:center; justify-content:center; margin:1rem 0">
-  {% if page > 1 %}<a href="/?page={{ page - 1 }}{{ qs }}">&larr; Newer</a>{% endif %}
+  {% if page > 1 %}<a href="/changes?page={{ page - 1 }}{{ qs }}">&larr; Newer</a>{% endif %}
   <span class="muted" style="font-size:.85rem">page {{ page }}</span>
-  {% if has_next %}<a href="/?page={{ page + 1 }}{{ qs }}">Older &rarr;</a>{% endif %}
+  {% if has_next %}<a href="/changes?page={{ page + 1 }}{{ qs }}">Older &rarr;</a>{% endif %}
 </div>
 {% endif %}
 {% endblock %}

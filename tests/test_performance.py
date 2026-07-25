@@ -67,8 +67,8 @@ def test_item_list_query_count_is_bounded(client, db):
     assert counts["n"] <= 12, f"{counts['n']} queries for 25 items — N+1 regression"
 
 
-def test_landing_page_query_count_is_bounded(client, db):
-    """The needs-attention band added a pending-outcomes pass to the busiest page; it
+def test_feed_page_query_count_is_bounded(client, db):
+    """The needs-attention band added a pending-outcomes pass to the feed; it
     must stay a fixed number of queries rather than one per open consultation."""
     _seed_items(db, 25)
     engine = db.get_bind()
@@ -79,11 +79,11 @@ def test_landing_page_query_count_is_bounded(client, db):
         counts["n"] += 1
 
     try:
-        r = client.get("/")
+        r = client.get("/changes")
     finally:
         event.remove(engine, "before_cursor_execute", _count)
     assert r.status_code == 200
-    assert counts["n"] <= 20, f"{counts['n']} queries for the landing page — N+1 regression"
+    assert counts["n"] <= 20, f"{counts['n']} queries for the feed page — N+1 regression"
 
 
 def test_cdn_cache_header_when_auth_disabled(client, seeded):
@@ -92,7 +92,7 @@ def test_cdn_cache_header_when_auth_disabled(client, seeded):
     def edge(path):
         return client.get(path).headers.get("vercel-cdn-cache-control", "")
 
-    assert "max-age=60" in edge("/")
+    assert "max-age=60" in edge("/changes")
     assert "max-age=60" in edge("/api/v1/items")
     assert "max-age=60" not in edge("/admin/versions")  # internal/admin never cached
 

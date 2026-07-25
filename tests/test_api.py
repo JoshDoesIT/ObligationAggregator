@@ -71,7 +71,7 @@ def test_html_pages_render(client, seeded):
         # icons are inline SVG now — no pictographic emoji should reach the page
         assert not emoji.search(r.text), f"emoji leaked into {path}"
         assert "<svg" in r.text  # the icon set is present
-    assert "CIRCIA" in client.get("/").text
+    assert "CIRCIA" in client.get("/changes").text
 
 
 def _rfc_item(db, key: str, title: str, slug: str):

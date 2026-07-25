@@ -51,7 +51,7 @@
     <tr>
       <td class="titlecell"><a href="/items/{{ w.item_id }}">{{ w.title }}</a></td>
       <td class="muted" data-label="Why it's here">{{ w.detail }}</td>
-      <td>{% if w.obligation %}<a class="tag" href="/?obligation={{ w.obligation }}">{{ w.obligation }}</a>{% endif %}</td>
+      <td>{% if w.obligation %}<a class="tag" href="/changes?obligation={{ w.obligation }}">{{ w.obligation }}</a>{% endif %}</td>
     </tr>
     {% endfor %}
     </tbody>

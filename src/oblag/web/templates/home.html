@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}ObligationAggregator — regulatory change intelligence{% endblock %}
+{% block content %}
+{# ================= THE HORIZON =================
+   The hero is a live radar of this instance's actual regulatory horizon: every
+   upcoming deadline is a dot, distance from center = time until it lands, and every
+   dot is a link. Drawn server-side from the same query the deadlines page uses —
+   the artwork can never drift from the truth. Pure CSS/SVG; no libraries; honors
+   prefers-reduced-motion. #}
+<style>
+  /* full-bleed section that escapes main's centered column */
+  .bleed { margin-inline: calc(50% - 50vw); }
+  .horizon {
+    --hz-bg1:#0b0e17; --hz-bg2:#111631; --hz-line:rgba(148,170,255,.14);
+    --hz-fg:#eef1fb; --hz-muted:#98a2c8;
+    background:
+      radial-gradient(1200px 700px at 72% 38%, #1b2350 0%, transparent 55%),
+      radial-gradient(900px 600px at 15% 85%, #14204a33 0%, transparent 60%),
+      linear-gradient(160deg, var(--hz-bg1), var(--hz-bg2));
+    color:var(--hz-fg);
+    margin-top:-1.4rem; /* meet the header */
+    padding:clamp(2.2rem,6vw,4.5rem) 1.25rem clamp(2.4rem,5vw,4rem);
+    position:relative; overflow:hidden;
+  }
+  /* faint chart grid — the room the radar lives in */
+  .horizon::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+    background-image:linear-gradient(var(--hz-line) 1px, transparent 1px),
+                     linear-gradient(90deg, var(--hz-line) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(80% 80% at 50% 40%, #000 30%, transparent 100%);
+    -webkit-mask-image:radial-gradient(80% 80% at 50% 40%, #000 30%, transparent 100%); }
+  .hz-inner { max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap;
+              gap:clamp(1.5rem,4vw,3.5rem); align-items:center; position:relative; }
+  .hz-copy { flex:1 1 340px; min-width:0; }
+  .hz-eyebrow { font-size:.74rem; letter-spacing:.22em; text-transform:uppercase;
+                color:var(--hz-muted); margin:0 0 1rem; }
+  .hz-eyebrow .dot { display:inline-block; width:7px; height:7px; border-radius:50%;
+                     background:#5cc98a; margin-right:.5rem; animation:hz-live 2.4s ease-in-out infinite; }
+  @keyframes hz-live { 50% { opacity:.25; } }
+  .display { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+             font-size:clamp(2.3rem, 6.5vw, 4.2rem); line-height:1.04; letter-spacing:-.02em;
+             margin:0 0 1.1rem; font-weight:400; }
+  .display em { font-style:italic;
+    background:linear-gradient(100deg, #8aa8f5 10%, #c9d6ff 55%, #7be3ac 95%);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hz-sub { color:var(--hz-muted); font-size:1.02rem; line-height:1.65; max-width:46ch; margin:0 0 1.6rem; }
+  .hz-cta { display:flex; gap:.7rem; flex-wrap:wrap; }
+  .hz-cta a { display:inline-flex; align-items:center; gap:.45rem; border-radius:10px;
+              padding:.7rem 1.15rem; font-weight:600; font-size:.95rem; text-decoration:none; }
+  .hz-cta a:hover { text-decoration:none; filter:brightness(1.1); }
+  .hz-cta .primary { background:var(--accent); color:#fff; }
+  .hz-cta .ghost { color:var(--hz-fg); border:1px solid rgba(148,170,255,.35); }
+
+  /* ---- the radar ---- */
+  .radar-wrap { flex:1 1 340px; display:flex; flex-direction:column; align-items:center; min-width:0; }
+  .radar { position:relative; width:min(88vw, 480px); aspect-ratio:1; }
+  .radar svg { width:100%; height:100%; display:block; }
+  .radar .ring { fill:none; stroke:rgba(148,170,255,.18); stroke-width:1; }
+  .radar .ring-label { fill:#7f8cba; font-size:13px; letter-spacing:.06em; }
+  .radar .axis { stroke:rgba(148,170,255,.10); stroke-width:1; }
+  .sweep { position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:conic-gradient(from 0deg, rgba(138,168,245,.22) 0deg, rgba(138,168,245,.05) 55deg, transparent 95deg);
+    animation:sweep 14s linear infinite;
+    mask-image:radial-gradient(circle, #000 0 47%, transparent 47%);
+    -webkit-mask-image:radial-gradient(circle, #000 0 47%, transparent 47%); }
+  @keyframes sweep { to { transform:rotate(360deg); } }
+  .dot-hot  { fill:#ff7a7e; }
+  .dot-warm { fill:#f5b455; }
+  .dot-far  { fill:#8aa8f5; }
+  .radar a circle { transition:opacity .15s; cursor:pointer; }
+  .radar a:hover circle { opacity:1; stroke:#fff; stroke-width:1.5; }
+  .radar a:focus-visible circle { stroke:#fff; stroke-width:2; }
+  .halo { animation:halo 2.2s ease-out infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes halo { 0% { opacity:.65; transform:scale(1);} 100% { opacity:0; transform:scale(2.6);} }
+  .radar-cap { color:var(--hz-muted); font-size:.8rem; margin-top:.8rem; text-align:center; max-width:40ch; }
+
+  /* ---- live stats band ---- */
+  .pulse { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+           gap:1px; background:var(--line); border:1px solid var(--line);
+           border-radius:var(--radius); overflow:hidden; margin:1.6rem 0; }
+  .pulse a { background:var(--panel); padding:1.1rem 1.2rem; display:block; color:inherit; }
+  .pulse a:hover { text-decoration:none; background:var(--line2); }
+  .pulse .n { font-size:1.9rem; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1; }
+  .pulse .l { color:var(--muted); font-size:.82rem; margin-top:.15rem; }
+
+  /* ---- obligations ticker ---- */
+  .ticker { overflow:hidden; border-block:1px solid var(--line); padding:.85rem 0;
+            margin:2.2rem calc(50% - 50vw) 0; position:relative;
+    mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .ticker-track { display:flex; gap:2.4rem; width:max-content; animation:tick 90s linear infinite; }
+  .ticker:hover .ticker-track { animation-play-state:paused; }
+  @keyframes tick { to { transform:translateX(-50%); } }
+  .ticker span { white-space:nowrap; color:var(--fg2); font-size:.92rem; }
+  .ticker span::before { content:"◆"; color:var(--accent); opacity:.45; margin-right:.8rem; font-size:.6rem; vertical-align:.14em; }
+
+  /* ---- concept cards ---- */
+  .creed { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
+           gap:.9rem; margin:2.2rem 0 1rem; }
+  .creed .c { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+              padding:1.25rem 1.3rem; box-shadow:var(--shadow); }
+  .creed .ic-badge { width:38px; height:38px; border-radius:10px; background:var(--accent-soft);
+                     color:var(--accent); display:flex; align-items:center; justify-content:center;
+                     margin-bottom:.8rem; }
+  .creed h3 { margin:0 0 .4rem; font-size:1.02rem; }
+  .creed p { margin:0; color:var(--muted); font-size:.9rem; line-height:1.6; }
+
+  .coda { text-align:center; margin:2.8rem 0 1rem; }
+  .coda .display { font-size:clamp(1.5rem, 3.4vw, 2.2rem); margin-bottom:.4rem; }
+  .coda p { color:var(--muted); margin:.2rem 0 1rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sweep, .halo, .ticker-track, .hz-eyebrow .dot { animation:none; }
+    .sweep { display:none; }
+  }
+  @media (max-width:720px) {
+    .horizon { margin-top:-1rem; }
+    .hz-cta a { width:100%; justify-content:center; }
+  }
+</style>
+
+<section class="horizon bleed" aria-label="Live regulatory horizon">
+  <div class="hz-inner">
+    <div class="hz-copy">
+      <p class="hz-eyebrow"><span class="dot"></span>Open-source regulatory change intelligence</p>
+      <h1 class="display">Regulation moves.<br><em>See it coming.</em></h1>
+      <p class="hz-sub">ObligationAggregator watches {{ stats.obligations }} laws, frameworks and
+      standards at their primary sources — and reduces every rulemaking, consultation and
+      release into a lifecycle you can act on, with evidence attached to every date.</p>
+      <div class="hz-cta">
+        <a class="primary" href="/changes">Open the change feed {{ icon('search', 15) }}</a>
+        <a class="ghost" href="/deadlines">{{ icon('calendar', 15) }} This week's deadlines</a>
+      </div>
+    </div>
+    <div class="radar-wrap">
+      <div class="radar">
+        <svg viewBox="0 0 600 600" role="img"
+             aria-label="Radar chart of {{ dots | length }} upcoming deadlines, nearest at the center">
+          {% for ring in rings %}
+          <circle class="ring" cx="300" cy="300" r="{{ ring.r }}"/>
+          <text class="ring-label" x="300" y="{{ 294 - ring.r }}" text-anchor="middle">{{ ring.label }}</text>
+          {% endfor %}
+          <line class="axis" x1="300" y1="20" x2="300" y2="580"/>
+          <line class="axis" x1="20" y1="300" x2="580" y2="300"/>
+          <circle cx="300" cy="300" r="4.5" fill="#eef1fb"/>
+          <text class="ring-label" x="300" y="322" text-anchor="middle">today</text>
+          {% for d in dots %}
+          <a href="/items/{{ d.item_id }}" aria-label="{{ d.title }}">
+            <title>{{ d.title }}</title>
+            {% if d.cls == 'hot' %}<circle class="halo dot-hot" cx="{{ d.x }}" cy="{{ d.y }}" r="6"/>{% endif %}
+            <circle class="dot-{{ d.cls }}" cx="{{ d.x }}" cy="{{ d.y }}" r="6" opacity=".92"/>
+          </a>
+          {% endfor %}
+        </svg>
+        <div class="sweep" aria-hidden="true"></div>
+      </div>
+      <p class="radar-cap">Live — your next {{ dots | length }} deadlines, plotted by time to
+      impact. The center is today. Touch a point to open it.</p>
+    </div>
+  </div>
+</section>
+
+<div class="pulse" role="list" aria-label="Live counts">
+  <a role="listitem" href="/changes"><span class="n">{{ stats.changes }}</span><div class="l">tracked changes</div></a>
+  <a role="listitem" href="/changes?state=comment_open"><span class="n">{{ stats.open_windows }}</span><div class="l">comment windows open</div></a>
+  <a role="listitem" href="/deadlines"><span class="n">{{ stats.deadlines_30d }}</span><div class="l">deadlines in 30 days</div></a>
+  <a role="listitem" href="/obligations"><span class="n">{{ stats.obligations }}</span><div class="l">obligations watched</div></a>
+</div>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    {% for name in obligations %}<span>{{ name }}</span>{% endfor %}
+    {% for name in obligations %}<span>{{ name }}</span>{% endfor %}
+  </div>
+</div>
+
+<section class="creed" aria-label="How it works">
+  <div class="c">
+    <div class="ic-badge">{{ icon('rss', 18) }}</div>
+    <h3>Watched at the source</h3>
+    <p>Adapters poll the Federal Register, EUR-Lex, NIST, PCI SSC, EDPB and more on a
+    schedule — the primary record, not hearsay. Sources self-report their own health.</p>
+  </div>
+  <div class="c">
+    <div class="ic-badge">{{ icon('clock', 18) }}</div>
+    <h3>A lifecycle, not a headline</h3>
+    <p>Every signal reduces into one state machine — proposed, comment, final, effective —
+    so you always know where a change <em>stands</em>, not just that it happened.</p>
+  </div>
+  <div class="c">
+    <div class="ic-badge">{{ icon('check', 18) }}</div>
+    <h3>Evidence attached</h3>
+    <p>Dates carry confidence levels and verified source snapshots — hash-sealed, optionally
+    signed. An estimate is never dressed up as a statutory date.</p>
+  </div>
+</section>
+
+<div class="coda">
+  <p class="display">Watch your own horizon.</p>
+  <p>Apache-2.0. Self-host it, fork it, or wire the <a href="/docs">JSON API</a> into what you already run.</p>
+  <div class="hz-cta" style="justify-content:center">
+    <a class="primary" href="/changes" style="background:var(--accent); color:#fff">Start with the feed</a>
+    <a class="ghost" href="/watchlists" style="color:var(--fg); border:1px solid var(--line)">Create a watchlist</a>
+  </div>
+</div>
+{% endblock %}

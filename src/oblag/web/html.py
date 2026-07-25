@@ -313,6 +313,74 @@ templates.env.globals.update(conf_help=CONF_HELP, state_labels=STATE_LABELS)
 
 
 @router.get("/", response_class=HTMLResponse)
+def home_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    """The front door: a live 'regulatory horizon' — every upcoming deadline plotted as
+    a dot whose distance from center is time until it lands. The hero is drawn from the
+    same data the feed serves, so the artwork is never a mock. Legacy feed URLs
+    (/?obligation=… bookmarks from when the feed lived at /) redirect to /changes."""
+    legacy = {"q", "state", "source", "obligation", "page"}
+    if legacy & set(request.query_params.keys()):
+        return RedirectResponse(f"/changes?{request.url.query}", status_code=301)
+
+    import math
+
+    from sqlalchemy import func
+
+    from oblag.db.models import Obligation
+
+    horizon = api.upcoming_deadlines(db=db, date_type=None, within_days=365)["deadlines"]
+
+    # Polar plot: radius grows with log(days) so the near future — where decisions
+    # happen — gets most of the canvas; golden-angle spacing scatters dots organically
+    # without collisions. Every dot links to its item: the painting is navigation.
+    def _radius(days: int) -> float:
+        return 62 + 218 * (math.log1p(max(days, 0)) / math.log1p(365))
+
+    dots = []
+    for i, d in enumerate(horizon[:48]):
+        a = i * 2.399963  # golden angle
+        r = _radius(d["days_until"])
+        dots.append(
+            {
+                "x": round(300 + r * math.cos(a), 1),
+                "y": round(300 + r * math.sin(a), 1),
+                "cls": "hot"
+                if d["days_until"] <= 7
+                else "warm"
+                if d["days_until"] <= 30
+                else "far",
+                "item_id": d["item_id"],
+                "title": f"{d['title']} — {d['date_type'].replace('_', ' ')} in {d['days_until']}d",
+            }
+        )
+    rings = [
+        {"r": round(_radius(d)), "label": lbl}
+        for d, lbl in ((7, "7d"), (30, "30d"), (90, "90d"), (365, "1y"))
+    ]
+
+    state_counts: dict[ItemState, int] = {
+        row[0]: row[1]
+        for row in db.query(PipelineItem.state, func.count()).group_by(PipelineItem.state)
+    }
+    obligations = [name for (name,) in db.query(Obligation.name).order_by(Obligation.slug)]
+    stats = {
+        "changes": sum(state_counts.values()),
+        "open_windows": state_counts.get(ItemState.comment_open, 0),
+        "deadlines_30d": sum(1 for d in horizon if d["days_until"] <= 30),
+        "obligations": len(obligations),
+    }
+    return templates.TemplateResponse(
+        request,
+        "home.html",
+        {"ctx": ctx, "dots": dots, "rings": rings, "stats": stats, "obligations": obligations},
+    )
+
+
+@router.get("/changes", response_class=HTMLResponse)
 def items_page(
     request: Request,
     db: Session = Depends(get_db),
