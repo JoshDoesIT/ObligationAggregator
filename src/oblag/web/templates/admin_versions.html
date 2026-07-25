@@ -11,24 +11,24 @@ real, with a one-line catalog edit. This page is a read-only audit of what the t
 <div class="panel">
   <h3>Recent version activity</h3>
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows stack">
     <thead><tr><th>Standard</th><th>In force</th><th>Detected</th><th>Result</th><th>Source</th><th>When</th></tr></thead>
     <tbody>
     {% for r in log %}
     <tr>
       <td><strong>{{ r.name or r.slug }}</strong> <a class="tag" href="/?obligation={{ r.slug }}">{{ r.slug }}</a></td>
-      <td>{{ r.in_force or '—' }}</td>
-      <td><span class="badge info">{{ r.version }}</span></td>
-      <td>
+      <td data-label="In force">{{ r.in_force or '—' }}</td>
+      <td data-label="Detected"><span class="badge info">{{ r.version }}</span></td>
+      <td data-label="Result">
         {% if r.decision == 'auto' %}<span class="badge ok">{{ icon('check', 12) }} applied</span>
         {% else %}<span class="badge warn">flagged — not applied</span>{% endif %}
       </td>
-      <td class="muted">
+      <td class="muted" data-label="Source">
         {% if r.source_url %}<a href="{{ r.source_url }}" rel="noopener">{{ r.item_title or 'source' }} {{ icon('external', 12) }}</a>
         {% elif r.item_id %}<a href="/items/{{ r.item_id }}">{{ r.item_title or 'item' }}</a>
         {% else %}—{% endif %}
       </td>
-      <td class="muted" style="white-space:nowrap">{{ r.decided_at[:10] if r.decided_at }}</td>
+      <td class="muted" data-label="When" style="white-space:nowrap">{{ r.decided_at[:10] if r.decided_at }}</td>
     </tr>
     {% else %}
     <tr><td colspan="6" class="empty">{{ icon('check', 40, 'big-ic') }}

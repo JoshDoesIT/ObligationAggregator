@@ -85,17 +85,17 @@
 
 <div class="panel">
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows stack">
     <thead><tr><th>Name</th><th>Delivery</th><th>Watching</th><th>Status</th><th></th></tr></thead>
     <tbody>
     {% for w in watchlists %}
     <tr>
       <td><strong>{{ w.name }}</strong></td>
-      <td style="max-width:22rem; overflow-wrap:anywhere">
+      <td data-label="Delivery" style="max-width:22rem; overflow-wrap:anywhere">
         <span class="tag">{{ w.channel }}</span>
         {% if w.feed_url %}<div style="margin-top:.2rem"><a href="{{ w.feed_url }}">{{ w.feed_url }}</a></div>
         {% elif w.target %}<div class="muted" style="margin-top:.2rem; font-size:.85rem">{{ w.target }}</div>{% endif %}</td>
-      <td>
+      <td data-label="Watching">
         {% set f = w.filters or {} %}
         {% for key, vals in f.items() if vals %}
           <div style="font-size:.82rem"><span class="muted">{{ key.replace('_', ' ') }}:</span>
@@ -104,7 +104,7 @@
           <span class="muted" style="font-size:.85rem">everything</span>
         {% endfor %}
       </td>
-      <td>{% if w.active %}<span class="badge ok"><span class="dot"></span>active</span>
+      <td data-label="Status">{% if w.active %}<span class="badge ok"><span class="dot"></span>active</span>
           {% else %}<span class="badge"><span class="dot"></span>paused</span>{% endif %}</td>
       <td>{% if w.active %}
         <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline">

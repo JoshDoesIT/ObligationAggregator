@@ -45,7 +45,7 @@ def test_feed_rows_are_three_columns(client, seeded):
     """Kind and Source no longer own columns — they ride a muted subtitle so the row
     scans Change → State → Key dates."""
     html = client.get("/").text
-    header = re.search(r"<table class=\"rows feed\">.*?<thead>(.*?)</thead>", html, re.S)
+    header = re.search(r"<table class=\"rows feed[^\"]*\">.*?<thead>(.*?)</thead>", html, re.S)
     assert header
     cols = re.findall(r"<th>([^<]*)</th>", header.group(1))
     assert cols == ["Change", "State", "Key dates"]
@@ -131,3 +131,43 @@ def test_byol_routes_are_gone(client, seeded):
     that actually carried 128 controls forward, purely because of renumbering)."""
     for path in ("/byol", "/byol/upload", "/byol/diff"):
         assert client.get(path).status_code == 404, path
+
+
+def test_every_data_table_is_stackable_on_mobile(client, seeded, db):
+    """Below 720px data tables render as labelled cards instead of real tables. Measured
+    on a 375px viewport before this change: the feed's fixed columns made the state badge
+    overprint the key dates and cut off the rightmost column, and the page scrolled
+    horizontally (scrollWidth 427 > 375). The CSS does the work; the invariant the markup
+    must hold is that NO data table ships without the `stack` class."""
+    from oblag.db.models import PipelineItem
+
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    for path in (
+        "/",
+        "/deadlines",
+        "/obligations",
+        "/watchlists",
+        "/events",
+        "/health",
+        f"/items/{item.id}",
+    ):
+        html = client.get(path).text
+        tables = re.findall(r"<table([^>]*)>", html)
+        for attrs in tables:
+            assert "stack" in attrs, f"{path} has a table without mobile stacking: <table{attrs}>"
+        # labelled cells only exist once there are rows — an empty table renders a
+        # single colspan placeholder instead
+        if tables and 'class="empty"' not in html:
+            assert "data-label=" in html, f"{path} cells need mobile labels"
+
+
+def test_mobile_viewport_and_touch_rules_present(client, seeded):
+    """The responsive rules are inline in base.html — assert the load-bearing ones so a
+    future edit can't silently drop mobile support."""
+    html = client.get("/").text
+    assert 'name="viewport"' in html and "width=device-width" in html
+    assert "@media (max-width:720px)" in html
+    assert "@media (pointer:coarse)" in html  # 44px touch targets
+    assert "table.stack" in html
+    # the More menu must escape the horizontally-scrolling nav on mobile
+    assert "position:fixed" in html

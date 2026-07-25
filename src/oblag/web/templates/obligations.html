@@ -9,7 +9,7 @@ the <a href="/">change feed</a> is a signal about one of these.</p>
 
 <div class="panel">
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows stack">
     <thead><tr><th>Obligation</th><th>Issuing body</th><th>Jurisdiction</th>
       <th class="num">Active changes</th><th>Next deadline</th></tr></thead>
     <tbody>
@@ -24,9 +24,9 @@ the <a href="/">change feed</a> is a signal about one of these.</p>
             style="font-size:.78rem">official source {{ icon('external', 11) }}</a></div>
         {% endif %}
       </td>
-      <td class="muted">{{ o.issuing_body }}</td>
-      <td><span class="tag">{{ o.jurisdiction }}</span></td>
-      <td class="num">
+      <td class="muted" data-label="Issuing body">{{ o.issuing_body }}</td>
+      <td data-label="Jurisdiction"><span class="tag">{{ o.jurisdiction }}</span></td>
+      <td class="num" data-label="Active changes">
         {% if o.active_items %}
           <a href="/?obligation={{ o.slug }}"><strong>{{ o.active_items }}</strong></a>
           {% if o.total_items > o.active_items %}<span class="muted" style="font-size:.8rem">/ {{ o.total_items }}</span>{% endif %}
@@ -36,7 +36,7 @@ the <a href="/">change feed</a> is a signal about one of these.</p>
           <span class="muted">—</span>
         {% endif %}
       </td>
-      <td>
+      <td data-label="Next deadline">
         {% if o.next_deadline %}
           {{ due_chip(o.next_deadline.days_until) }}
           <span style="font-size:.85rem">{{ o.next_deadline.date_type | human_date_type }}

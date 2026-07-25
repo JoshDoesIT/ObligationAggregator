@@ -17,15 +17,15 @@
 <div class="panel">
   <h3>API keys</h3>
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows stack">
     <thead><tr><th>Name</th><th>Prefix</th><th>Created</th><th>Last used</th><th></th></tr></thead>
     <tbody>
     {% for k in keys %}
     <tr>
       <td><strong>{{ k.name }}</strong></td>
-      <td><code>{{ k.prefix }}…</code></td>
-      <td class="muted">{{ k.created_at.strftime('%Y-%m-%d') if k.created_at }}</td>
-      <td class="muted">{{ k.last_used_at.strftime('%Y-%m-%d') if k.last_used_at else 'never' }}</td>
+      <td data-label="Prefix"><code>{{ k.prefix }}…</code></td>
+      <td class="muted" data-label="Created">{{ k.created_at.strftime('%Y-%m-%d') if k.created_at }}</td>
+      <td class="muted" data-label="Last used">{{ k.last_used_at.strftime('%Y-%m-%d') if k.last_used_at else 'never' }}</td>
       <td>{% if ctx.can_admin_org %}
         <form method="post" action="/settings/api-keys/{{ k.id }}/revoke" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">
@@ -70,15 +70,15 @@
 <div class="panel">
   <h3>Team</h3>
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows stack">
     <thead><tr><th>Member</th><th>Role</th></tr></thead>
     <tbody>
     {% for m in members %}
-    <tr><td>{{ m.email }}</td><td><span class="tag">{{ m.role }}</span></td></tr>
+    <tr><td>{{ m.email }}</td><td data-label="Role"><span class="tag">{{ m.role }}</span></td></tr>
     {% endfor %}
     {% for i in invites %}
     <tr><td>{{ i.email }} <span class="muted" style="font-size:.8rem">(invited)</span></td>
-        <td><span class="tag">{{ i.role }}</span></td></tr>
+        <td data-label="Role"><span class="tag">{{ i.role }}</span></td></tr>
     {% endfor %}
     </tbody>
   </table>

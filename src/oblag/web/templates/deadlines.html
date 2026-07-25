@@ -9,8 +9,8 @@
 
 <div class="panel">
   <div class="tablewrap">
-  <table class="rows">
-    <thead><tr><th>Due</th><th>Date</th><th>Milestone</th><th>Obligation</th><th>Confidence</th></tr></thead>
+  <table class="rows stack">
+    <thead><tr><th>Change</th><th>Due</th><th>Milestone</th><th>Confidence</th></tr></thead>
     <tbody>
     {% set groups = namespace(current='') %}
     {% for d in deadlines %}
@@ -18,19 +18,19 @@
                     else 'Next 3 months' if d.days_until <= 90 else 'Later' %}
     {% if bucket != groups.current %}
       {% set groups.current = bucket %}
-      <tr><td colspan="5" style="background:var(--line2); font-weight:700; font-size:.8rem;
+      <tr class="group"><td colspan="4" style="background:var(--line2); font-weight:700; font-size:.8rem;
         text-transform:uppercase; letter-spacing:.05em; color:var(--muted)">{{ bucket }}</td></tr>
     {% endif %}
     <tr>
-      <td>{{ due_chip(d.days_until) }}</td>
-      <td style="white-space:nowrap"><strong>{{ d.value }}</strong></td>
-      <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
       <td class="titlecell"><a href="/items/{{ d.item_id }}">{{ d.title }}</a>
           <div style="margin-top:.2rem">{{ state_badge(d.state) }}</div></td>
-      <td>{{ conf(d.confidence) }}</td>
+      <td data-label="Due">{{ due_chip(d.days_until) }}
+          <strong style="margin-left:.35rem; white-space:nowrap">{{ d.value }}</strong></td>
+      <td data-label="Milestone">{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
+      <td data-label="Confidence">{{ conf(d.confidence) }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="5"><div class="empty">{{ icon('calendar', 40, 'big-ic') }}
+    <tr><td colspan="4"><div class="empty">{{ icon('calendar', 40, 'big-ic') }}
       No deadlines in the selected window.</div></td></tr>
     {% endfor %}
     </tbody>
@@ -44,13 +44,13 @@
 <div class="panel" id="awaiting">
   <h3>Awaiting outcome — no date announced yet</h3>
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows stack">
     <thead><tr><th>What</th><th>Why it's here</th><th>Obligation</th></tr></thead>
     <tbody>
     {% for w in watch %}
     <tr>
       <td class="titlecell"><a href="/items/{{ w.item_id }}">{{ w.title }}</a></td>
-      <td class="muted">{{ w.detail }}</td>
+      <td class="muted" data-label="Why it's here">{{ w.detail }}</td>
       <td>{% if w.obligation %}<a class="tag" href="/?obligation={{ w.obligation }}">{{ w.obligation }}</a>{% endif %}</td>
     </tr>
     {% endfor %}

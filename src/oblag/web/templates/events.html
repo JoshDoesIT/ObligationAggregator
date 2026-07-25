@@ -18,17 +18,17 @@
 
 <div class="panel">
   <div class="tablewrap">
-  <table class="rows">
+  <table class="rows stack">
     <thead><tr><th>When</th><th>Event</th><th>Item</th><th>What happened</th></tr></thead>
     <tbody>
     {% for e in events %}
     <tr>
-      <td class="muted" style="white-space:nowrap">{{ e.occurred_at[:16].replace('T', ' ') if e.occurred_at }}</td>
+      <td class="muted" data-label="When" style="white-space:nowrap">{{ e.occurred_at[:16].replace('T', ' ') if e.occurred_at }}</td>
       <td><span class="badge plain {{ 'bad' if e.type == 'anomaly' else 'info' if e.type == 'date_changed' else '' }}">{{ e.type | human_event }}</span></td>
-      <td style="max-width:20rem">{% if e.item_id %}
+      <td data-label="Item" style="max-width:20rem">{% if e.item_id %}
         <a href="/items/{{ e.item_id }}">{{ (titles.get(e.item_id) or ('#' ~ e.item_id)) | truncate(70) }}</a>
       {% endif %}</td>
-      <td>{{ e | event_text }}</td>
+      <td data-label="What happened">{{ e | event_text }}</td>
     </tr>
     {% else %}
     <tr><td colspan="4"><div class="empty">{{ icon('clock', 40, 'big-ic') }}No events yet.</div></td></tr>
