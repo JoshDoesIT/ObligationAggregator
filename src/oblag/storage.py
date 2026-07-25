@@ -5,9 +5,7 @@ Backends:
   storage_ref = relative path, unchanged from earlier releases)
 - vercel-blob — Vercel Blob over its REST API (serverless deployments have no
   persistent filesystem; storage_ref = the blob URL)
-
-BYOL private documents intentionally stay on the local backend: they are added and
-diffed via the CLI on a trusted machine and must never reach shared/public storage."""
+"""
 
 from __future__ import annotations
 

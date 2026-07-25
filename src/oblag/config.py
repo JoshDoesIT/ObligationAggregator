@@ -54,7 +54,6 @@ class Settings(BaseSettings):
     # are unaffected). Enforced on creation.
     quota_watchlists: int = 0
     quota_api_keys: int = 0
-    quota_byol_docs: int = 0
     quota_invites: int = 0
 
     # Provenance (M3): Ed25519 private key — a PEM string (serverless: set
@@ -107,10 +106,6 @@ class Settings(BaseSettings):
     @property
     def snapshot_dir(self) -> Path:
         return self.data_dir / "snapshots"
-
-    @property
-    def private_dir(self) -> Path:
-        return self.data_dir / "private"
 
 
 @lru_cache

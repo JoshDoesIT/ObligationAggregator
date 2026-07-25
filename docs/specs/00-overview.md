@@ -25,8 +25,8 @@ scheduler → adapter.fetch_raw() → snapshot store (SHA-256, content-addressed
    `event.snapshot_id` are populated whenever the fact came from a fetch.
 3. **Copyright is enforced by data, not discipline.** `obligation.display_policy` gates what
    the UI/API may render; copyrighted body text is never stored in shared tables.
-   BYOL private documents live only in `private_document` + local storage and are excluded
-   from all shared outputs (RSS, webhooks, API exports).
+   (The BYOL private-document store this invariant also covered was removed in v0.9.0 —
+   see spec 06 §4.)
 4. **Confidence is explicit.** Every date carries `statutory_hard | published_firm |
    agency_estimate | derived`; an agency estimate is never rendered as firm.
 5. **Illegal state transitions do not crash** — they are recorded as anomalies

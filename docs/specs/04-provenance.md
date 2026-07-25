@@ -29,7 +29,6 @@ stored content and verifies the DSSE signature.
 
 Keyless Sigstore signing requires an OIDC identity on the fetcher and publishes every
 monitored URL + timestamp to a public transparency log. That is fine for public
-regulations but wrong for private/BYOL obligations, and it couples self-hosters to an
+regulations but wrong for private obligations, and it couples self-hosters to an
 external service. Design: DSSE/in-toto formats (Sigstore-compatible), local key by
 default, Rekor submission as a future opt-in flag for public sources only.
-BYOL private documents are hashed but NEVER attested to any external log.

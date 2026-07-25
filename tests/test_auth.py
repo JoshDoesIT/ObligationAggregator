@@ -329,45 +329,7 @@ def test_members_only_admin_manages_keys(ml):
     assert "won't be shown again" not in member.get("/settings").text
 
 
-# --- Phase 3: BYOL isolation, email prefs, assert-date, quotas ---------------
-
-
-def test_byol_org_isolation(ml, tmp_path):
-    a = _login_with_org(ml, "a@byol.test", "ByolA")
-    b = _login_with_org(ml, "b@byol.test", "ByolB")
-    # org A uploads a licensed doc
-    f = tmp_path / "std.txt"
-    f.write_text("1.1 Do the thing.\n1.2 Do another thing.\n")
-    csrf = _csrf(a, "/byol")
-    up = a.post(
-        "/byol/upload",
-        data={
-            "obligation": "pci-dss",
-            "version": "v-secret-9",
-            "attest_license": "1",
-            "csrf_token": csrf,
-        },
-        files={"file": ("std.txt", f.read_bytes(), "text/plain")},
-        follow_redirects=False,
-    )
-    assert up.status_code == 303
-    # A sees its doc
-    assert "v-secret-9" in a.get("/byol").text
-    # B sees NOTHING of A's (isolation)
-    bpage = b.get("/byol").text
-    assert "v-secret-9" not in bpage
-    # B cannot diff against A's version — no cross-org read
-    csrfb = _csrf(b, "/byol")
-    r = b.post(
-        "/byol/diff",
-        data={
-            "obligation": "pci-dss",
-            "from_version": "1.0",
-            "to_version": "1.0",
-            "csrf_token": csrfb,
-        },
-    )
-    assert "no BYOL document" in r.text
+# --- Phase 3: email prefs, assert-date, quotas -------------------------------
 
 
 def test_org_email_preferences_saved_and_applied(ml, monkeypatch):
