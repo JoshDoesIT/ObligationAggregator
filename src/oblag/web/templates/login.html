@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Sign in — ObligationAggregator{% endblock %}
+{% block title %}Sign in · ObligationAggregator{% endblock %}
 {% block content %}
 <div style="max-width:26rem; margin:2rem auto">
   <h2 class="page">Sign in</h2>
@@ -10,7 +10,7 @@
       It expires shortly and can only be used once.</p>
     </div></div>
   {% else %}
-    <p class="lede">Enter your work email and we'll send you a one-time sign-in link — no
+    <p class="lede">Enter your work email and we'll send you a one-time sign-in link, no
     password needed.</p>
     {% if error %}<div class="panel"><div class="pad" style="color:var(--bad)">{{ error }}</div></div>{% endif %}
     <div class="panel"><div class="pad">

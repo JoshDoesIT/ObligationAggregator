@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Watchlists — ObligationAggregator{% endblock %}
+{% block title %}Watchlists · ObligationAggregator{% endblock %}
 
 {# One creation form, reused by the panel and by the empty state so a first-time user
    never has to hunt for it. Step 1 (what + where) is all most people need; the raw
@@ -25,7 +25,7 @@
 
   <fieldset style="border:0; padding:.9rem 0 0; margin:0">
     <legend style="font-size:.8rem; color:var(--muted); padding:0">Obligations
-      <span style="font-weight:400">— leave all unchecked to watch everything</span></legend>
+      <span style="font-weight:400">(leave all unchecked to watch everything)</span></legend>
     <div class="checkgrid scroll" data-pickfilter="Filter obligations…">
       {% for o in obligations %}
       <label><input type="checkbox" name="obligation_slugs" value="{{ o.slug }}"> {{ o.name }}</label>
@@ -61,8 +61,8 @@
         </div>
       </fieldset>
     </div>
-    <p class="muted" style="font-size:.8rem; margin:.6rem 0 0">Filters are ANDed — an item must
-    match every category you narrow.</p>
+    <p class="muted" style="font-size:.8rem; margin:.6rem 0 0">Filters combine, so an item has
+    to match every category you narrow.</p>
   </details>
 
   <div style="margin-top:.9rem"><button>Create watchlist</button></div>

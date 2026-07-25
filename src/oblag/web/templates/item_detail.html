@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_macros.html" import state_badge, conf, due_chip %}
 {% from "_icons.html" import icon %}
-{% block title %}{{ item.title }} — ObligationAggregator{% endblock %}
+{% block title %}{{ item.title }} · ObligationAggregator{% endblock %}
 {% block content %}
 <p style="margin:.2rem 0"><a href="/changes">&larr; Change feed</a></p>
 <h2 class="page" style="max-width:60rem">{{ item.title }}</h2>
@@ -33,13 +33,13 @@
     {% set oblink %}<a href="/changes?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
     {% set cur = item.obligation_current_version %}
     {% if rstatus == 'informational' %}
-      This is an <strong>advisory</strong> from the issuing body — informational, not a
-      lifecycle change to {{ 'the standard itself' if not item.obligation else oblink }}.
+      This is an <strong>advisory</strong> from the issuing body. It's informational and
+      doesn't change {{ 'the standard itself' if not item.obligation else oblink }}.
     {% elif rstatus == 'current' %}
-      This announces the <strong>current version</strong> of {{ oblink }} — published and
-      <strong>in force</strong> ({{ cur }}).
+      This announces the <strong>current version</strong> of {{ oblink }}. It's published
+      and <strong>in force</strong> ({{ cur }}).
     {% elif rstatus == 'superseded' %}
-      This release has since been <strong>superseded</strong> — the current version of
+      This release has since been <strong>superseded</strong>. The current version of
       {{ oblink }} is <strong>{{ cur }}</strong>.
     {% else %}
       {{ oblink }} is published; the current version in force is <strong>{{ cur }}</strong>.
@@ -58,22 +58,22 @@
            closed feedback-on-current RFC and a historical draft consultation whose
            subject has SINCE become the in-force version (publication post no longer in
            the feed, so no publication item exists to resolve it). #}
-        This <strong>{{ item | signal_kind }}</strong> concerned {{ oblink }} ({{ cur }})
-        — the version <strong>currently in force</strong>. The comment window has closed;
+        This <strong>{{ item | signal_kind }}</strong> concerned {{ oblink }} ({{ cur }}),
+        the version <strong>currently in force</strong>. The comment window has closed, and
         nothing changes until a revised version is published.
       {% else %}
-        This <strong>{{ item | signal_kind }}</strong> solicits feedback on the current version
-        of {{ oblink }} ({{ cur }}), which <strong>remains in force</strong> — the feedback
-        shapes a future revision and changes nothing until a revised version is published.
+        This <strong>{{ item | signal_kind }}</strong> asks for feedback on the current
+        version of {{ oblink }} ({{ cur }}), which <strong>stays in force</strong>. The
+        feedback shapes a future revision, and nothing changes until that's published.
       {% endif %}
     {% elif rflavor == 'draft' %}
       This <strong>{{ item | signal_kind }}</strong> covers a <strong>draft of the next
       version</strong> of {{ oblink }}. The current version ({{ cur }})
-      <strong>remains in force</strong> until the revised standard is published.
+      <strong>stays in force</strong> until the revised standard is published.
     {% else %}
       This is a <strong>{{ item | signal_kind }}</strong> on an already-published standard.
-      The current version of {{ oblink }} ({{ cur }}) <strong>remains in force</strong>
-      throughout the comment period — the feedback shapes a future revision.
+      The current version of {{ oblink }} ({{ cur }}) <strong>stays in force</strong>
+      through the comment period. The feedback shapes a future revision.
     {% endif %}
   </div></div>
   {% if rflavor == 'current' %}
@@ -116,10 +116,10 @@
       </div></div>
     {% elif item.state == 'withdrawn' %}
       <div class="panel"><div class="pad">{{ state_badge(item.state) }}
-        This proposal was formally withdrawn — it is no longer moving toward a requirement.</div></div>
+        This proposal was formally withdrawn. It's no longer moving toward a requirement.</div></div>
     {% elif item.state == 'stalled' %}
       <div class="panel"><div class="pad">{{ state_badge(item.state) }}
-        No source activity for an extended period; timeline uncertain.</div></div>
+        No source activity for a while now, so the timeline is uncertain.</div></div>
     {% endif %}
   </div>
 {% endif %}
@@ -139,7 +139,7 @@
       <td data-label="Confidence">{{ conf(d.confidence) }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="4" class="muted">No machine-readable dates yet — add one with a curated assertion.</td></tr>
+    <tr><td colspan="4" class="muted">No machine-readable dates yet. You can add one with a curated assertion.</td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -181,7 +181,7 @@
 
   {% if item.date_history | length > item.current_dates | length %}
   <div class="panel">
-    <h3>Date history <span style="text-transform:none; letter-spacing:0">— append-only; superseded values struck through</span></h3>
+    <h3>Date history <span style="text-transform:none; letter-spacing:0">(append-only; superseded values struck through)</span></h3>
     <div class="tablewrap">
     <table class="stack">
       <thead><tr><th>Milestone</th><th>Date</th><th>Confidence</th><th>Asserted</th></tr></thead>
@@ -232,7 +232,7 @@
 
 {% if ctx and ctx.is_admin %}
 <div class="panel">
-  <h3>Add a curated date <span style="text-transform:none; letter-spacing:0">— admin</span></h3>
+  <h3>Add a curated date <span style="text-transform:none; letter-spacing:0">(admin)</span></h3>
   <div class="pad">
     <form method="post" action="/items/{{ item.id }}/assert-date" class="filters" style="margin:0">
       <input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">

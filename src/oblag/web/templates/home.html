@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}ObligationAggregator — the regulatory ledger{% endblock %}
+{% block title %}ObligationAggregator · the regulatory ledger{% endblock %}
 {% block content %}
 {# ================= THE LEDGER =================
    Identity drawn from the material this site tracks: the printed regulation. Paper,
@@ -151,10 +151,10 @@
     </div>
     <div class="hz-grid">
       <div class="hz-copy">
-        <h1 class="headline">Regulation moves.<span class="over">— and you will see it coming.</span></h1>
+        <h1 class="headline">Regulation moves.<span class="over">and you'll see it coming.</span></h1>
         <p class="hz-sub">ObligationAggregator watches {{ stats.obligations }} laws, frameworks and
-        standards at their primary sources, and reduces every rulemaking, consultation and
-        release into a lifecycle you can act on — with evidence attached to every date.</p>
+        standards at their official sources. Every rulemaking, consultation and release gets
+        tracked through its lifecycle, and every date comes with evidence you can check.</p>
         <div class="hz-cta">
           <a class="primary" href="/changes">Open the change feed</a>
           <a class="ghost" href="/deadlines">{{ icon('calendar', 14) }} This week's deadlines</a>
@@ -184,8 +184,8 @@
           <div class="sweep" aria-hidden="true"></div>
           <div class="stamp">Live data<br>not a mock</div>
         </div>
-        <p class="radar-cap">Fig. 1 — your next {{ dots | length }} deadlines, plotted by time to
-        impact. Center is today. Touch a point to open its record.</p>
+        <p class="radar-cap">Fig. 1: the next {{ dots | length }} deadlines, closest ones near
+        the center. The center is today. Tap a point to open it.</p>
       </div>
     </div>
   </div>
@@ -207,28 +207,30 @@
 
 <section class="creed" aria-label="How it works">
   <div class="c">
-    <span class="cl-no">§ 1 — SOURCES</span>
+    <span class="cl-no">§ 1 · SOURCES</span>
     <h3>Watched at the source</h3>
-    <p>Adapters poll the Federal Register, EUR-Lex, NIST, PCI SSC, EDPB and more on a
-    schedule — the primary record, not hearsay. Every source reports its own health.</p>
+    <p>We check the Federal Register, EUR-Lex, NIST, PCI SSC, EDPB and more on a schedule,
+    straight from the official record. Each source reports its own health too, so you'll
+    know if one goes quiet.</p>
   </div>
   <div class="c">
-    <span class="cl-no">§ 2 — LIFECYCLE</span>
-    <h3>A lifecycle, not a headline</h3>
-    <p>Every signal reduces into one state machine — proposed, comment, final, effective —
-    so you always know where a change <em>stands</em>, not just that it happened.</p>
+    <span class="cl-no">§ 2 · LIFECYCLE</span>
+    <h3>Where things actually stand</h3>
+    <p>Every signal lands in one simple lifecycle: proposed, comment, final, effective.
+    You always know where a change stands and what's coming next.</p>
   </div>
   <div class="c">
-    <span class="cl-no">§ 3 — EVIDENCE</span>
+    <span class="cl-no">§ 3 · EVIDENCE</span>
     <h3>Evidence attached</h3>
-    <p>Dates carry confidence levels and verified source snapshots — hash-sealed, optionally
-    signed. An estimate is never dressed up as a statutory date.</p>
+    <p>Every date carries a confidence level and a verified snapshot of where it came from,
+    hash-sealed and optionally signed. If something is an estimate, we say so.</p>
   </div>
 </section>
 
 <div class="coda">
   <h2>Watch your own horizon.</h2>
-  <p>Apache-2.0. Self-host it, fork it, or wire the <a href="/docs">JSON API</a> into what you already run.</p>
+  <p>It's Apache-2.0, so you can self-host it, fork it, or wire the <a href="/docs">JSON API</a>
+  into whatever you already run.</p>
   <div class="hz-cta" style="justify-content:center">
     <a class="primary" href="/changes" style="background:var(--accent); color:#fff; border:1.5px solid var(--ink); box-shadow:2px 2px 0 var(--ink)">Start with the feed</a>
     <a class="ghost" href="/watchlists" style="background:var(--panel); color:var(--fg); border:1.5px solid var(--ink); box-shadow:2px 2px 0 var(--ink)">Create a watchlist</a>

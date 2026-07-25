@@ -157,7 +157,7 @@ def test_rfc_flavors_render_the_truthful_lifecycle(client, seeded, db):
     """PCI runs RFCs in three flavors; each must render what is actually true.
 
     - Feedback on the in-force version (DSS v4.0.1): revision lifecycle,
-      'solicits feedback on the current version'.
+      'asks for feedback on the current version'.
     - RFC on a draft of the NEXT version (PTS HSM v5.0 while v4.0 is in force):
       revision lifecycle, 'draft of the next version', current version in force.
     - RFC on a first-version draft (KMO v1.0, nothing published): the ordinary
@@ -167,8 +167,8 @@ def test_rfc_flavors_render_the_truthful_lifecycle(client, seeded, db):
 
     cur = _rfc_item(db, "pci-dss-401", "PCI SSC RFC: PCI DSS v4.0.1", "pci-dss")
     html = client.get(f"/items/{cur.id}").text
-    assert "solicits feedback on the current version" in html
-    assert "remains in force" in html
+    assert "asks for feedback on the current" in html
+    assert "stays in force" in html
     # an RFC on the in-force version closes at the comment window; it does not itself
     # become a published revision, so no "Revision published" node is shown
     assert "Revision published" not in html
@@ -178,18 +178,18 @@ def test_rfc_flavors_render_the_truthful_lifecycle(client, seeded, db):
     html = client.get(f"/items/{draft.id}").text
     assert "draft of the next" in html
     # a draft of the NEXT version does become the published revision (3.1 in force)
-    assert "remains in force" in html and "(3.1)" in html
+    assert "stays in force" in html and "(3.1)" in html
     assert "Revision published" in html
 
     first = _rfc_item(db, "kmo-1", "PCI SSC RFC: PCI KMO v1.0 Standard", "pci-kmo")
     html = client.get(f"/items/{first.id}").text
-    assert "remains in force" not in html
+    assert "stays in force" not in html
     assert "Final · pending effective" in html  # ordinary mainline stepper
 
     # a genuine rulemaking still uses the ordinary lifecycle (control)
     circia = db.query(PipelineItem).filter_by(source_system="federal_register").first()
     control = client.get(f"/items/{circia.id}").text
-    assert "remains in force" not in control
+    assert "stays in force" not in control
 
 
 def test_deadlines_ics_export(client, seeded):

@@ -13,7 +13,7 @@
 {% macro conf(confidence) -%}
   {%- set is_firm = confidence in ('statutory_hard', 'published_firm') -%}
   <span class="conf {{ 'conf-firm' if is_firm else 'conf-est' }}"
-        title="{{ confidence | human_conf }} — {{ conf_help.get(confidence, '') }}"
+        title="{{ confidence | human_conf }}: {{ conf_help.get(confidence, '') }}"
     >{{ 'firm' if is_firm else 'estimated' }}</span>
 {%- endmacro %}
 

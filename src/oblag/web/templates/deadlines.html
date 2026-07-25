@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_macros.html" import state_badge, conf, due_chip %}
 {% from "_icons.html" import icon %}
-{% block title %}Deadlines — ObligationAggregator{% endblock %}
+{% block title %}Deadlines · ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Upcoming deadlines</h2>
 <p class="lede">Every current future deadline on active items, soonest first.
@@ -42,7 +42,7 @@
 {# Named "Awaiting outcome", never "watching" — watch/watchlist means a subscription
    you create. These are derived from live pipeline state, not subscribed to. #}
 <div class="panel" id="awaiting">
-  <h3>Awaiting outcome — no date announced yet</h3>
+  <h3>Awaiting outcome <span style="text-transform:none; letter-spacing:0">(no date announced yet)</span></h3>
   <div class="tablewrap">
   <table class="rows stack">
     <thead><tr><th>What</th><th>Why it's here</th><th>Obligation</th></tr></thead>
@@ -59,10 +59,11 @@
   </div>
   <details class="pad" style="padding-top:0">
     <summary>How this list is built</summary>
-    <p class="muted" style="font-size:.82rem; margin:.4rem 0 0">Derived live from pipeline
-    state: closed consultations awaiting an outcome, adopted documents without an effective
-    date, and standards with a revision underway. Entries clear themselves when the outcome
-    lands (a publication, an announced date, a new edition).</p>
+    <p class="muted" style="font-size:.82rem; margin:.4rem 0 0">This list builds itself from
+    live pipeline state: closed consultations that still owe an outcome, adopted documents
+    without an effective date, and standards with a revision underway. Entries clear on
+    their own when the outcome lands, whether that's a publication, an announced date, or
+    a new edition.</p>
   </details>
 </div>
 {% endif %}

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Settings — ObligationAggregator{% endblock %}
+{% block title %}Settings · ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Organization settings</h2>
 <p class="lede">Manage API keys, teammates and invites for <strong>{{ ctx.org.name }}</strong>.
-{% if not ctx.can_admin_org %}You have read-only access — ask an owner or admin to make changes.{% endif %}</p>
+{% if not ctx.can_admin_org %}You have read-only access. Ask an owner or admin to make changes.{% endif %}</p>
 
 {% if new_key %}
 <div class="panel"><div class="pad" style="border-left:3px solid var(--ok)">
-  <strong>New API key — copy it now, it won't be shown again:</strong>
+  <strong>New API key. Copy it now, it won't be shown again:</strong>
   <div style="margin-top:.5rem"><code style="font-size:.95em; user-select:all">{{ new_key }}</code></div>
   <p class="muted" style="font-size:.82rem; margin:.5rem 0 0">Use it as a bearer token:
     <code>Authorization: Bearer {{ new_key[:12] }}…</code> against <code>/api/v1/…</code></p>
