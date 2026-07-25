@@ -293,25 +293,6 @@ class AdapterHealth(Base):
     items_seen_last_run: Mapped[int] = mapped_column(Integer, default=0)
 
 
-class PrivateDocument(Base):
-    """BYOL store. Rows/files here must NEVER appear in shared outputs (spec 00 inv. 3)
-    and NEVER cross an org boundary (spec 07 §6) — every access is org-scoped."""
-
-    __tablename__ = "private_document"
-    __table_args__ = (
-        UniqueConstraint("org_id", "obligation_id", "version_label", name="uq_private_doc_version"),
-    )
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    org_id: Mapped[int | None] = mapped_column(ForeignKey("org.id"), index=True)
-    obligation_id: Mapped[int] = mapped_column(ForeignKey("obligation.id"), index=True)
-    version_label: Mapped[str] = mapped_column(String(64))
-    sha256: Mapped[str] = mapped_column(String(64))
-    storage_ref: Mapped[str] = mapped_column(String(255))
-    license_attested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-
-
 # --- Multi-tenancy (spec 07) -------------------------------------------------
 # All additive: the pipeline data (obligations, items, events, snapshots) is
 # shared and never tenant-scoped. Only these tables + watchlist.org_id carry

@@ -27,9 +27,8 @@ alerts, and page-watching. `oblag` replaces that with:
   snapshot with full fetch metadata (DSSE/in-toto attestations optional), so "comment closes
   on date Y per source Z" is independently verifiable.
 - **Copyright enforced by data, not discipline.** Copyrighted standards (ISO, PCI DSS) are
-  tracked as change events, dates, and requirement identifiers — never body text. Self-hosters
-  who own licensed copies can use the private BYOL store for local full-text diffing; private
-  documents never enter shared outputs.
+  tracked as change events, dates, and version state — never body text. What the app asserts
+  about them is limited to facts a licence does not cover.
 
 ## Quick start
 
@@ -76,9 +75,6 @@ uv run oblag serve         # UI + API on http://localhost:8000
   1.1.2 catalog with tracked items as back-matter resources (stable UUIDs; state,
   dates+confidence, join keys as namespaced props). Control-level crosswalk mapping is
   deliberately out of scope until it can be human-reviewed.
-- **BYOL private analysis** — `oblag byol add pci-dss 4.0.1 ./licensed.pdf
-  --attest-license`, then `oblag byol diff pci-dss 4.0 4.0.1` for identifier-level
-  change reports, gated by each obligation's `display_policy`.
 - **Provenance** — `oblag keygen` enables DSSE/in-toto attestation of every snapshot;
   `oblag verify-snapshot <sha256>` re-verifies content + signature offline.
 - **AI assist (off by default)** — `oblag ai-summarize <item>` drafts a summary with

@@ -83,15 +83,12 @@ def _provision_tenancy() -> None:
     """Ensure a default org exists and adopt any orphan (pre-tenancy) watchlists into
     it, so single-org deployments and upgrades keep working transparently (spec 07 §8)."""
     from oblag import auth
-    from oblag.db.models import PrivateDocument, Watchlist
+    from oblag.db.models import Watchlist
 
     with session_scope() as session:
         org = auth.get_default_org(session)
         session.query(Watchlist).filter(Watchlist.org_id.is_(None)).update(
             {Watchlist.org_id: org.id}, synchronize_session=False
-        )
-        session.query(PrivateDocument).filter(PrivateDocument.org_id.is_(None)).update(
-            {PrivateDocument.org_id: org.id}, synchronize_session=False
         )
 
 
@@ -135,14 +132,13 @@ def create_app() -> FastAPI:
             _seed_milestones()
             _stamp_boot()
 
-    from oblag.web import api, auth_routes, byol_routes, html, internal, watchlists
+    from oblag.web import api, auth_routes, html, internal, watchlists
 
     app.include_router(api.router)
     app.include_router(internal.router)
     app.include_router(watchlists.router)
     app.include_router(watchlists.rss_router)
     app.include_router(auth_routes.router)
-    app.include_router(byol_routes.router)
     app.include_router(html.router)
 
     _NO_CACHE_PREFIXES = ("/api/internal", "/admin", "/auth")

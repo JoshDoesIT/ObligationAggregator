@@ -267,7 +267,7 @@ CATALOG: list[dict] = [
         display_policy=DisplayPolicy.ids_and_titles,
     ),
     # --- the rest of the PCI SSC standards family (all copyrighted; RFC/change
-    # signals tracked via the pci_ssc adapter, full text via BYOL) ---
+    # signals tracked via the pci_ssc adapter — never body text) ---
     dict(
         slug="pci-pts-poi",
         name="PCI PTS POI (PIN Transaction Security — Point of Interaction)",

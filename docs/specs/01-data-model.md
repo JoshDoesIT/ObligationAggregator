@@ -68,6 +68,6 @@ event_id) — at-most-once delivery per event per watchlist.
 adapter (unique), last_run_at, last_success_at, consecutive_failures, last_error,
 items_seen_last_run.
 
-### private_document  (BYOL — never in shared outputs)
-id, obligation_id FK, version_label, sha256, storage_ref, license_attested_at, uploaded_at.
-UNIQUE(obligation_id, version_label).
+### private_document  — **REMOVED in v0.9.0** (spec 06 §4)
+The BYOL store was withdrawn; the model is gone. A legacy table may still exist on
+deployments upgraded from ≤0.8.0 — it is inert and safe to drop manually.

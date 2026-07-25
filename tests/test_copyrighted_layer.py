@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
-from pathlib import Path
 
 import pytest
 
@@ -9,11 +8,8 @@ from conftest import load_fixture
 from oblag.adapters.base import RawDocument
 from oblag.adapters.iso_catalog import IsoCatalogAdapter
 from oblag.adapters.pci_ssc import PciSscAdapter
-from oblag.byol import ByolError, add_document, diff_versions
-from oblag.catalog import seed_obligations
 from oblag.core.reducer import reduce_item
 from oblag.db.models import Confidence, DateType, ItemState
-from oblag.structure import diff_structures, extract_requirements
 
 
 def _org(db):
@@ -162,75 +158,3 @@ PCI_V2 = """\
 12.1 Information security policy.
 A.5.23 Information security for use of cloud services
 """
-
-
-def test_extract_requirements_line_anchored():
-    reqs = extract_requirements(PCI_V1)
-    assert set(reqs) == {"8.3", "8.3.6", "8.3.9", "12.1"}  # cross-reference NOT extracted
-    assert reqs["8.3.6"].heading.startswith("Passwords/passphrases")
-
-
-def test_diff_structures():
-    diff = diff_structures(extract_requirements(PCI_V1), extract_requirements(PCI_V2))
-    assert [r.identifier for r in diff.added] == ["8.3.10", "A.5.23"]
-    assert [r.identifier for r in diff.removed] == ["8.3.9"]
-    assert diff.kept == 3
-
-
-# --- BYOL store + policy gating ---
-
-
-@pytest.fixture()
-def byol_files(tmp_path: Path):
-    v1 = tmp_path / "std_v1.txt"
-    v2 = tmp_path / "std_v2.txt"
-    v1.write_text(PCI_V1)
-    v2.write_text(PCI_V2)
-    return v1, v2
-
-
-def test_byol_requires_license_attestation(db, byol_files):
-    seed_obligations(db)
-    with pytest.raises(ByolError, match="license"):
-        add_document(db, "pci-dss", "4.0", byol_files[0], license_attested=False, org_id=_org(db))
-
-
-def test_byol_diff_gated_by_display_policy(db, byol_files):
-    seed_obligations(db)
-    v1, v2 = byol_files
-    add_document(db, "pci-dss", "4.0", v1, license_attested=True, org_id=_org(db))
-    add_document(db, "pci-dss", "4.0.1", v2, license_attested=True, org_id=_org(db))
-
-    # pci-dss policy is ids_and_titles → headings included
-    diff = diff_versions(db, "pci-dss", "4.0", "4.0.1", org_id=_org(db))
-    assert diff.counts == {"added": 2, "removed": 1, "kept": 3}
-    assert {"id": "8.3.10", "heading": "New MFA requirement for all access."} in diff.added
-
-    # iso-27001 policy is ids_only → identifiers, no headings
-    add_document(db, "iso-27001", "2013", v1, license_attested=True, org_id=_org(db))
-    add_document(db, "iso-27001", "2022", v2, license_attested=True, org_id=_org(db))
-    diff = diff_versions(db, "iso-27001", "2013", "2022", org_id=_org(db))
-    assert diff.added is not None
-    assert all(set(entry) == {"id"} for entry in diff.added)
-
-    # events_only → counts only
-    from oblag.db.models import DisplayPolicy, Obligation
-
-    ob = db.query(Obligation).filter_by(slug="iso-27001").one()
-    ob.display_policy = DisplayPolicy.events_only
-    db.flush()
-    diff = diff_versions(db, "iso-27001", "2013", "2022", org_id=_org(db))
-    assert diff.added is None and diff.removed is None
-    assert diff.counts["added"] == 2
-
-
-def test_byol_files_live_under_private_dir_only(db, byol_files, tmp_path):
-    seed_obligations(db)
-    add_document(db, "pci-dss", "4.0", byol_files[0], license_attested=True, org_id=_org(db))
-    from oblag.config import get_settings
-
-    private = get_settings().private_dir
-    assert (private / f"org-{_org(db)}" / "pci-dss" / "4.0" / "std_v1.txt").exists()
-    # nothing in the shared snapshot store
-    snapshots = get_settings().snapshot_dir
-    assert not snapshots.exists() or not any(snapshots.rglob("*"))

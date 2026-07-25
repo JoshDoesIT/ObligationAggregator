@@ -292,7 +292,7 @@ class QuotaError(Exception):
 def enforce_quota(session: Session, org_id: int, kind: str) -> None:
     """Raise QuotaError if creating one more `kind` would exceed the org's cap.
     Limit 0 = unlimited."""
-    from oblag.db.models import ApiKey, Invite, PrivateDocument, Watchlist
+    from oblag.db.models import ApiKey, Invite, Watchlist
 
     settings = get_settings()
     limit, current = {
@@ -303,10 +303,6 @@ def enforce_quota(session: Session, org_id: int, kind: str) -> None:
         "api_keys": (
             settings.quota_api_keys,
             lambda: session.query(ApiKey).filter_by(org_id=org_id, revoked_at=None).count(),
-        ),
-        "byol_docs": (
-            settings.quota_byol_docs,
-            lambda: session.query(PrivateDocument).filter_by(org_id=org_id).count(),
         ),
         "invites": (
             settings.quota_invites,

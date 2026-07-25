@@ -64,16 +64,27 @@ the client→proxy leg (diagnosed via netlog; the proxy re-originates TLS upstre
 ISO Annex `A.5.23`, TSC `CC6.1`) from text — line-anchored to avoid false positives.
 IDs are facts; body text is never extracted into shared storage.
 
-## 4. BYOL private store + local diff
+## 4. BYOL private store + local diff — **REMOVED in v0.9.0**
 
-- `oblag byol add <obligation> <version> <file> --attest-license` copies the user's
-  licensed copy into `data/private/`, hashes it, records `license_attested_at`.
-- `oblag byol diff <obligation> <v1> <v2>` extracts identifiers from both versions
-  locally and reports added/removed/kept — output gated by the obligation's
-  `display_policy`:
-  - `events_only` → counts only
-  - `ids_only` → identifier lists (ISO default)
-  - `ids_and_titles` → identifiers + their heading line (PCI/SOC 2 default)
-  - `full_text` → identifiers + heading line (BYOL diffs never dump body text)
-- Private documents are not pipeline items, never enter snapshots/RSS/webhooks/API
-  exports, and are never attested to any external log (spec 04).
+Shipped in M5 and withdrawn after evaluation against real documents. `oblag byol
+add/diff` let a self-hoster store a licensed copy and get an identifier-level
+added/removed/kept report, gated by `display_policy`.
+
+**Why it was removed.** Validated on NIST SP 800-171 r2 → r3 (public domain, so the
+comparison could be published): the diff reported **136 added / 137 removed / 18 kept**
+for a revision that in fact carried **128 controls forward**. NIST renumbered
+`3.1.1` → `03.01.01`, and identifiers were compared as literal strings. The same run
+surfaced 19 table-of-contents lines parsed as requirements and 33 "Withdrawn"
+placeholders counted as additions.
+
+Normalising identifiers would have fixed that one case, but not the general problem:
+each publisher family (PCI tables, ISO Annex A, AICPA TSC, HITRUST hierarchies) needs
+its own extractor plus golden fixtures, PDF extraction is lossy in family-specific
+ways, and layouts drift silently between revisions. The failure mode is not an empty
+result — it is a confidently formatted wrong one, in a product whose entire premise is
+accuracy. Dependability would have had to be re-earned per publisher, per revision,
+indefinitely.
+
+Layers 1–3 (change events, public change-artifact adapters, identifier facts) are
+unaffected and remain the copyrighted-obligation story. Version tracking never
+depended on uploads: it comes from the adapters and the auto-apply pass.

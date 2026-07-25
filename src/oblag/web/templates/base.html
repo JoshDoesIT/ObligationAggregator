@@ -233,7 +233,6 @@
     <a href="/obligations" class="{{ 'active' if path.startswith('/obligations') }}">Obligations</a>
     <a href="/deadlines" class="{{ 'active' if path.startswith('/deadlines') }}">Deadlines</a>
     <a href="/watchlists" class="{{ 'active' if path.startswith('/watchlists') }}">Watchlists</a>
-    <a href="/byol" class="{{ 'active' if path.startswith('/byol') }}">Documents</a>
     {% set on_util = path.startswith('/events') or path.startswith('/health')
                      or path.startswith('/admin/versions') or path.startswith('/docs') %}
     <details class="util {{ 'on' if on_util }}">

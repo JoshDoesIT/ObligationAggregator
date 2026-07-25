@@ -13,17 +13,18 @@ def _nav(html: str) -> str:
     return m.group(1)
 
 
-def test_primary_nav_is_five_items_with_utility_menu(client, seeded):
-    """Five daily-use destinations at top level; operator/reference surfaces stay
+def test_primary_nav_is_daily_use_only_with_utility_menu(client, seeded):
+    """Only daily-use destinations at top level; operator/reference surfaces stay
     reachable but demoted into the More menu."""
     nav = _nav(client.get("/").text)
     primary = re.findall(r"<a href=\"([^\"]+)\" class=\"\{?[^\"]*\"[^>]*>([^<]+)</a>", nav)
     top = [label.strip() for href, label in primary if 'class="' not in href]
-    # the five primary labels appear outside the utility menu
+    # the primary labels appear outside the utility menu
     menu = nav.split('<div class="utilmenu">')[1] if "utilmenu" in nav else ""
     head = nav.split('<div class="utilmenu">')[0]
-    for label in ("Changes", "Obligations", "Deadlines", "Watchlists", "Documents"):
+    for label in ("Changes", "Obligations", "Deadlines", "Watchlists"):
         assert label in head, f"{label} should be a primary nav item"
+    assert "Documents" not in nav, "the BYOL tab was removed in v0.9.0"
     assert top  # sanity: the regex found anchors
     # operator/reference surfaces are present but inside the menu, not at top level
     for label in ("Activity", "Sources", "API"):
@@ -119,5 +120,14 @@ def test_confidence_renders_two_tiers(client, seeded):
 
 
 def test_all_pages_render(client, seeded):
-    for path in ("/", "/obligations", "/deadlines", "/watchlists", "/byol", "/events", "/health"):
+    for path in ("/", "/obligations", "/deadlines", "/watchlists", "/events", "/health"):
         assert client.get(path).status_code == 200, path
+
+
+def test_byol_routes_are_gone(client, seeded):
+    """The bring-your-own-license upload/diff surface was removed in v0.9.0: its
+    identifier diff could not be made dependable across obligation families (a real
+    NIST SP 800-171 r2→r3 comparison reported 136 added / 137 removed for a revision
+    that actually carried 128 controls forward, purely because of renumbering)."""
+    for path in ("/byol", "/byol/upload", "/byol/diff"):
+        assert client.get(path).status_code == 404, path

@@ -45,13 +45,11 @@ over the raw body for authenticity, and targets are SSRF-validated (no private /
 loopback / metadata hosts; redirects disabled). Org admins invite teammates by email
 under Settings; invitees join on first sign-in.
 
-**Org depth (Phase 3):** each org's BYOL licensed documents are strictly isolated —
-org-partitioned storage, every query org-scoped, so one tenant can never read
-another's copies (uploaded + diffed under **Documents**). Orgs set a notification
-From-name and Reply-To under Settings, applied to their email watchlists. Instance
-admins (`OBLAG_INSTANCE_ADMINS`) can add curated dates to items from the UI. Optional
-per-org quotas: `OBLAG_QUOTA_WATCHLISTS`, `OBLAG_QUOTA_API_KEYS`, `OBLAG_QUOTA_BYOL_DOCS`,
-`OBLAG_QUOTA_INVITES` (0 = unlimited, the default).
+**Org depth (Phase 3):** orgs set a notification From-name and Reply-To under Settings,
+applied to their email watchlists. Instance admins (`OBLAG_INSTANCE_ADMINS`) can add
+curated dates to items from the UI. Optional per-org quotas:
+`OBLAG_QUOTA_WATCHLISTS`, `OBLAG_QUOTA_API_KEYS`, `OBLAG_QUOTA_INVITES`
+(0 = unlimited, the default).
 
 ## 3. Deploy
 
@@ -85,8 +83,6 @@ The endpoints are 404 unless `OBLAG_CRON_SECRET` is set and 401 without the bear
 - **Browser tier**: Vercel functions cannot host Chromium. With
   `OBLAG_BROWSER_CDP_URL` set, browser adapters (EBA) connect to a remote Chromium
   over CDP; without it they self-disable cleanly and everything else still runs.
-- **BYOL** stays a local/CLI workflow by design — licensed documents must not be
-  uploaded to shared storage (spec 06).
 - **APScheduler is not used on Vercel** — do not run `oblag serve --with-scheduler`
   there; Vercel Cron replaces it. Self-hosting keeps working unchanged.
 

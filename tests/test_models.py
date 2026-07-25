@@ -13,7 +13,6 @@ from oblag.db.models import (
     KeyDate,
     Obligation,
     PipelineItem,
-    PrivateDocument,
 )
 
 
@@ -67,45 +66,6 @@ def test_key_date_supersession_chain(db):
     rows = db.query(KeyDate).filter_by(pipeline_item_id=item.id).all()
     assert len(rows) == 2
     assert d2.supersedes_id == d1.id
-
-
-def test_private_document_version_unique_per_obligation(db):
-    from oblag.db.models import Org
-
-    ob = Obligation(slug="pci-dss", name="PCI DSS", issuing_body="PCI SSC", jurisdiction="Global")
-    db.add(ob)
-    # real Org rows so the org_id FK holds (Postgres enforces it; SQLite's test engine
-    # doesn't — the Postgres CI parity job is what surfaced the missing rows)
-    db.add_all([Org(id=1, slug="org1", name="Org 1"), Org(id=2, slug="org2", name="Org 2")])
-    db.flush()
-    # uniqueness is per (org, obligation, version): same org+version clashes...
-    db.add(
-        PrivateDocument(
-            org_id=1, obligation_id=ob.id, version_label="4.0.1", sha256="ab" * 32, storage_ref="x"
-        )
-    )
-    db.flush()
-    db.add(
-        PrivateDocument(
-            org_id=1, obligation_id=ob.id, version_label="4.0.1", sha256="cd" * 32, storage_ref="y"
-        )
-    )
-    with pytest.raises(IntegrityError):
-        db.flush()
-    db.rollback()
-    # ...but a DIFFERENT org may hold the same obligation+version independently
-    db.add_all([ob, Org(id=1, slug="org1", name="Org 1"), Org(id=2, slug="org2", name="Org 2")])
-    db.add(
-        PrivateDocument(
-            org_id=1, obligation_id=ob.id, version_label="4.0.1", sha256="ab" * 32, storage_ref="x"
-        )
-    )
-    db.add(
-        PrivateDocument(
-            org_id=2, obligation_id=ob.id, version_label="4.0.1", sha256="ef" * 32, storage_ref="z"
-        )
-    )
-    db.flush()  # no clash across orgs
 
 
 def test_obligation_defaults_are_conservative_enough(db):

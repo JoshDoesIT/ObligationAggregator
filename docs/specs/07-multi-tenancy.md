@@ -19,7 +19,6 @@ Tenant-owned state is exactly:
 |---|---|---|
 | Watchlists + notification targets | instance-global | owned by an org |
 | RSS feed URLs | guessable (`/feeds/{id}.xml`) | unguessable per-watchlist token |
-| BYOL private documents | instance-global private dir | **strictly org-isolated** (§6) |
 | Curated date assertions | anyone (CLI) | instance admins only (shared data!) |
 | Source credentials (LegiScan key, …) | instance env vars | stay instance-level (shared fetch) |
 | SMTP | instance env vars | instance-level default; per-org From/reply-to later |
@@ -37,12 +36,11 @@ login_token    id, user_id_or_email, token_hash, expires_at, consumed_at   -- ma
 session        id (random 256-bit), user_id, org_id (active org), expires_at, created_at
 api_key        id, org_id, name, key_hash, created_at, last_used_at, revoked_at
 watchlist      + org_id FK (nullable during migration, §8), + feed_token (random)
-private_document + org_id FK
 ```
 
 - A user can belong to multiple orgs; the session carries the **active org**.
-- Roles: `owner` (billing/danger zone), `admin` (manage members, watchlists,
-  BYOL), `member` (create/edit own watchlists, read everything).
+- Roles: `owner` (billing/danger zone), `admin` (manage members, watchlists),
+  `member` (create/edit own watchlists, read everything).
 - Instance operators get a separate `OBLAG_INSTANCE_ADMINS` (csv of emails)
   gate for cross-tenant operations: curated assertions, purge/relink/seed
   maintenance, adapter health beyond the public page.
@@ -75,8 +73,8 @@ changes — `user.email` remains the join point.
   deadlines (+ .ics), activity, sources health, read-only JSON API. The shared
   regulatory data is the product's public face and marketing surface.
 - **Authenticated, org-scoped:** watchlist CRUD (`WHERE org_id = session.org`),
-  BYOL upload/diff, API keys, org settings, member management (admin), notification
-  history for the org's watchlists.
+  API keys, org settings, member management (admin), notification history for the
+  org's watchlists.
 - **Instance admin:** curated assert-date, maintenance endpoints (in addition
   to the existing `OBLAG_CRON_SECRET` machine gate), catalog editing.
 - API requests authenticate with `Authorization: Bearer <api_key>` → resolves
@@ -96,14 +94,12 @@ changes — `user.email` remains the join point.
   Outbound webhook targets must be validated against SSRF (no private IP
   ranges, no redirects) once orgs can point them anywhere.
 
-## 6. BYOL isolation (legally load-bearing)
+## 6. BYOL isolation — **obsolete (feature removed in v0.9.0)**
 
-Private documents move under `private/{org_id}/…` (or org-prefixed keys in
-blob storage). Every read path takes org from the session — never from the
-request body. Spec 00 invariant 3 ("BYOL content never appears in shared
-outputs") gains a sibling: **BYOL content never crosses an org boundary** —
-enforced in `byol.py` queries and covered by a dedicated test that attempts a
-cross-org read and must 404.
+Phase 3 gave the BYOL store org-partitioned storage and org-scoped queries. The
+feature itself was withdrawn in v0.9.0 (spec 06 §4), so there is no longer private
+per-org content to isolate. Org scoping of watchlists, API keys and invites is
+unaffected.
 
 ## 7. Public-exposure hardening (prerequisites to launch)
 
@@ -114,7 +110,7 @@ cross-org read and must 404.
 - Security headers: CSP (self-only — the UI is already dependency-free), 
   X-Content-Type-Options, Referrer-Policy.
 - Postgres row counts and blob storage are shared-instance costs; per-org
-  quotas on watchlists (e.g. 100) and BYOL documents (e.g. 50) as guardrails.
+  quotas on watchlists (e.g. 100) as guardrails.
 - Rotate `CRON_SECRET`; move maintenance endpoints to instance-admin sessions
   where interactive.
 
@@ -123,7 +119,7 @@ cross-org read and must 404.
 1. Ship schema additively (`org_id` nullable, `feed_token` backfilled for all
    existing watchlists; existing rows get org NULL = "legacy instance org").
 2. On first boot after upgrade, create a `default` org; adopt legacy watchlists
-   and private documents into it.
+   into it.
 3. Self-hosted single-org mode: `OBLAG_AUTH=disabled` (default **on** for new
    config, `disabled` preserved for existing deployments) skips login entirely
    and pins every request to the default org — today's behavior, exactly.
@@ -135,8 +131,9 @@ cross-org read and must 404.
   org-scoped watchlist CRUD, feed tokens, CSRF. (Biggest single phase.)
 - **Phase 2 — programmatic access:** API keys, per-key rate limits, webhook
   HMAC + SSRF guards, org member invites.
-- **Phase 3 — org depth:** BYOL isolation, per-org email preferences,
-  instance-admin UI for curated assertions, quotas.
+- **Phase 3 — org depth:** per-org email preferences, instance-admin UI for
+  curated assertions, quotas. (BYOL isolation shipped here and was removed in
+  v0.9.0 — spec 06 §4.)
 - **Phase 4 — commercial (optional):** billing (Stripe), plan limits, usage
   metering. Deliberately unspecified until the product proves out.
 
