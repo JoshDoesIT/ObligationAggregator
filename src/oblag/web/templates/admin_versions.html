@@ -16,7 +16,7 @@ real, with a one-line catalog edit. This page is a read-only audit of what the t
     <tbody>
     {% for r in log %}
     <tr>
-      <td><strong>{{ r.name or r.slug }}</strong> <a class="tag" href="/?obligation={{ r.slug }}">{{ r.slug }}</a></td>
+      <td><strong>{{ r.name or r.slug }}</strong> <a class="tag" href="/changes?obligation={{ r.slug }}">{{ r.slug }}</a></td>
       <td data-label="In force">{{ r.in_force or '—' }}</td>
       <td data-label="Detected"><span class="badge info">{{ r.version }}</span></td>
       <td data-label="Result">

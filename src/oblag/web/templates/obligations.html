@@ -16,7 +16,7 @@ the <a href="/">change feed</a> is a signal about one of these.</p>
     {% for o in rows %}
     <tr>
       <td class="titlecell">
-        {% if o.total_items %}<a href="/?obligation={{ o.slug }}">{{ o.name }}</a>
+        {% if o.total_items %}<a href="/changes?obligation={{ o.slug }}">{{ o.name }}</a>
         {% else %}<span style="font-weight:600">{{ o.name }}</span>{% endif %}
         <span class="tag">{{ o.slug }}</span>
         {% if o.canonical_url %}
@@ -28,7 +28,7 @@ the <a href="/">change feed</a> is a signal about one of these.</p>
       <td data-label="Jurisdiction"><span class="tag">{{ o.jurisdiction }}</span></td>
       <td class="num" data-label="Active changes">
         {% if o.active_items %}
-          <a href="/?obligation={{ o.slug }}"><strong>{{ o.active_items }}</strong></a>
+          <a href="/changes?obligation={{ o.slug }}"><strong>{{ o.active_items }}</strong></a>
           {% if o.total_items > o.active_items %}<span class="muted" style="font-size:.8rem">/ {{ o.total_items }}</span>{% endif %}
         {% elif o.total_items %}
           <span class="muted">{{ o.total_items }}</span>

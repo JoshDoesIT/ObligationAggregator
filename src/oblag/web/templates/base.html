@@ -26,7 +26,9 @@
     * { box-sizing:border-box; }
     html { -webkit-text-size-adjust:100%; }
     body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-           "Helvetica Neue", Arial, sans-serif; color:var(--fg); background:var(--bg); }
+           "Helvetica Neue", Arial, sans-serif; color:var(--fg); background:var(--bg);
+           overflow-x:clip; /* full-bleed sections use 100vw, which includes the scrollbar
+           gutter on desktop — clip that sliver instead of growing a horizontal scrollbar */ }
     a { color:var(--accent); text-decoration:none; }
     a:hover { text-decoration:underline; }
 
@@ -293,8 +295,8 @@
     {% set path = request.url.path %}
     {# Five primary destinations — the daily-use surfaces. Operator/reference pages
        (Activity, Sources, Versions, API) live in the "More" menu so they don't compete. #}
-    <a href="/" class="{{ 'active' if path == '/' or path.startswith('/items') }}"
-       {% if path == '/' or path.startswith('/items') %}aria-current="page"{% endif %}>Changes</a>
+    <a href="/changes" class="{{ 'active' if path.startswith('/changes') or path.startswith('/items') }}"
+       {% if path.startswith('/changes') or path.startswith('/items') %}aria-current="page"{% endif %}>Changes</a>
     <a href="/obligations" class="{{ 'active' if path.startswith('/obligations') }}">Obligations</a>
     <a href="/deadlines" class="{{ 'active' if path.startswith('/deadlines') }}">Deadlines</a>
     <a href="/watchlists" class="{{ 'active' if path.startswith('/watchlists') }}">Watchlists</a>

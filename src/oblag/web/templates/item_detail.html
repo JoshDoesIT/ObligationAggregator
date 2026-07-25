@@ -3,14 +3,14 @@
 {% from "_icons.html" import icon %}
 {% block title %}{{ item.title }} — ObligationAggregator{% endblock %}
 {% block content %}
-<p style="margin:.2rem 0"><a href="/">&larr; Change feed</a></p>
+<p style="margin:.2rem 0"><a href="/changes">&larr; Change feed</a></p>
 <h2 class="page" style="max-width:60rem">{{ item.title }}</h2>
 <p style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.5rem 0 .9rem">
   {{ state_badge(item.state) }}
   <span class="tag">{{ item | signal_kind }}</span>
   <span class="tag">{{ item.source_system | human_source }}</span>
   <span class="tag">{{ item.jurisdiction }}</span>
-  {% if item.obligation %}<a class="tag" href="/?obligation={{ item.obligation }}"
+  {% if item.obligation %}<a class="tag" href="/changes?obligation={{ item.obligation }}"
     title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
   <span class="tag" title="lifecycle track">{{ item.track }} track</span>
   {% if item.url %}<a href="{{ item.url }}" rel="noopener" style="font-size:.88rem">View at source {{ icon('external', 13) }}</a>{% endif %}
@@ -30,7 +30,7 @@
      fact of where that version stands today — no comment-window stepper, because these
      items never were consultations. #}
   <div class="panel"><div class="pad">
-    {% set oblink %}<a href="/?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
+    {% set oblink %}<a href="/changes?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
     {% set cur = item.obligation_current_version %}
     {% if rstatus == 'informational' %}
       This is an <strong>advisory</strong> from the issuing body — informational, not a
@@ -50,7 +50,7 @@
      the comment window feeds a future revision, not a first effectiveness. The flavor
      says WHAT is under review — the in-force version itself, or a draft of the next. #}
   <div class="panel"><div class="pad">
-    {% set oblink %}<a href="/?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
+    {% set oblink %}<a href="/changes?obligation={{ item.obligation }}">{{ item.obligation }}</a>{% endset %}
     {% set cur = item.obligation_current_version %}
     {% if rflavor == 'current' %}
       {% if item.state == 'comment_closed' %}

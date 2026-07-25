@@ -1,3 +1,3 @@
 """ObligationAggregator: regulatory & framework change-intelligence for GRC engineers."""
 
-__version__ = "0.9.1"
+__version__ = "0.10.0"
