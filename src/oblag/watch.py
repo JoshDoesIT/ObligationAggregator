@@ -15,7 +15,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from oblag.core.reducer import current_dates
+from oblag.core.reducer import current_dates_bulk
 from oblag.db.models import DateType, ItemState, PipelineItem
 
 # consultation sources whose closed windows imply a pending outcome (rulemakings from
@@ -24,8 +24,8 @@ from oblag.db.models import DateType, ItemState, PipelineItem
 _CONSULTATION_SOURCES = {"pci_ssc", "have_your_say", "edpb", "esma", "eba", "aicpa", "nerc"}
 
 
-def _live(db: Session, item: PipelineItem, dtype: DateType) -> Any:
-    for (dt, _label), kd in current_dates(db, item.id).items():
+def _live(dates: dict[Any, Any], dtype: DateType) -> Any:
+    for (dt, _label), kd in dates.items():
         if dt is dtype:
             return kd.value
     return None
@@ -40,14 +40,18 @@ def pending_outcomes(db: Session) -> list[dict[str, Any]]:
         )
         .all()
     )
+    # One dates query for the whole set — this runs on the landing page now, so a
+    # per-item lookup would scale queries with the number of open consultations.
+    live = current_dates_bulk(db, [i.id for i in items])
     for item in items:
+        dates = live.get(item.id, {})
         ob = item.obligation
         if item.state == ItemState.comment_closed:
             if item.source_system not in _CONSULTATION_SOURCES:
                 continue
             if item.resolved_change_id is not None:
                 continue
-            if _live(db, item, DateType.adopted) is not None:
+            if _live(dates, DateType.adopted) is not None:
                 # concluded — the outcome (an adopted act) is already recorded; the
                 # state flips to effective on the next re-reduce
                 continue
@@ -61,7 +65,7 @@ def pending_outcomes(db: Session) -> list[dict[str, Any]]:
                     # feedback-on-current RFC (no promised outcome) or a draft whose
                     # version has since published — nothing is pending
                     continue
-            closed = _live(db, item, DateType.comment_close)
+            closed = _live(dates, DateType.comment_close)
             out.append(
                 {
                     "kind": "awaiting_outcome",
@@ -76,7 +80,7 @@ def pending_outcomes(db: Session) -> list[dict[str, Any]]:
                 }
             )
         elif item.state == ItemState.final_pending_effective:
-            eff = _live(db, item, DateType.effective)
+            eff = _live(dates, DateType.effective)
             if eff is not None:
                 continue  # a dated effectiveness already shows on the deadlines list
             out.append(

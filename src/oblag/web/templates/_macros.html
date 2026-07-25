@@ -8,8 +8,13 @@
   <span class="badge {{ cls }}"><span class="dot"></span>{{ state | human_state }}</span>
 {%- endmacro %}
 
+{# Two visual tiers — a date is either firm (statute/published) or an estimate. The
+   precise level and its definition stay available on hover. #}
 {% macro conf(confidence) -%}
-  <span class="conf conf-{{ confidence }}" title="{{ conf_help.get(confidence, '') }}">{{ confidence | human_conf }}</span>
+  {%- set is_firm = confidence in ('statutory_hard', 'published_firm') -%}
+  <span class="conf {{ 'conf-firm' if is_firm else 'conf-est' }}"
+        title="{{ confidence | human_conf }} — {{ conf_help.get(confidence, '') }}"
+    >{{ 'firm' if is_firm else 'estimated' }}</span>
 {%- endmacro %}
 
 {% macro due_chip(days) -%}

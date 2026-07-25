@@ -156,13 +156,18 @@ def upcoming_deadlines(
         for r in db.query(KeyDate.supersedes_id).filter(KeyDate.supersedes_id.isnot(None))
     }
     wanted = set(date_type) if date_type else DEADLINE_TYPES
+    # Resolve every owning item in one query — this ran per deadline row, so a busy
+    # horizon cost one round trip per date (and the landing page now calls this too).
+    kept = [kd for kd in rows if kd.id not in superseded and kd.date_type.value in wanted]
+    items_by_id = {
+        it.id: it
+        for it in db.query(PipelineItem).filter(
+            PipelineItem.id.in_({kd.pipeline_item_id for kd in kept})
+        )
+    } or {}
     out = []
-    for kd in rows:
-        if kd.id in superseded:
-            continue
-        if kd.date_type.value not in wanted:
-            continue
-        item = db.get(PipelineItem, kd.pipeline_item_id)
+    for kd in kept:
+        item = items_by_id.get(kd.pipeline_item_id)
         if item is None or item.state.value in ("withdrawn", "superseded"):
             continue
         out.append(

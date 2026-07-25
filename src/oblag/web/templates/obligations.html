@@ -4,9 +4,8 @@
 {% block title %}Obligations — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Obligation catalog</h2>
-<p class="lede">The regulations, frameworks and standards this instance tracks — the things your
-program is actually subject to. Everything on the <a href="/">change feed</a> is a signal
-<em>about</em> one of these (a rulemaking, draft, consultation, advisory or release).</p>
+<p class="lede">The regulations, frameworks and standards this instance tracks. Everything on
+the <a href="/">change feed</a> is a signal about one of these.</p>
 
 <div class="panel">
   <div class="tablewrap">
@@ -50,7 +49,11 @@ program is actually subject to. Everything on the <a href="/">change feed</a> is
   </table>
   </div>
 </div>
-<p class="muted" style="font-size:.85rem">Quiet rows are still monitored — their sources simply
-have no open rulemaking or draft right now. Copyrighted standards (ISO, PCI DSS, HITRUST)
-track change events and identifiers only; bring your own licensed copy for full-text diffs.</p>
+<details style="margin-top:.6rem">
+  <summary>About this catalog</summary>
+  <p class="muted" style="font-size:.85rem; margin:.4rem 0 0">Quiet rows are still monitored — their
+  sources simply have no open rulemaking or draft right now. Copyrighted standards (ISO, PCI DSS,
+  HITRUST) track change events and identifiers only; bring your own licensed copy for full-text
+  diffs.</p>
+</details>
 {% endblock %}

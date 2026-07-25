@@ -4,11 +4,8 @@
 {% block title %}Deadlines — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Upcoming deadlines</h2>
-<p class="lede">Every current, non-superseded future deadline on active items, soonest first.
-Hover a confidence label to see what it means — an
-<span class="conf conf-agency_estimate" title="{{ conf_help['agency_estimate'] }}">estimate</span> is never a
-<span class="conf conf-statutory_hard" title="{{ conf_help['statutory_hard'] }}">statutory date</span>.
-<br><a href="/deadlines.ics" style="display:inline-flex; align-items:center; gap:.35rem">{{ icon('calendar', 14) }} Export to calendar (.ics)</a> — subscribe from Outlook, Google or Apple Calendar.</p>
+<p class="lede">Every current future deadline on active items, soonest first.
+<a href="/deadlines.ics" style="display:inline-flex; align-items:center; gap:.35rem">{{ icon('calendar', 14) }} Export to calendar (.ics)</a></p>
 
 <div class="panel">
   <div class="tablewrap">
@@ -42,8 +39,10 @@ Hover a confidence label to see what it means — an
 </div>
 
 {% if watch %}
-<div class="panel">
-  <h3>Watching — no date announced yet</h3>
+{# Named "Awaiting outcome", never "watching" — watch/watchlist means a subscription
+   you create. These are derived from live pipeline state, not subscribed to. #}
+<div class="panel" id="awaiting">
+  <h3>Awaiting outcome — no date announced yet</h3>
   <div class="tablewrap">
   <table class="rows">
     <thead><tr><th>What</th><th>Why it's here</th><th>Obligation</th></tr></thead>
@@ -58,10 +57,13 @@ Hover a confidence label to see what it means — an
     </tbody>
   </table>
   </div>
-  <p class="muted" style="font-size:.8rem; padding:0 1rem .7rem">Derived live from pipeline
-  state: closed consultations awaiting an outcome, adopted documents without an effective
-  date, and standards with a revision underway. Entries clear themselves when the outcome
-  lands (a publication, an announced date, a new edition).</p>
+  <details class="pad" style="padding-top:0">
+    <summary>How this list is built</summary>
+    <p class="muted" style="font-size:.82rem; margin:.4rem 0 0">Derived live from pipeline
+    state: closed consultations awaiting an outcome, adopted documents without an effective
+    date, and standards with a revision underway. Entries clear themselves when the outcome
+    lands (a publication, an announced date, a new edition).</p>
+  </details>
 </div>
 {% endif %}
 {% endblock %}

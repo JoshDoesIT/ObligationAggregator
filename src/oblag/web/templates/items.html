@@ -4,41 +4,74 @@
 {% block title %}Change feed — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Change feed</h2>
-<p class="lede">Rulemakings, drafts, consultations, advisories and releases moving through their
-lifecycle — the signals about the <a href="/obligations">obligations</a> you're subject to.</p>
+<p class="lede">Signals about the <a href="/obligations">obligations</a> you're subject to.</p>
 
-<div class="stats">
-  <div class="stat hl"><a href="/"><span class="n">{{ stats.total }}</span>
-    <span class="l">tracked changes</span></a></div>
-  <div class="stat"><a href="/?state=comment_open"><span class="n">{{ stats.comment_open }}</span>
-    <span class="l">comment windows open</span></a></div>
-  <div class="stat"><a href="/?state=final_pending_effective"><span class="n">{{ stats.pending_effective }}</span>
-    <span class="l">final · not yet effective</span></a></div>
-  <div class="stat"><a href="/deadlines"><span class="n">{{ stats.deadlines_30d }}</span>
-    <span class="l">deadlines in 30 days</span></a></div>
-</div>
+{# Needs attention: the three questions a GRC engineer opens this app to answer, each
+   with its top items inline so the answer needs no second click. #}
+<section class="attn" aria-label="Needs attention">
+  <div class="card {{ 'hot' if attention.closing and attention.closing[0].days_until <= 7 }}">
+    <div class="hd"><span class="n">{{ attention.closing | length }}</span>
+      <span class="l">comment windows closing</span></div>
+    {% if attention.closing %}
+      <ul>
+        {% for d in attention.closing[:3] %}
+        <li>{{ due_chip(d.days_until) }}<a href="/items/{{ d.item_id }}">{{ d.title }}</a></li>
+        {% endfor %}
+      </ul>
+      {% if attention.closing | length > 3 %}
+      <div class="more"><a href="/?state=comment_open">See all {{ attention.closing | length }}</a></div>
+      {% endif %}
+    {% else %}<div class="none">Nothing closing in the next 14 days.</div>{% endif %}
+  </div>
 
-<form class="filters" method="get" action="/">
+  <div class="card {{ 'warm' if attention.deadlines }}">
+    <div class="hd"><span class="n">{{ attention.deadlines | length }}</span>
+      <span class="l">deadlines in 30 days</span></div>
+    {% if attention.deadlines %}
+      <ul>
+        {% for d in attention.deadlines[:3] %}
+        <li>{{ due_chip(d.days_until) }}<a href="/items/{{ d.item_id }}">{{ d.title }}</a></li>
+        {% endfor %}
+      </ul>
+      <div class="more"><a href="/deadlines">All deadlines</a></div>
+    {% else %}<div class="none">No deadlines in the next 30 days.</div>{% endif %}
+  </div>
+
+  <div class="card">
+    <div class="hd"><span class="n">{{ attention.awaiting | length }}</span>
+      <span class="l">awaiting outcome</span></div>
+    {% if attention.awaiting %}
+      <ul>
+        {% for w in attention.awaiting[:3] %}
+        <li><a href="/items/{{ w.item_id }}">{{ w.title }}</a></li>
+        {% endfor %}
+      </ul>
+      <div class="more"><a href="/deadlines#awaiting">Why these are open</a></div>
+    {% else %}<div class="none">Nothing pending an announcement.</div>{% endif %}
+  </div>
+</section>
+
+<form class="filters" method="get" action="/" data-autosubmit>
   <input type="search" name="q" placeholder="Search title or abstract…" value="{{ q or '' }}">
-  <select name="state">
+  <select name="state" aria-label="Filter by state">
     <option value="">All states</option>
     {% for s in states %}
     <option value="{{ s }}" {{ 'selected' if s == state }}>{{ s | human_state }}</option>
     {% endfor %}
   </select>
-  <select name="source">
+  <select name="source" aria-label="Filter by source">
     <option value="">All sources</option>
     {% for s in sources %}
     <option value="{{ s }}" {{ 'selected' if s == source }}>{{ s | human_source }}</option>
     {% endfor %}
   </select>
-  <select name="obligation">
+  <select name="obligation" aria-label="Filter by obligation">
     <option value="">All obligations</option>
     {% for o in obligations %}
     <option value="{{ o.slug }}" {{ 'selected' if o.slug == obligation }}>{{ o.name }}</option>
     {% endfor %}
   </select>
-  <button>Apply</button>
+  <button class="js-apply">Apply</button>
   {% if q or state or source or obligation %}<a href="/" class="muted" style="font-size:.85rem">clear</a>{% endif %}
   <span class="muted" style="margin-left:auto; font-size:.85rem">{{ total }} result{{ '' if total == 1 else 's' }}</span>
 </form>
@@ -46,7 +79,7 @@ lifecycle — the signals about the <a href="/obligations">obligations</a> you'r
 <div class="panel">
   <div class="tablewrap">
   <table class="rows feed">
-    <thead><tr><th>Change</th><th>Kind</th><th>State</th><th>Source</th><th>Key dates</th></tr></thead>
+    <thead><tr><th>Change</th><th>State</th><th>Key dates</th></tr></thead>
     <tbody>
     {% for item in items %}
     <tr>
@@ -54,20 +87,10 @@ lifecycle — the signals about the <a href="/obligations">obligations</a> you'r
         <a href="/items/{{ item.id }}">{{ item.title }}</a>
         {% if item.obligation %}<a class="tag" href="/?obligation={{ item.obligation }}"
           title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
-        {% set idkeys = item.join_keys
-             | selectattr('type', 'in', ['rin', 'docket_id', 'celex', 'bill_id',
-                                         'fr_doc_number', 'oeil_procedure', 'eba_cp'])
-             | list %}
-        {% if idkeys %}
-        <div class="keyrow">
-          {% for k in idkeys[:3] %}<code>{{ k.value }}</code>{% endfor %}
-        </div>
-        {% endif %}
+        <div class="sub">{{ item | signal_kind }}<span class="sep">·</span>{{
+          item.source_system | human_source }}<span class="sep">·</span>{{ item.jurisdiction }}</div>
       </td>
-      <td><span class="tag">{{ item | signal_kind }}</span></td>
       <td>{{ state_badge(item.state) }}</td>
-      <td><span class="muted" style="white-space:nowrap">{{ item.source_system | human_source }}</span><br>
-          <span class="muted" style="font-size:.8rem">{{ item.jurisdiction }}</span></td>
       <td>
         <div class="datechips">
         {% for d in item.current_dates %}
@@ -84,7 +107,7 @@ lifecycle — the signals about the <a href="/obligations">obligations</a> you'r
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="5"><div class="empty">{{ icon('search', 40, 'big-ic') }}
+    <tr><td colspan="3"><div class="empty">{{ icon('search', 40, 'big-ic') }}
       No items match these filters.<br><a href="/">Show everything</a></div></td></tr>
     {% endfor %}
     </tbody>

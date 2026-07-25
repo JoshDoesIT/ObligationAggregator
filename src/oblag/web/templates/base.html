@@ -42,10 +42,24 @@
     .brand .logo { width:26px; height:26px; border-radius:7px; background:var(--accent);
                    color:#fff; display:inline-flex; align-items:center; justify-content:center;
                    font-size:.85rem; font-weight:800; }
-    nav.site { display:flex; gap:.25rem; flex-wrap:wrap; }
-    nav.site a { color:var(--fg2); padding:.85rem .7rem; font-size:.9rem; border-bottom:2px solid transparent; }
-    nav.site a:hover { color:var(--fg); text-decoration:none; }
-    nav.site a.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+    nav.site { display:flex; gap:.25rem; flex-wrap:wrap; align-items:stretch; }
+    nav.site > a { color:var(--fg2); padding:.85rem .7rem; font-size:.9rem; border-bottom:2px solid transparent; }
+    nav.site > a:hover { color:var(--fg); text-decoration:none; }
+    nav.site > a.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+
+    /* utility ("More") menu: operator/reference surfaces, kept out of the primary five */
+    nav.site details.util { position:relative; }
+    nav.site details.util > summary { list-style:none; cursor:pointer; color:var(--fg2);
+      padding:.85rem .7rem; font-size:.9rem; border-bottom:2px solid transparent; }
+    nav.site details.util > summary::-webkit-details-marker { display:none; }
+    nav.site details.util > summary:hover { color:var(--fg); }
+    nav.site details.util.on > summary { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+    .utilmenu { position:absolute; top:100%; left:0; min-width:180px; background:var(--panel);
+      border:1px solid var(--line); border-radius:var(--radius); padding:.3rem; z-index:30;
+      display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(16,24,40,.14); }
+    .utilmenu a { padding:.5rem .7rem; border-radius:7px; font-size:.88rem; color:var(--fg2); }
+    .utilmenu a:hover { background:var(--line2); color:var(--fg); text-decoration:none; }
+    .utilmenu a.active { color:var(--accent); font-weight:600; }
     main { padding:1.4rem 1.25rem 3rem; max-width:1180px; margin:0 auto; }
     h2.page { margin:.2rem 0 .3rem; font-size:1.35rem; }
     p.lede { margin:.1rem 0 1.1rem; color:var(--muted); max-width:70ch; }
@@ -64,6 +78,12 @@
          letter-spacing:.04em; white-space:nowrap; background:var(--panel); }
     tbody tr:hover, table.rows tr:hover td { background:var(--line2); }
     td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    /* the change title is the scan target — give it the room, not the date column */
+    table.feed { table-layout:fixed; }
+    table.feed th:nth-child(1) { width:55%; }
+    table.feed th:nth-child(2) { width:14%; }
+    table.feed th:nth-child(3) { width:31%; }
+    table.feed td:nth-child(1) { overflow-wrap:anywhere; }
 
     /* ---- badges ---- */
     .badge { display:inline-flex; align-items:center; gap:.4rem; padding:.13rem .6rem;
@@ -78,12 +98,11 @@
     .tag { display:inline-block; padding:.1rem .5rem; border-radius:6px; font-size:.78rem;
            background:var(--neutral-soft); color:var(--fg2); white-space:nowrap; }
 
-    /* confidence */
+    /* confidence — two visual tiers (firm vs estimated); the exact level is on hover,
+       so a scan reads "can I rely on this date?" without decoding four encodings */
     .conf { border-bottom:1px dotted var(--muted); cursor:help; font-size:.82rem; }
-    .conf-statutory_hard { color:var(--ok); font-weight:600; }
-    .conf-published_firm { color:var(--info); }
-    .conf-agency_estimate { color:var(--warn); }
-    .conf-derived { color:var(--muted); font-style:italic; }
+    .conf-firm { color:var(--fg2); font-weight:600; }
+    .conf-est { color:var(--warn); font-style:italic; }
 
     /* countdowns */
     .due { font-variant-numeric:tabular-nums; font-weight:700; padding:.1rem .55rem;
@@ -91,6 +110,24 @@
     .due.soon { background:var(--bad-soft); color:var(--bad); }
     .due.near { background:var(--warn-soft); color:var(--warn); }
     .due.far  { background:var(--neutral-soft); color:var(--fg2); }
+
+    /* ---- needs-attention band ---- */
+    .attn { display:grid; grid-template-columns:repeat(auto-fit, minmax(255px, 1fr));
+            gap:.8rem; margin:.5rem 0 1.4rem; }
+    .attn .card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+                  box-shadow:var(--shadow); padding:.75rem .95rem; }
+    .attn .hd { display:flex; align-items:baseline; gap:.5rem; }
+    .attn .n { font-size:1.45rem; font-weight:700; line-height:1.15; }
+    .attn .l { font-size:.82rem; color:var(--muted); font-weight:600; }
+    .attn .card.hot .n { color:var(--bad); }
+    .attn .card.warm .n { color:var(--warn); }
+    .attn ul { list-style:none; margin:.5rem 0 0; padding:0; display:flex;
+               flex-direction:column; gap:.32rem; }
+    .attn li { font-size:.85rem; display:flex; gap:.45rem; align-items:baseline; min-width:0; }
+    .attn li a { color:var(--fg); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .attn li a:hover { color:var(--accent); }
+    .attn .none { font-size:.85rem; color:var(--muted); margin-top:.45rem; }
+    .attn .more { font-size:.8rem; margin-top:.4rem; }
 
     /* ---- stats strip ---- */
     .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
@@ -112,6 +149,21 @@
              color:#fff; cursor:pointer; font-size:.9rem; font-weight:600; }
     button:hover { filter:brightness(1.08); }
     button.quiet { background:var(--neutral-soft); color:var(--fg2); }
+    /* labelled checkbox groups — replaces hand-typed enum CSV in the watchlist builder */
+    .checkgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+                 gap:.15rem .8rem; margin-top:.35rem; }
+    .checkgrid.one { grid-template-columns:1fr; }
+    /* a long catalog must not become its own wall of choices: cap the height and let it
+       scroll, with a type-to-filter box added by JS above it */
+    .checkgrid.scroll { max-height:190px; overflow-y:auto; border:1px solid var(--line);
+                        border-radius:8px; padding:.5rem .6rem; }
+    .pickfilter { margin-top:.4rem; }
+    .pickfilter input { width:100%; max-width:320px; }
+    .pickcount { font-size:.78rem; color:var(--muted); margin-top:.3rem; }
+    .checkgrid label { display:flex; align-items:center; gap:.45rem; font-size:.86rem;
+                       color:var(--fg2); padding:.18rem 0; cursor:pointer; }
+    .checkgrid input { accent-color:var(--accent); margin:0; }
+    fieldset legend { font-weight:600; }
 
     /* ---- lifecycle stepper ---- */
     .steps { display:flex; align-items:flex-start; margin:.9rem 0 .3rem; overflow-x:auto; padding-bottom:.3rem; }
@@ -143,6 +195,15 @@
     .keyrow code { font-size:.74rem; color:var(--muted); background:transparent; padding:0 .35rem 0 0; }
     .titlecell a { font-weight:600; color:var(--fg); }
     .titlecell a:hover { color:var(--accent); }
+    /* one muted line carrying the secondary facets (kind · source · jurisdiction), so the
+       feed row scans as Change → State → Key date instead of five competing columns */
+    .sub { color:var(--muted); font-size:.8rem; margin-top:.2rem; }
+    .sub .sep { padding:0 .3rem; opacity:.6; }
+    /* collapsed audit surface on item detail */
+    details.section { margin:1rem 0; }
+    details.section > summary { font-size:.82rem; text-transform:uppercase; letter-spacing:.04em;
+      color:var(--muted); font-weight:600; padding:.5rem 0; }
+    details.section[open] > summary { margin-bottom:.2rem; }
     .datechips { display:flex; flex-direction:column; gap:.25rem; }
     .datechip { font-size:.82rem; white-space:nowrap; }
     .datechip .t { color:var(--muted); }
@@ -154,9 +215,6 @@
     @media (max-width:720px) {
       main { padding:1rem .8rem 2.5rem; }
       th, td { padding:.5rem .55rem; }
-      /* feed table: drop Kind + Source columns; title, state and dates carry the row */
-      table.feed th:nth-child(2), table.feed td:nth-child(2),
-      table.feed th:nth-child(4), table.feed td:nth-child(4) { display:none; }
       .stats { grid-template-columns:repeat(2, 1fr); }
     }
   </style>
@@ -168,17 +226,26 @@
   <a class="brand" href="/"><span class="logo">OA</span> ObligationAggregator</a>
   <nav class="site">
     {% set path = request.url.path %}
+    {# Five primary destinations — the daily-use surfaces. Operator/reference pages
+       (Activity, Sources, Versions, API) live in the "More" menu so they don't compete. #}
     <a href="/" class="{{ 'active' if path == '/' or path.startswith('/items') }}"
        {% if path == '/' or path.startswith('/items') %}aria-current="page"{% endif %}>Changes</a>
     <a href="/obligations" class="{{ 'active' if path.startswith('/obligations') }}">Obligations</a>
     <a href="/deadlines" class="{{ 'active' if path.startswith('/deadlines') }}">Deadlines</a>
-    <a href="/events" class="{{ 'active' if path.startswith('/events') }}">Activity</a>
     <a href="/watchlists" class="{{ 'active' if path.startswith('/watchlists') }}">Watchlists</a>
     <a href="/byol" class="{{ 'active' if path.startswith('/byol') }}">Documents</a>
-    <a href="/health" class="{{ 'active' if path.startswith('/health') }}">Sources</a>
-    {% if ctx and ctx.is_admin %}<a href="/admin/versions"
-       class="{{ 'active' if path.startswith('/admin/versions') }}">Versions</a>{% endif %}
-    <a href="/docs" title="OpenAPI documentation">API</a>
+    {% set on_util = path.startswith('/events') or path.startswith('/health')
+                     or path.startswith('/admin/versions') or path.startswith('/docs') %}
+    <details class="util {{ 'on' if on_util }}">
+      <summary>More</summary>
+      <div class="utilmenu">
+        <a href="/events" class="{{ 'active' if path.startswith('/events') }}">Activity</a>
+        <a href="/health" class="{{ 'active' if path.startswith('/health') }}">Sources</a>
+        {% if ctx and ctx.is_admin %}<a href="/admin/versions"
+           class="{{ 'active' if path.startswith('/admin/versions') }}">Versions</a>{% endif %}
+        <a href="/docs" title="OpenAPI documentation">API</a>
+      </div>
+    </details>
   </nav>
   {% if ctx and ctx.auth_on %}
     {% if ctx.authed %}
@@ -196,5 +263,52 @@
   {% endif %}
 </header>
 <main id="content">{% block content %}{% endblock %}</main>
+<script>
+  // Progressive enhancement only — everything below still works with JS disabled.
+  // 1. Filter forms apply on change; the Apply button is the no-JS fallback, so it is
+  //    hidden only once we know JS runs. Scoped to [data-autosubmit] so that other
+  //    forms sharing the .filters layout (e.g. the admin curated-date form) never
+  //    self-submit when a select changes.
+  document.querySelectorAll('form[data-autosubmit]').forEach(function (form) {
+    form.querySelectorAll('select').forEach(function (el) {
+      el.addEventListener('change', function () {
+        if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
+      });
+    });
+    form.querySelectorAll('.js-apply').forEach(function (btn) { btn.hidden = true; });
+  });
+  // 2. Type-to-filter for long checkbox lists. Inserted by JS so that without it the
+  //    list is simply a scrollable group — nothing is hidden behind a control that
+  //    cannot work.
+  document.querySelectorAll('[data-pickfilter]').forEach(function (grid) {
+    var labels = Array.prototype.slice.call(grid.querySelectorAll('label'));
+    var wrap = document.createElement('div');
+    wrap.className = 'pickfilter';
+    var input = document.createElement('input');
+    input.type = 'search';
+    input.placeholder = grid.getAttribute('data-pickfilter');
+    input.setAttribute('aria-label', grid.getAttribute('data-pickfilter'));
+    wrap.appendChild(input);
+    grid.parentNode.insertBefore(wrap, grid);
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      labels.forEach(function (l) {
+        var box = l.querySelector('input');
+        // never hide a checked box — a filtered-away selection would be invisible
+        l.hidden = q !== '' && !box.checked && l.textContent.toLowerCase().indexOf(q) === -1;
+      });
+    });
+  });
+  // 3. Close the "More" menu on outside click or Escape.
+  var util = document.querySelector('nav.site details.util');
+  if (util) {
+    document.addEventListener('click', function (e) {
+      if (util.open && !util.contains(e.target)) { util.open = false; }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && util.open) { util.open = false; }
+    });
+  }
+</script>
 </body>
 </html>

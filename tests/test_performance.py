@@ -67,6 +67,25 @@ def test_item_list_query_count_is_bounded(client, db):
     assert counts["n"] <= 12, f"{counts['n']} queries for 25 items — N+1 regression"
 
 
+def test_landing_page_query_count_is_bounded(client, db):
+    """The needs-attention band added a pending-outcomes pass to the busiest page; it
+    must stay a fixed number of queries rather than one per open consultation."""
+    _seed_items(db, 25)
+    engine = db.get_bind()
+    counts = {"n": 0}
+
+    @event.listens_for(engine, "before_cursor_execute")
+    def _count(conn, cursor, statement, params, context, executemany):
+        counts["n"] += 1
+
+    try:
+        r = client.get("/")
+    finally:
+        event.remove(engine, "before_cursor_execute", _count)
+    assert r.status_code == 200
+    assert counts["n"] <= 20, f"{counts['n']} queries for the landing page — N+1 regression"
+
+
 def test_cdn_cache_header_when_auth_disabled(client, seeded):
     # single-org (auth off): global read pages are edge-cacheable via the Vercel-specific
     # header (plain Cache-Control s-maxage is ignored by Vercel's Python runtime)

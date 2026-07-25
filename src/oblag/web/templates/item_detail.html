@@ -17,7 +17,7 @@
   <form method="post" action="/items/{{ item.id }}/watch" style="display:inline; margin-left:auto">
     {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
     <button title="Create an RSS watchlist for this {{ 'obligation' if item.obligation else 'source' }}"
-      style="display:inline-flex; align-items:center; gap:.35rem">{{ icon('bell', 14) }} Watch</button>
+      style="display:inline-flex; align-items:center; gap:.35rem">{{ icon('bell', 14) }} Subscribe</button>
   </form>
 </p>
 {% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
@@ -128,7 +128,7 @@
   <h3>Key dates</h3>
   <div class="tablewrap">
   <table>
-    <thead><tr><th>Milestone</th><th>Date</th><th>When</th><th>Confidence</th><th>Provenance</th></tr></thead>
+    <thead><tr><th>Milestone</th><th>Date</th><th>When</th><th>Confidence</th></tr></thead>
     <tbody>
     {% for d in item.current_dates %}
     <tr>
@@ -137,74 +137,98 @@
       <td>{% set du = d.value | days_until %}
           {% if du is not none and du >= 0 %}{{ due_chip(du) }}{% else %}<span class="muted">{{ d.value | reldate }}</span>{% endif %}</td>
       <td>{{ conf(d.confidence) }}</td>
-      <td class="muted">
-        {% if d.snapshot %}
-        <details><summary>verified snapshot</summary>
-          sha256 <code>{{ d.snapshot.sha256[:16] }}…</code><br>
-          fetched {{ d.snapshot.fetched_at[:19] if d.snapshot.fetched_at }}<br>
-          <a href="{{ d.snapshot.source_url }}" rel="noopener">source URL {{ icon('external', 12) }}</a>
-          {% if d.snapshot.attestation_ref %}<br>signed attestation stored{% endif %}
-        </details>
-        {% else %}curated assertion{% endif %}
-      </td>
     </tr>
     {% else %}
-    <tr><td colspan="5" class="muted">No machine-readable dates yet — add one with a curated assertion.</td></tr>
+    <tr><td colspan="4" class="muted">No machine-readable dates yet — add one with a curated assertion.</td></tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
 </div>
 
-{% if item.date_history | length > item.current_dates | length %}
-<div class="panel">
-  <h3>Date history <span style="text-transform:none; letter-spacing:0">— append-only; superseded values struck through</span></h3>
-  <div class="tablewrap">
-  <table>
-    <thead><tr><th>Milestone</th><th>Date</th><th>Confidence</th><th>Asserted</th></tr></thead>
-    <tbody>
-    {% for d in item.date_history %}
-    <tr class="{{ 'ghost' if d.id in superseded_ids }}">
-      <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
-      <td>{% if d.retracted %}<span class="badge warn">withdrawn by source</span>
-          <span class="muted" style="font-size:.82rem">was {{ d.value }}</span>
-          {% else %}{{ d.value }}{% endif %}</td>
-      <td>{{ conf(d.confidence) }}</td>
-      <td class="muted">{{ d.asserted_at[:10] if d.asserted_at }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-</div>
-{% endif %}
+{# Everything an auditor needs, one disclosure away — provenance, the append-only date
+   history, the event log and identifiers. Kept out of the default read so the page
+   answers "where does this stand?" first. #}
+<details class="section">
+  <summary>History &amp; provenance</summary>
 
-<div class="panel">
-  <h3>Activity</h3>
-  <div class="tablewrap">
-  <table>
-    <thead><tr><th>When</th><th>Event</th><th>What happened</th></tr></thead>
-    <tbody>
-    {% for e in item.events %}
-    <tr>
-      <td class="muted" style="white-space:nowrap">{{ e.occurred_at[:10] if e.occurred_at }}</td>
-      <td><span class="badge plain {{ 'bad' if e.type == 'anomaly' else 'info' if e.type == 'date_changed' else '' }}">{{ e.type | human_event }}</span></td>
-      <td>{{ e | event_text }}
-          <details style="display:inline-block; margin-left:.4rem"><summary>raw</summary>
-            <code style="white-space:pre-wrap">{{ e.payload | tojson }}</code></details></td>
-    </tr>
-    {% else %}
-    <tr><td colspan="3" class="muted">No events recorded.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="panel">
+    <h3>Provenance</h3>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>Milestone</th><th>Date</th><th>Evidence</th></tr></thead>
+      <tbody>
+      {% for d in item.current_dates %}
+      <tr>
+        <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
+        <td>{{ d.value }}</td>
+        <td class="muted">
+          {% if d.snapshot %}
+            verified snapshot · sha256 <code>{{ d.snapshot.sha256[:16] }}…</code><br>
+            fetched {{ d.snapshot.fetched_at[:19] if d.snapshot.fetched_at }} ·
+            <a href="{{ d.snapshot.source_url }}" rel="noopener">source URL {{ icon('external', 12) }}</a>
+            {% if d.snapshot.attestation_ref %}<br>signed attestation stored{% endif %}
+          {% else %}curated assertion{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" class="muted">No dates recorded.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
   </div>
-</div>
 
-<div class="panel"><div class="pad">
-  <span class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.04em">Identifiers</span><br>
-  {% for k in item.join_keys %}<code>{{ k.type }}: {{ k.value }}</code> {% endfor %}
-</div></div>
+  {% if item.date_history | length > item.current_dates | length %}
+  <div class="panel">
+    <h3>Date history <span style="text-transform:none; letter-spacing:0">— append-only; superseded values struck through</span></h3>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>Milestone</th><th>Date</th><th>Confidence</th><th>Asserted</th></tr></thead>
+      <tbody>
+      {% for d in item.date_history %}
+      <tr class="{{ 'ghost' if d.id in superseded_ids }}">
+        <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
+        <td>{% if d.retracted %}<span class="badge warn">withdrawn by source</span>
+            <span class="muted" style="font-size:.82rem">was {{ d.value }}</span>
+            {% else %}{{ d.value }}{% endif %}</td>
+        <td>{{ conf(d.confidence) }}</td>
+        <td class="muted">{{ d.asserted_at[:10] if d.asserted_at }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <h3>Activity</h3>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>When</th><th>Event</th><th>What happened</th></tr></thead>
+      <tbody>
+      {% for e in item.events %}
+      <tr>
+        <td class="muted" style="white-space:nowrap">{{ e.occurred_at[:10] if e.occurred_at }}</td>
+        <td><span class="badge plain {{ 'bad' if e.type == 'anomaly' else 'info' if e.type == 'date_changed' else '' }}">{{ e.type | human_event }}</span></td>
+        <td>{{ e | event_text }}
+            <details style="display:inline-block; margin-left:.4rem"><summary>raw</summary>
+              <code style="white-space:pre-wrap">{{ e.payload | tojson }}</code></details></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" class="muted">No events recorded.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="panel"><div class="pad">
+    <span class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.04em">Identifiers</span><br>
+    {% for k in item.join_keys %}<code>{{ k.type }}: {{ k.value }}</code> {% endfor %}
+  </div></div>
+</details>
 
 {% if ctx and ctx.is_admin %}
 <div class="panel">
