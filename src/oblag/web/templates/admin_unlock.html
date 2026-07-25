@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Operator unlock — ObligationAggregator{% endblock %}
+{% block title %}Operator unlock · ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Operator unlock</h2>
-<p class="lede">Curated date assertions write shared, user-visible data, so they're gated
-behind the operator token on this deployment (the <code>OBLAG_ADMIN_TOKEN</code>, or the
-<code>OBLAG_CRON_SECRET</code> when no separate admin token is set). Enter it to unlock
-admin actions for this browser (12 hours).</p>
+<p class="lede">Curated dates change what everyone sees, so this deployment asks for the
+operator token first (that's <code>OBLAG_ADMIN_TOKEN</code>, or <code>OBLAG_CRON_SECRET</code>
+if no separate admin token is set). Enter it once and this browser stays unlocked for
+12 hours.</p>
 
 {% if already %}
 <div class="panel"><div class="pad">You're already unlocked.

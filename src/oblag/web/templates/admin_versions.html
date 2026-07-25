@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Version tracking — ObligationAggregator{% endblock %}
+{% block title %}Version tracking · ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Version tracking</h2>
-<p class="lede">Standards' in-force versions update <strong>automatically</strong> when a newer
-one is published in a tracked feed — no action needed. A detection that isn't a plausible
-successor (the fingerprint of a mis-parse) is flagged here instead of applied; correct it, if
-real, with a one-line catalog edit. This page is a read-only audit of what the tracker did.</p>
+<p class="lede">In-force versions update <strong>automatically</strong> when a newer one is
+published in a tracked feed, so there's nothing you need to do here. If a detection doesn't
+look like a plausible successor (usually the sign of a mis-parse), it gets flagged instead of
+applied, and a one-line catalog edit fixes it if it turns out to be real. This page is just a
+read-only record of what the tracker did.</p>
 
 <div class="panel">
   <h3>Recent version activity</h3>
@@ -21,7 +22,7 @@ real, with a one-line catalog edit. This page is a read-only audit of what the t
       <td data-label="Detected"><span class="badge info">{{ r.version }}</span></td>
       <td data-label="Result">
         {% if r.decision == 'auto' %}<span class="badge ok">{{ icon('check', 12) }} applied</span>
-        {% else %}<span class="badge warn">flagged — not applied</span>{% endif %}
+        {% else %}<span class="badge warn">flagged, not applied</span>{% endif %}
       </td>
       <td class="muted" data-label="Source">
         {% if r.source_url %}<a href="{{ r.source_url }}" rel="noopener">{{ r.item_title or 'source' }} {{ icon('external', 12) }}</a>
@@ -32,7 +33,7 @@ real, with a one-line catalog edit. This page is a read-only audit of what the t
     </tr>
     {% else %}
     <tr><td colspan="6" class="empty">{{ icon('check', 40, 'big-ic') }}
-      No version changes detected yet — every tracked standard is at its latest published version.</td></tr>
+      No version changes detected yet. Every tracked standard is at its latest published version.</td></tr>
     {% endfor %}
     </tbody>
   </table>

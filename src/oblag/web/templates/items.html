@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% from "_macros.html" import state_badge, conf, due_chip %}
 {% from "_icons.html" import icon %}
-{% block title %}Change feed — ObligationAggregator{% endblock %}
+{% block title %}Change feed · ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Change feed</h2>
-<p class="lede">Signals about the <a href="/obligations">obligations</a> you're subject to.</p>
+<p class="lede">Everything moving on the <a href="/obligations">obligations</a> you're subject to.</p>
 
 {# Needs attention: the three questions a GRC engineer opens this app to answer, each
    with its top items inline so the answer needs no second click. #}
@@ -46,7 +46,7 @@
         <li><a href="/items/{{ w.item_id }}">{{ w.title }}</a></li>
         {% endfor %}
       </ul>
-      <div class="more"><a href="/deadlines#awaiting">Why these are open</a></div>
+      <div class="more"><a href="/deadlines#awaiting">Why these are still open</a></div>
     {% else %}<div class="none">Nothing pending an announcement.</div>{% endif %}
   </div>
 </section>
@@ -108,7 +108,7 @@
     </tr>
     {% else %}
     <tr><td colspan="3"><div class="empty">{{ icon('search', 40, 'big-ic') }}
-      No items match these filters.<br><a href="/changes">Show everything</a></div></td></tr>
+      Nothing matches those filters.<br><a href="/changes">Show everything</a></div></td></tr>
     {% endfor %}
     </tbody>
   </table>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_macros.html" import due_chip %}
 {% from "_icons.html" import icon %}
-{% block title %}Obligations — ObligationAggregator{% endblock %}
+{% block title %}Obligations · ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Obligation catalog</h2>
 <p class="lede">The regulations, frameworks and standards this instance tracks. Everything on
@@ -51,9 +51,8 @@ the <a href="/">change feed</a> is a signal about one of these.</p>
 </div>
 <details style="margin-top:.6rem">
   <summary>About this catalog</summary>
-  <p class="muted" style="font-size:.85rem; margin:.4rem 0 0">Quiet rows are still monitored — their
-  sources simply have no open rulemaking or draft right now. Copyrighted standards (ISO, PCI DSS,
-  HITRUST) track change events and identifiers only; bring your own licensed copy for full-text
-  diffs.</p>
+  <p class="muted" style="font-size:.85rem; margin:.4rem 0 0">Quiet rows are still monitored;
+  their sources just don't have an open rulemaking or draft right now. Copyrighted standards
+  (ISO, PCI DSS, HITRUST) are tracked as change events and version facts, never body text.</p>
 </details>
 {% endblock %}

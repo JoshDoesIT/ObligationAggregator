@@ -105,7 +105,7 @@ def test_pending_outcomes_derivation(db, client):
 
     # and the deadlines page renders the panel
     html = client.get("/deadlines").text
-    assert "Awaiting outcome — no date announced yet" in html
+    assert "Awaiting outcome" in html
     assert "PCI KMO v1.0" in html
 
 

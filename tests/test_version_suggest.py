@@ -307,7 +307,7 @@ def test_release_items_get_factual_banners_not_consultation_wording(client, db):
     assert old.state == ItemState.effective
     html = client.get(f"/items/{old.id}").text
     assert "superseded" in html and "11.8" in html
-    assert "draft of the next" not in html and "solicits feedback" not in html
+    assert "draft of the next" not in html and "asks for feedback" not in html
     assert "Comment open" not in html  # no fabricated comment lifecycle
 
     # a release OF the current version reads as current, not superseded
@@ -350,7 +350,7 @@ def test_advisory_items_are_informational_without_lifecycle_claims(client, db):
     adv = db.query(PipelineItem).filter_by(title="HITRUST advisory HAA-2026-002").one()
     html = client.get(f"/items/{adv.id}").text
     assert "advisory" in html and "informational" in html
-    assert "Comment open" not in html and "remains in force" not in html
+    assert "Comment open" not in html and "stays in force" not in html
 
 
 def test_closed_current_version_consultation_uses_past_tense(client, db):
@@ -365,7 +365,7 @@ def test_closed_current_version_consultation_uses_past_tense(client, db):
     assert rfc.state == ItemState.comment_closed
     html = client.get(f"/items/{rfc.id}").text
     assert "currently in force" in html and "comment window has closed" in html
-    assert "solicits feedback" not in html
+    assert "asks for feedback" not in html
 
 
 def test_hys_adopted_assertion_completes_consultation_lifecycle(db):
