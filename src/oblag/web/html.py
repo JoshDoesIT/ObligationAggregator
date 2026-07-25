@@ -343,12 +343,24 @@ def items_page(
         row[0]: row[1]
         for row in db.query(PipelineItem.state, func.count()).group_by(PipelineItem.state)
     }
-    deadlines_30d = len(api.upcoming_deadlines(db=db, date_type=None, within_days=30)["deadlines"])
+    # "Needs attention" band: the three things worth acting on, answered inline so the
+    # landing page leads with a conclusion rather than a table to triage. All three come
+    # from one deadlines query plus the derived pending-outcomes pass.
+    from oblag.watch import pending_outcomes
+
+    deadlines_30 = api.upcoming_deadlines(db=db, date_type=None, within_days=30)["deadlines"]
+    attention = {
+        "closing": [
+            d for d in deadlines_30 if d["date_type"] == "comment_close" and d["days_until"] <= 14
+        ],
+        "deadlines": deadlines_30,
+        "awaiting": pending_outcomes(db),
+    }
     stats = {
         "total": sum(state_counts.values()),
         "comment_open": state_counts.get(ItemState.comment_open, 0),
         "pending_effective": state_counts.get(ItemState.final_pending_effective, 0),
-        "deadlines_30d": deadlines_30d,
+        "deadlines_30d": len(deadlines_30),
     }
 
     # Attention-first default ordering: open comment windows (nearest close first),
@@ -402,6 +414,7 @@ def items_page(
             "obligations": linked_obligations,
             "q": q,
             "stats": stats,
+            "attention": attention,
             "page": page,
             "page_size": page_size,
             "has_next": page * page_size < data["total"],
@@ -737,7 +750,7 @@ def watchlists_page(
 ):
     if r := _login_redirect(ctx):
         return r
-    from oblag.db.models import Obligation
+    from oblag.db.models import EventType, Obligation
     from oblag.web import watchlists as wl_api
 
     data = wl_api.list_watchlists(db=db, ctx=ctx)
@@ -745,6 +758,10 @@ def watchlists_page(
         {"slug": slug, "name": name}
         for slug, name in db.query(Obligation.slug, Obligation.name).order_by(Obligation.name)
     ]
+    # Filter vocabularies as pickable options — the form never asks anyone to type an enum.
+    data["states"] = [s.value for s in ItemState]
+    data["event_types"] = [e.value for e in EventType]
+    data["sources"] = sorted(row[0] for row in db.query(PipelineItem.source_system).distinct())
     data["ctx"] = ctx
     return templates.TemplateResponse(request, "watchlists.html", data)
 
@@ -759,16 +776,24 @@ async def watchlists_create(
 
     form = await request.form()
     check_csrf(ctx, str(form.get("csrf_token", "")))
-    csv = lambda key: [s.strip() for s in str(form.get(key, "")).split(",") if s.strip()]  # noqa: E731
+
+    def multi(key: str) -> list[str]:
+        """Repeated checkbox fields, while still accepting a legacy comma-separated
+        value (the form used to ask for typed CSV; API clients may still send it)."""
+        out: list[str] = []
+        for raw in form.getlist(key):
+            out.extend(s.strip() for s in str(raw).split(",") if s.strip())
+        return out
+
     body = wl_api.WatchlistIn(
         name=str(form.get("name", "unnamed")),
         channel=str(form.get("channel", "rss")),
         target=str(form.get("target") or "") or None,
         filters=wl_api.WatchlistFilters(
-            source_systems=csv("source_systems"),
-            states=csv("states"),
-            event_types=csv("event_types"),
-            obligation_slugs=[str(v) for v in form.getlist("obligation_slugs")],
+            source_systems=multi("source_systems"),
+            states=multi("states"),
+            event_types=multi("event_types"),
+            obligation_slugs=multi("obligation_slugs"),
         ),
     )
     wl_api.create_watchlist(body, db=db, ctx=ctx)

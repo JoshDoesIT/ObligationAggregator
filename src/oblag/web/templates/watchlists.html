@@ -1,56 +1,100 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
 {% block title %}Watchlists — ObligationAggregator{% endblock %}
-{% block content %}
-<h2 class="page">Watchlists</h2>
-<p class="lede">Get notified when obligations move: comment windows opening, final rules landing,
-effective dates approaching, projected dates slipping. Filters are ANDed; leave a filter empty
-to match everything.</p>
 
-<div class="panel">
-  <h3>New watchlist</h3>
-  <div class="pad">
-  <form method="post" action="/watchlists"
-        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:.7rem; align-items:end">
-    {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
-    <div><label for="wl-name" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Name</label>
-      <input id="wl-name" name="name" placeholder="e.g. “EU cyber deadlines”" required style="width:100%"></div>
-    <div><label for="wl-channel" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Delivery channel</label>
-      <select id="wl-channel" name="channel" style="width:100%">
+{# One creation form, reused by the panel and by the empty state so a first-time user
+   never has to hunt for it. Step 1 (what + where) is all most people need; the raw
+   pipeline vocabulary lives behind "More filters" as labelled checkboxes — never as
+   hand-typed enum CSV. #}
+{% macro new_watchlist_form(obligations, states, sources, event_types, ctx, compact=false) %}
+<form method="post" action="/watchlists">
+  {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:.7rem; align-items:end">
+    <div><label for="wl-name{{ '-e' if compact }}" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Name</label>
+      <input id="wl-name{{ '-e' if compact }}" name="name" placeholder="e.g. “EU cyber deadlines”" required style="width:100%"></div>
+    <div><label for="wl-channel{{ '-e' if compact }}" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Deliver via</label>
+      <select id="wl-channel{{ '-e' if compact }}" name="channel" style="width:100%">
         <option value="rss">RSS feed</option>
         <option value="email">Email</option>
         <option value="webhook">Webhook</option>
       </select></div>
-    <div><label for="wl-target" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Email / webhook URL <span style="font-weight:400">(blank for RSS)</span></label>
-      <input id="wl-target" name="target" style="width:100%"></div>
-    <div><label for="wl-obligations" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Obligations <span style="font-weight:400">(hold Ctrl/Cmd for several)</span></label>
-      <select id="wl-obligations" name="obligation_slugs" multiple size="4" style="width:100%">
-        {% for o in obligations %}<option value="{{ o.slug }}">{{ o.name }}</option>{% endfor %}
-      </select></div>
-    <div><label for="wl-sources" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Sources <span style="font-weight:400">(csv, optional)</span></label>
-      <input id="wl-sources" name="source_systems" placeholder="cellar, edpb" style="width:100%"></div>
-    <div><label for="wl-states" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">States <span style="font-weight:400">(csv, optional)</span></label>
-      <input id="wl-states" name="states" placeholder="comment_open" style="width:100%"></div>
-    <div><label for="wl-events" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Event types <span style="font-weight:400">(csv, optional)</span></label>
-      <input id="wl-events" name="event_types" placeholder="date_changed" style="width:100%"></div>
-    <div><button style="width:100%">Create watchlist</button></div>
-  </form>
-  <p class="muted" style="font-size:.82rem; margin:.6rem 0 0">Tip: the {{ icon('bell', 12) }} Watch
-  button on any item page creates a one-click watchlist for that obligation.</p>
+    <div><label for="wl-target{{ '-e' if compact }}" style="display:block; font-size:.8rem; color:var(--muted); margin-bottom:.2rem">Send to
+        <span style="font-weight:400">(email or URL; blank for RSS)</span></label>
+      <input id="wl-target{{ '-e' if compact }}" name="target" style="width:100%"></div>
+  </div>
+
+  <fieldset style="border:0; padding:.9rem 0 0; margin:0">
+    <legend style="font-size:.8rem; color:var(--muted); padding:0">Obligations
+      <span style="font-weight:400">— leave all unchecked to watch everything</span></legend>
+    <div class="checkgrid scroll" data-pickfilter="Filter obligations…">
+      {% for o in obligations %}
+      <label><input type="checkbox" name="obligation_slugs" value="{{ o.slug }}"> {{ o.name }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <details style="margin-top:.7rem">
+    <summary>More filters</summary>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:1rem; margin-top:.6rem">
+      <fieldset style="border:0; padding:0; margin:0">
+        <legend style="font-size:.8rem; color:var(--muted); padding:0">Lifecycle state</legend>
+        <div class="checkgrid one">
+          {% for s in states %}
+          <label><input type="checkbox" name="states" value="{{ s }}"> {{ s | human_state }}</label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <fieldset style="border:0; padding:0; margin:0">
+        <legend style="font-size:.8rem; color:var(--muted); padding:0">Event type</legend>
+        <div class="checkgrid one">
+          {% for e in event_types %}
+          <label><input type="checkbox" name="event_types" value="{{ e }}"> {{ e | human_event }}</label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <fieldset style="border:0; padding:0; margin:0">
+        <legend style="font-size:.8rem; color:var(--muted); padding:0">Source</legend>
+        <div class="checkgrid one">
+          {% for s in sources %}
+          <label><input type="checkbox" name="source_systems" value="{{ s }}"> {{ s | human_source }}</label>
+          {% endfor %}
+        </div>
+      </fieldset>
+    </div>
+    <p class="muted" style="font-size:.8rem; margin:.6rem 0 0">Filters are ANDed — an item must
+    match every category you narrow.</p>
+  </details>
+
+  <div style="margin-top:.9rem"><button>Create watchlist</button></div>
+</form>
+{% endmacro %}
+
+{% block content %}
+<h2 class="page">Watchlists</h2>
+<p class="lede">Get notified when the obligations you pick move.</p>
+
+{% if watchlists %}
+<div class="panel">
+  <h3>New watchlist</h3>
+  <div class="pad">
+    {{ new_watchlist_form(obligations, states, sources, event_types, ctx) }}
+    <p class="muted" style="font-size:.82rem; margin:.7rem 0 0">Tip: the {{ icon('bell', 12) }} Subscribe
+    button on any change page creates one of these in a click.</p>
   </div>
 </div>
 
 <div class="panel">
   <div class="tablewrap">
   <table class="rows">
-    <thead><tr><th>Name</th><th>Channel</th><th>Delivery</th><th>Filters</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Delivery</th><th>Watching</th><th>Status</th><th></th></tr></thead>
     <tbody>
     {% for w in watchlists %}
     <tr>
       <td><strong>{{ w.name }}</strong></td>
-      <td><span class="tag">{{ w.channel }}</span></td>
       <td style="max-width:22rem; overflow-wrap:anywhere">
-        {% if w.feed_url %}<a href="{{ w.feed_url }}">{{ w.feed_url }}</a>{% else %}{{ w.target or '—' }}{% endif %}</td>
+        <span class="tag">{{ w.channel }}</span>
+        {% if w.feed_url %}<div style="margin-top:.2rem"><a href="{{ w.feed_url }}">{{ w.feed_url }}</a></div>
+        {% elif w.target %}<div class="muted" style="margin-top:.2rem; font-size:.85rem">{{ w.target }}</div>{% endif %}</td>
       <td>
         {% set f = w.filters or {} %}
         {% for key, vals in f.items() if vals %}
@@ -61,19 +105,27 @@ to match everything.</p>
         {% endfor %}
       </td>
       <td>{% if w.active %}<span class="badge ok"><span class="dot"></span>active</span>
-          {% else %}<span class="badge"><span class="dot"></span>disabled</span>{% endif %}</td>
+          {% else %}<span class="badge"><span class="dot"></span>paused</span>{% endif %}</td>
       <td>{% if w.active %}
         <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline">
           {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
-          <button class="quiet">Disable</button>
+          <button class="quiet" title="Stop delivering; history is kept">Pause</button>
         </form>{% endif %}</td>
     </tr>
-    {% else %}
-    <tr><td colspan="6"><div class="empty">{{ icon('bell', 40, 'big-ic') }}
-      No watchlists yet — create one above to get change alerts.</div></td></tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
 </div>
+{% else %}
+{# Empty state doubles as onboarding: the form itself, not a pointer to one. #}
+<div class="panel">
+  <h3>Create your first watchlist</h3>
+  <div class="pad">
+    <p class="muted" style="font-size:.88rem; margin:0 0 .9rem">Pick the obligations you care
+    about and how you want to hear about them. You can narrow further later.</p>
+    {{ new_watchlist_form(obligations, states, sources, event_types, ctx, compact=true) }}
+  </div>
+</div>
+{% endif %}
 {% endblock %}

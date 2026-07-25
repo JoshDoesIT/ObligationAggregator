@@ -3,17 +3,16 @@
 {% block title %}Activity — ObligationAggregator{% endblock %}
 {% block content %}
 <h2 class="page">Activity</h2>
-<p class="lede">The append-only event log: every state transition, date movement, content change
-and anomaly across all tracked obligations.</p>
+<p class="lede">The append-only event log across all tracked obligations.</p>
 
-<form class="filters" method="get" action="/events">
-  <select name="type">
+<form class="filters" method="get" action="/events" data-autosubmit>
+  <select name="type" aria-label="Filter by event type">
     <option value="">All event types</option>
     {% for t in types %}
     <option value="{{ t }}" {{ 'selected' if t == type }}>{{ t | human_event }}</option>
     {% endfor %}
   </select>
-  <button>Apply</button>
+  <button class="js-apply">Apply</button>
   {% if type %}<a href="/events" class="muted" style="font-size:.85rem">clear</a>{% endif %}
 </form>
 
