@@ -93,18 +93,6 @@
   .pulse .l { color:var(--muted); font-size:.7rem; text-transform:uppercase;
               letter-spacing:.12em; margin-top:.3rem; }
 
-  /* ---- the register ticker ---- */
-  .ticker { overflow:hidden; border-bottom:1px solid var(--ink); padding:.7rem 0;
-            margin:0 calc(50% - 50vw);
-    mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-    -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-  .ticker-track { display:flex; gap:2.6rem; width:max-content; animation:tick 100s linear infinite; }
-  .ticker:hover .ticker-track { animation-play-state:paused; }
-  @keyframes tick { to { transform:translateX(-50%); } }
-  .ticker span { white-space:nowrap; color:var(--fg2); font-family:var(--mono);
-                 font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; }
-  .ticker span::before { content:"§"; color:var(--accent); margin-right:.7rem; font-weight:700; }
-
   /* ---- clauses: newspaper columns, not cards ---- */
   .creed { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
            gap:0; margin:2.4rem 0 1rem; border-block:1px solid var(--ink); }
@@ -126,7 +114,7 @@
   .coda p { color:var(--muted); margin:.2rem 0 1.2rem; font-size:.92rem; }
 
   @media (prefers-reduced-motion: reduce) {
-    .sweep, .halo, .ticker-track, .mast .live::before { animation:none; }
+    .sweep, .halo, .mast .live::before { animation:none; }
     .sweep { display:none; }
   }
   @media (max-width:720px) {
@@ -198,13 +186,6 @@
   <a role="listitem" href="/obligations"><span class="n">{{ stats.obligations }}</span><div class="l">obligations watched</div></a>
 </div>
 
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-track">
-    {% for name in obligations %}<span>{{ name }}</span>{% endfor %}
-    {% for name in obligations %}<span>{{ name }}</span>{% endfor %}
-  </div>
-</div>
-
 <section class="creed" aria-label="How it works">
   <div class="c">
     <span class="cl-no">§ 1 · SOURCES</span>
@@ -220,10 +201,10 @@
     You always know where a change stands and what's coming next.</p>
   </div>
   <div class="c">
-    <span class="cl-no">§ 3 · EVIDENCE</span>
-    <h3>Evidence attached</h3>
-    <p>Every date carries a confidence level and a verified snapshot of where it came from,
-    hash-sealed and optionally signed. If something is an estimate, we say so.</p>
+    <span class="cl-no">§ 3 · PROOF</span>
+    <h3>Dates you can defend</h3>
+    <p>Every date shows where it came from and how firm it is. If it's an estimate, we say
+    so. And when an auditor asks how you knew, you can show them the source.</p>
   </div>
 </section>
 
