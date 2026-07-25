@@ -127,16 +127,16 @@
 <div class="panel">
   <h3>Key dates</h3>
   <div class="tablewrap">
-  <table>
+  <table class="stack">
     <thead><tr><th>Milestone</th><th>Date</th><th>When</th><th>Confidence</th></tr></thead>
     <tbody>
     {% for d in item.current_dates %}
     <tr>
       <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
-      <td><strong>{{ d.value }}</strong></td>
-      <td>{% set du = d.value | days_until %}
+      <td data-label="Date"><strong>{{ d.value }}</strong></td>
+      <td data-label="When">{% set du = d.value | days_until %}
           {% if du is not none and du >= 0 %}{{ due_chip(du) }}{% else %}<span class="muted">{{ d.value | reldate }}</span>{% endif %}</td>
-      <td>{{ conf(d.confidence) }}</td>
+      <td data-label="Confidence">{{ conf(d.confidence) }}</td>
     </tr>
     {% else %}
     <tr><td colspan="4" class="muted">No machine-readable dates yet — add one with a curated assertion.</td></tr>
@@ -155,14 +155,14 @@
   <div class="panel">
     <h3>Provenance</h3>
     <div class="tablewrap">
-    <table>
+    <table class="stack">
       <thead><tr><th>Milestone</th><th>Date</th><th>Evidence</th></tr></thead>
       <tbody>
       {% for d in item.current_dates %}
       <tr>
         <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
-        <td>{{ d.value }}</td>
-        <td class="muted">
+        <td data-label="Date">{{ d.value }}</td>
+        <td class="muted" data-label="Evidence">
           {% if d.snapshot %}
             verified snapshot · sha256 <code>{{ d.snapshot.sha256[:16] }}…</code><br>
             fetched {{ d.snapshot.fetched_at[:19] if d.snapshot.fetched_at }} ·
@@ -183,17 +183,17 @@
   <div class="panel">
     <h3>Date history <span style="text-transform:none; letter-spacing:0">— append-only; superseded values struck through</span></h3>
     <div class="tablewrap">
-    <table>
+    <table class="stack">
       <thead><tr><th>Milestone</th><th>Date</th><th>Confidence</th><th>Asserted</th></tr></thead>
       <tbody>
       {% for d in item.date_history %}
       <tr class="{{ 'ghost' if d.id in superseded_ids }}">
         <td>{{ d.date_type | human_date_type }}{% if d.label %} <span class="muted">· {{ d.label }}</span>{% endif %}</td>
-        <td>{% if d.retracted %}<span class="badge warn">withdrawn by source</span>
+        <td data-label="Date">{% if d.retracted %}<span class="badge warn">withdrawn by source</span>
             <span class="muted" style="font-size:.82rem">was {{ d.value }}</span>
             {% else %}{{ d.value }}{% endif %}</td>
-        <td>{{ conf(d.confidence) }}</td>
-        <td class="muted">{{ d.asserted_at[:10] if d.asserted_at }}</td>
+        <td data-label="Confidence">{{ conf(d.confidence) }}</td>
+        <td class="muted" data-label="Asserted">{{ d.asserted_at[:10] if d.asserted_at }}</td>
       </tr>
       {% endfor %}
       </tbody>
@@ -205,14 +205,14 @@
   <div class="panel">
     <h3>Activity</h3>
     <div class="tablewrap">
-    <table>
+    <table class="stack">
       <thead><tr><th>When</th><th>Event</th><th>What happened</th></tr></thead>
       <tbody>
       {% for e in item.events %}
       <tr>
         <td class="muted" style="white-space:nowrap">{{ e.occurred_at[:10] if e.occurred_at }}</td>
         <td><span class="badge plain {{ 'bad' if e.type == 'anomaly' else 'info' if e.type == 'date_changed' else '' }}">{{ e.type | human_event }}</span></td>
-        <td>{{ e | event_text }}
+        <td data-label="What happened">{{ e | event_text }}
             <details style="display:inline-block; margin-left:.4rem"><summary>raw</summary>
               <code style="white-space:pre-wrap">{{ e.payload | tojson }}</code></details></td>
       </tr>

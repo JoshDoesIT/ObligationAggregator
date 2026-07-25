@@ -78,7 +78,7 @@
 
 <div class="panel">
   <div class="tablewrap">
-  <table class="rows feed">
+  <table class="rows feed stack">
     <thead><tr><th>Change</th><th>State</th><th>Key dates</th></tr></thead>
     <tbody>
     {% for item in items %}
@@ -91,7 +91,7 @@
           item.source_system | human_source }}<span class="sep">·</span>{{ item.jurisdiction }}</div>
       </td>
       <td>{{ state_badge(item.state) }}</td>
-      <td>
+      <td data-label="Key dates">
         <div class="datechips">
         {% for d in item.current_dates %}
           <div class="datechip">

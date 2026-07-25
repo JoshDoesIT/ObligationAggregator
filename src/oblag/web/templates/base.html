@@ -216,6 +216,71 @@
       main { padding:1rem .8rem 2.5rem; }
       th, td { padding:.5rem .55rem; }
       .stats { grid-template-columns:repeat(2, 1fr); }
+
+      /* --- compact header: the brand + a single scrollable nav row. Wrapping to two
+         rows cost ~180px of a 760px viewport on every page. --- */
+      header.site { padding:0 .8rem; gap:.5rem; }
+      .brand { padding:.5rem 0; font-size:.95rem; }
+      .brand .logo { width:22px; height:22px; font-size:.75rem; }
+      nav.site { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+      nav.site::-webkit-scrollbar { display:none; }
+      /* measured: at 0.8rem/.38rem all five destinations + More fit within 375px, so
+         nothing important sits off-screen on a typical phone */
+      nav.site > a, nav.site details.util > summary { padding:.6rem .38rem; font-size:.8rem; white-space:nowrap; }
+      /* the nav scrolls horizontally, which would clip an absolutely-positioned child:
+         pin the dropdown to the viewport instead so it escapes that scroll container */
+      .utilmenu { position:fixed; top:auto; left:.8rem; right:.8rem; min-width:0; margin-top:.35rem; }
+
+      /* --- data tables become stacked cards. On a 375px screen a real table forced
+         fixed-width columns to collide (the state badge overprinted the dates) and cut
+         off the rightmost column, which is usually the one that matters. --- */
+      table.stack, table.stack tbody, table.stack tr, table.stack td { display:block; width:100%; }
+      table.stack thead { display:none; }
+      table.stack tr { padding:.7rem .2rem; border-bottom:1px solid var(--line); }
+      table.stack tr:last-child { border-bottom:0; }
+      table.stack td { border:0; padding:.1rem 0; }
+      table.stack td:empty { display:none; }
+      table.stack td[data-label]::before {
+        content:attr(data-label); display:block; font-size:.68rem; text-transform:uppercase;
+        letter-spacing:.04em; color:var(--muted); font-weight:600; margin:.4rem 0 .1rem;
+      }
+      table.stack tr.group { padding:.4rem .2rem; }
+      table.stack tr.group td::before { content:none; }
+      /* date chips are nowrap for table columns; inside a stacked card they must wrap
+         rather than push the card into its own horizontal scroll */
+      table.stack .datechip, table.stack .datechip .t { white-space:normal; }
+      /* fixed feed widths are meaningless once rows are blocks */
+      table.feed { table-layout:auto; }
+      table.stack .datechips { gap:.3rem; }
+
+      /* filter controls must never force the page wider than the screen */
+      form.filters { gap:.45rem; }
+      form.filters input, form.filters select { width:100%; min-width:0; max-width:100%; }
+      form.filters input[type=search] { min-width:0; }
+
+      /* the lifecycle stepper: narrower steps so more of it fits before scrolling */
+      .step { min-width:74px; font-size:.72rem; }
+
+      .attn { gap:.6rem; }
+      details.section > summary { padding:.7rem 0; }
+    }
+    /* Very small phones (≤374px, e.g. iPhone SE) can't fit the whole nav even tightened,
+       so it scrolls — fade the trailing edge to show there is more. */
+    @media (max-width:374px) {
+      nav.site { mask-image:linear-gradient(to right, #000 calc(100% - 22px), transparent);
+                 -webkit-mask-image:linear-gradient(to right, #000 calc(100% - 22px), transparent); }
+    }
+
+    /* Touch targets: WCAG 2.5.5 / HIG want ~44px. Applied on coarse pointers only, so
+       the desktop layout keeps its tighter rhythm. */
+    @media (pointer:coarse) {
+      nav.site > a, .utilmenu a, nav.site details.util > summary { min-height:44px; display:flex; align-items:center; }
+      button, input[type=submit] { min-height:44px; }
+      .checkgrid label { min-height:36px; }
+      .checkgrid input[type=checkbox] { width:20px; height:20px; }
+      details summary { min-height:32px; }
+      .titlecell a, .attn li a { display:inline-block; padding:.15rem 0; }
+      .attn .more a { display:inline-block; padding:.35rem 0; }
     }
   </style>
 </head>
