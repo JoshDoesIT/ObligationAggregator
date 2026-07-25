@@ -4,8 +4,8 @@ Every source is an adapter implementing:
 
 ```python
 class SourceAdapter(ABC):
-    name: str                     # e.g. "federal_register"
-    jurisdiction: str             # default jurisdiction for items
+    name: str  # e.g. "federal_register"
+    jurisdiction: str  # default jurisdiction for items
 
     def fetch_raw(self, ctx: FetchContext) -> Iterable[RawDocument]:
         """Fetch raw payloads from the source. May paginate. Uses ctx.client (httpx)."""
