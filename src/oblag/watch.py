@@ -89,7 +89,7 @@ def pending_outcomes(db: Session) -> list[dict[str, Any]]:
                     "item_id": item.id,
                     "title": item.title,
                     "obligation": ob.slug if ob else None,
-                    "detail": "Adopted — effective date not yet announced",
+                    "detail": "Adopted. The effective date hasn't been announced yet",
                 }
             )
     # ISO editions under revision: the item is effective (edition in force) but the
@@ -110,8 +110,8 @@ def pending_outcomes(db: Session) -> list[dict[str, Any]]:
                 "item_id": item.id,
                 "title": item.title,
                 "obligation": ob.slug if ob else None,
-                "detail": "Revision underway — current edition remains in force until "
-                "the new edition publishes",
+                "detail": "Revision underway. The current edition stays in force "
+                "until the new one publishes",
             }
         )
     out.sort(key=lambda w: (w["kind"], w["title"]))

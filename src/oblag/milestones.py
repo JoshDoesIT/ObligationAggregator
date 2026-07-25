@@ -20,7 +20,7 @@ _FIRM = Confidence.published_firm
 CURATED_MILESTONES: list[dict] = [
     {
         "key": "eu-ai-act-timeline",
-        "title": "EU AI Act (Regulation 2024/1689) — application timeline",
+        "title": "EU AI Act (Regulation 2024/1689): application timeline",
         "obligation": "eu-ai-act",
         "jurisdiction": "EU",
         "url": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj",
