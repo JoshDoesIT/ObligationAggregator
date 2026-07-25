@@ -366,17 +366,14 @@ def home_page(
         row[0]: row[1]
         for row in db.query(PipelineItem.state, func.count()).group_by(PipelineItem.state)
     }
-    obligations = [name for (name,) in db.query(Obligation.name).order_by(Obligation.slug)]
     stats = {
         "changes": sum(state_counts.values()),
         "open_windows": state_counts.get(ItemState.comment_open, 0),
         "deadlines_30d": sum(1 for d in horizon if d["days_until"] <= 30),
-        "obligations": len(obligations),
+        "obligations": db.query(Obligation).count(),
     }
     return templates.TemplateResponse(
-        request,
-        "home.html",
-        {"ctx": ctx, "dots": dots, "rings": rings, "stats": stats, "obligations": obligations},
+        request, "home.html", {"ctx": ctx, "dots": dots, "rings": rings, "stats": stats}
     )
 
 

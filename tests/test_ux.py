@@ -182,9 +182,8 @@ def test_mobile_viewport_and_touch_rules_present(client, seeded):
 
 
 def test_homepage_is_a_live_landing_page(client, seeded):
-    """/ is the front door (v0.10.0): a hero radar drawn from real deadline data, live
-    stat links into the app, and the obligations ticker. Not a mock — the dots must be
-    real item links."""
+    """/ is the front door: a hero radar drawn from real deadline data and live stat
+    links into the app. Not a mock — the dots must be real item links."""
     html = client.get("/").text
     assert "Regulation moves." in html
     assert 'aria-label="Live regulatory horizon"' in html

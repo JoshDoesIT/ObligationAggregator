@@ -10,24 +10,23 @@
    the same query the deadlines page uses, so the artwork can never drift from the
    truth. Pure CSS/SVG; no libraries; honors prefers-reduced-motion. #}
 <style>
-  .bleed { margin-inline: calc(50% - 50vw); }
+  .bleed { margin-inline: calc(50% - 50vw); margin-inline: calc(50% - 50svw); }
 
   /* ---- masthead hero: a gazette front page, not a SaaS gradient ---- */
-  .horizon { background:var(--bg); margin-top:-1.4rem; padding:0 1.25rem clamp(2rem,4vw,3rem);
+  .horizon { background:var(--bg); margin-top:-1.4rem; padding:0 1.25rem clamp(2rem,4svw,3rem);
              position:relative; }
   .hz-inner { max-width:1180px; margin:0 auto; }
   .mast { display:flex; justify-content:space-between; gap:1rem; align-items:baseline;
           border-bottom:1px solid var(--ink); padding:.55rem 0; font-family:var(--mono);
           font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
   .mast .live { color:var(--accent); font-weight:700; }
-  .mast .live::before { content:"●"; margin-right:.45rem; animation:blink 2.2s ease-in-out infinite; }
-  @keyframes blink { 50% { opacity:.25; } }
 
-  .hz-grid { display:flex; flex-wrap:wrap; gap:clamp(1.2rem,4vw,3rem); align-items:center;
-             padding-top:clamp(1.6rem,4vw,3rem); }
+  .hz-grid { display:flex; flex-wrap:wrap; gap:clamp(1.2rem,4svw,3rem); align-items:center;
+             padding-top:clamp(1.6rem,4svw,3rem); }
   .hz-copy { flex:1 1 360px; min-width:0; }
   .headline { margin:0 0 1.2rem; font-weight:900; text-transform:uppercase;
-              font-size:clamp(2.6rem, 7.2vw, 5.2rem); line-height:.94; letter-spacing:-.015em;
+              font-size:clamp(2.6rem, 7.2vw, 5.2rem);
+              font-size:clamp(2.6rem, 7.2svw, 5.2rem); line-height:.94; letter-spacing:-.015em;
               color:var(--ink);
               /* misregistered print: the vermillion plate sits a hair off the ink plate */
               text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28); }
@@ -48,7 +47,7 @@
 
   /* ---- the drafting chart ---- */
   .radar-wrap { flex:1 1 340px; display:flex; flex-direction:column; align-items:center; min-width:0; }
-  .radar { position:relative; width:min(88vw, 470px); aspect-ratio:1; }
+  .radar { position:relative; width:min(88vw, 470px); width:min(88svw, 470px); aspect-ratio:1; }
   .radar svg { width:100%; height:100%; display:block; }
   .radar .ring { fill:none; stroke:var(--ink); stroke-opacity:.28; stroke-width:1; }
   .radar .ring:nth-of-type(1) { stroke-dasharray:none; }
@@ -88,22 +87,11 @@
   .pulse a:first-child { border-left:0; }
   .pulse a:hover { text-decoration:none; background:var(--panel); }
   .pulse .n { font-size:2.3rem; font-weight:700; font-family:var(--mono); line-height:1.05; }
-  .pulse .n::after { content:"→"; display:inline-block; transform:rotate(-45deg);
-                     font-size:.5em; color:var(--accent); margin-left:.3rem; vertical-align:.6em; }
+  /* the figures end in a vermillion full stop, same as the headline. A count is a
+     fact, so it gets a period, and no trend arrow pretending it's a chart. */
+  .pulse .n::after { content:"."; color:var(--accent); }
   .pulse .l { color:var(--muted); font-size:.7rem; text-transform:uppercase;
               letter-spacing:.12em; margin-top:.3rem; }
-
-  /* ---- the register ticker ---- */
-  .ticker { overflow:hidden; border-bottom:1px solid var(--ink); padding:.7rem 0;
-            margin:0 calc(50% - 50vw);
-    mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-    -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-  .ticker-track { display:flex; gap:2.6rem; width:max-content; animation:tick 100s linear infinite; }
-  .ticker:hover .ticker-track { animation-play-state:paused; }
-  @keyframes tick { to { transform:translateX(-50%); } }
-  .ticker span { white-space:nowrap; color:var(--fg2); font-family:var(--mono);
-                 font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; }
-  .ticker span::before { content:"§"; color:var(--accent); margin-right:.7rem; font-weight:700; }
 
   /* ---- clauses: newspaper columns, not cards ---- */
   .creed { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
@@ -121,12 +109,13 @@
   /* ---- coda ---- */
   .coda { text-align:center; margin:3rem 0 1rem; }
   .coda h2 { font-weight:900; text-transform:uppercase; letter-spacing:-.01em;
-             font-size:clamp(1.6rem,4vw,2.6rem); margin:0 0 .5rem;
+             font-size:clamp(1.6rem,4vw,2.6rem);
+             font-size:clamp(1.6rem,4svw,2.6rem); margin:0 0 .5rem;
              text-shadow:.05em .05em 0 var(--accent-soft); }
   .coda p { color:var(--muted); margin:.2rem 0 1.2rem; font-size:.92rem; }
 
   @media (prefers-reduced-motion: reduce) {
-    .sweep, .halo, .ticker-track, .mast .live::before { animation:none; }
+    .sweep, .halo { animation:none; }
     .sweep { display:none; }
   }
   @media (max-width:720px) {
@@ -198,13 +187,6 @@
   <a role="listitem" href="/obligations"><span class="n">{{ stats.obligations }}</span><div class="l">obligations watched</div></a>
 </div>
 
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-track">
-    {% for name in obligations %}<span>{{ name }}</span>{% endfor %}
-    {% for name in obligations %}<span>{{ name }}</span>{% endfor %}
-  </div>
-</div>
-
 <section class="creed" aria-label="How it works">
   <div class="c">
     <span class="cl-no">§ 1 · SOURCES</span>
@@ -220,10 +202,10 @@
     You always know where a change stands and what's coming next.</p>
   </div>
   <div class="c">
-    <span class="cl-no">§ 3 · EVIDENCE</span>
-    <h3>Evidence attached</h3>
-    <p>Every date carries a confidence level and a verified snapshot of where it came from,
-    hash-sealed and optionally signed. If something is an estimate, we say so.</p>
+    <span class="cl-no">§ 3 · PROOF</span>
+    <h3>Dates you can defend</h3>
+    <p>Every date shows where it came from and how firm it is. If it's an estimate,
+    we say so.</p>
   </div>
 </section>
 
