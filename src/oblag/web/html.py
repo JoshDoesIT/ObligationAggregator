@@ -59,9 +59,9 @@ CONF_LABELS = {
     "derived": "Derived",
 }
 CONF_HELP = {
-    "statutory_hard": "Fixed by statute — will not move without new legislation",
+    "statutory_hard": "Fixed by statute. It won't move without new legislation",
     "published_firm": "Published by the issuing body in an official document",
-    "agency_estimate": "The agency's own projection — may slip",
+    "agency_estimate": "The agency's own projection, so it may slip",
     "derived": "Inferred by ObligationAggregator, not stated by the source",
 }
 SOURCE_LABELS = {
@@ -145,8 +145,8 @@ def _event_text(e: dict) -> str:
         frm = p.get("from") or "unset"
         if p.get("retracted"):
             return (
-                f"{_human_date_type(p.get('date_type'))}: {frm} withdrawn — "
-                "the source no longer states this date"
+                f"{_human_date_type(p.get('date_type'))}: {frm} withdrawn. "
+                "The source no longer states this date"
             )
         return (
             f"{_human_date_type(p.get('date_type'))}: {frm} → {p.get('to')}"
@@ -354,7 +354,7 @@ def home_page(
                 if d["days_until"] <= 30
                 else "far",
                 "item_id": d["item_id"],
-                "title": f"{d['title']} — {d['date_type'].replace('_', ' ')} in {d['days_until']}d",
+                "title": f"{d['title']} · {d['date_type'].replace('_', ' ')} in {d['days_until']}d",
             }
         )
     rings = [

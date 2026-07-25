@@ -270,7 +270,7 @@ CATALOG: list[dict] = [
     # signals tracked via the pci_ssc adapter — never body text) ---
     dict(
         slug="pci-pts-poi",
-        name="PCI PTS POI (PIN Transaction Security — Point of Interaction)",
+        name="PCI PTS POI (PIN Transaction Security, Point of Interaction)",
         issuing_body="PCI SSC",
         jurisdiction="Global",
         canonical_url="https://www.pcisecuritystandards.org/document_library/",
