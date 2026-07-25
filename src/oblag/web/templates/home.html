@@ -87,8 +87,9 @@
   .pulse a:first-child { border-left:0; }
   .pulse a:hover { text-decoration:none; background:var(--panel); }
   .pulse .n { font-size:2.3rem; font-weight:700; font-family:var(--mono); line-height:1.05; }
-  .pulse .n::after { content:"→"; display:inline-block; transform:rotate(-45deg);
-                     font-size:.5em; color:var(--accent); margin-left:.3rem; vertical-align:.6em; }
+  /* the figures end in a vermillion full stop, same as the headline. A count is a
+     fact, so it gets a period, and no trend arrow pretending it's a chart. */
+  .pulse .n::after { content:"."; color:var(--accent); }
   .pulse .l { color:var(--muted); font-size:.7rem; text-transform:uppercase;
               letter-spacing:.12em; margin-top:.3rem; }
 
