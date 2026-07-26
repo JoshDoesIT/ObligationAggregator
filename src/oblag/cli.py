@@ -7,9 +7,7 @@ import typer
 
 from oblag.db.session import init_db, session_scope
 
-app = typer.Typer(
-    help="ObligationAggregator — regulatory change intelligence.", no_args_is_help=True
-)
+app = typer.Typer(help="Gazette: regulatory change intelligence.", no_args_is_help=True)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 

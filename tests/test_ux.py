@@ -186,6 +186,10 @@ def test_homepage_is_a_live_landing_page(client, seeded):
     links into the app. Not a mock — the dots must be real item links."""
     html = client.get("/").text
     assert "Regulation moves." in html
+    # front-page furniture: nameplate, dateline, and the latest-filings briefs
+    assert 'class="np-title"' in html and "Gazette" in html
+    assert 'class="dateline"' in html
+    assert "The latest filings" in html
     assert 'aria-label="Live regulatory horizon"' in html
     assert 'class="sweep"' in html and "prefers-reduced-motion" in html
     # radar dots link to real items (seeded data has future deadlines)

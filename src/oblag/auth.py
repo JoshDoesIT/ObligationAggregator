@@ -321,11 +321,11 @@ def send_login_email(to: str, verify_url: str) -> None:
     if not settings.smtp_host:
         raise RuntimeError("SMTP is not configured (OBLAG_SMTP_HOST) — magic-link login needs it")
     msg = EmailMessage()
-    msg["Subject"] = "Your ObligationAggregator sign-in link"
+    msg["Subject"] = "Your Gazette sign-in link"
     msg["From"] = settings.smtp_from
     msg["To"] = to
     msg.set_content(
-        "Sign in to ObligationAggregator by opening this link "
+        "Sign in to Gazette by opening this link "
         f"(valid {settings.login_token_ttl_minutes} minutes, single use):\n\n{verify_url}\n\n"
         "If you didn't request this, you can ignore this email."
     )

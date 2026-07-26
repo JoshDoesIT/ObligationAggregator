@@ -1,8 +1,8 @@
-# ObligationAggregator
+# Gazette
 
 **Open-source regulatory & framework change-intelligence for GRC engineers.**
 
-ObligationAggregator (`oblag`) tracks formally proposed and adopted changes to the laws,
+Gazette (`oblag`) tracks formally proposed and adopted changes to the laws,
 regulations, and security/privacy standards you actually run programs against — PCI DSS,
 SOC 2, ISO 27001, NIST CSF/800-53, HIPAA, GDPR, DORA, NIS2, the EU AI Act, US state privacy
 laws — and turns them into a **lifecycle state machine** with **versioned date assertions**

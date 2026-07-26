@@ -1,4 +1,4 @@
-# Deploying ObligationAggregator on Vercel
+# Deploying Gazette on Vercel
 
 The whole platform runs as one Vercel project: the FastAPI app (UI + API) as a Python
 function, Vercel Cron for ingestion, Postgres for the system of record, and Vercel Blob

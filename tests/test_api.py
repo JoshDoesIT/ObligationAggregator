@@ -67,7 +67,7 @@ def test_html_pages_render(client, seeded):
     ):
         r = client.get(path)
         assert r.status_code == 200, path
-        assert "ObligationAggregator" in r.text
+        assert "Gazette" in r.text
         # icons are inline SVG now — no pictographic emoji should reach the page
         assert not emoji.search(r.text), f"emoji leaked into {path}"
         assert "<svg" in r.text  # the icon set is present

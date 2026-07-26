@@ -12,7 +12,7 @@ import httpx
 
 from oblag.db.models import Confidence, DateType
 
-USER_AGENT = "ObligationAggregator/0.1 (+https://github.com/JoshDoesIT/ObligationAggregator)"
+USER_AGENT = "Gazette/1.0 (+https://github.com/JoshDoesIT/ObligationAggregator)"
 
 
 @dataclass

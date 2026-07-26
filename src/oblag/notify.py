@@ -202,7 +202,7 @@ def alert_unhealthy_adapters(session: Session, *, min_failures: int = 2) -> int:
         return 0
     base = settings.base_url.rstrip("/")
     lines = [
-        f"{len(fresh)} data source(s) are failing on ObligationAggregator:",
+        f"{len(fresh)} data source(s) are failing on Gazette:",
         "",
     ]
     for h in fresh:

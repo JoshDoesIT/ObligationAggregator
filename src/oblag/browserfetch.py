@@ -130,8 +130,7 @@ def render_page(
             browser = pw.chromium.launch(executable_path=executable, **launch_kwargs)
         try:
             page = browser.new_page(
-                user_agent="ObligationAggregator/0.1 "
-                "(+https://github.com/JoshDoesIT/ObligationAggregator)"
+                user_agent="Gazette/1.0 (+https://github.com/JoshDoesIT/ObligationAggregator)"
             )
             response = page.goto(url, timeout=timeout_ms, wait_until="domcontentloaded")
             if wait_selector:
