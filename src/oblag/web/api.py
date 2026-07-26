@@ -75,13 +75,24 @@ def list_items(
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None
     total = query.count()
+    from sqlalchemy import func
     from sqlalchemy.orm import joinedload, selectinload
 
     from oblag.web.serialize import items_to_dicts
 
+    # Newest by the SOURCE's clock, falling back to when we first saw it. Ordering by
+    # last_seen_at ranked by our own polling instead: every item an adapter re-observed
+    # jumped to the top, and after a rebuild the whole feed shares one timestamp and
+    # comes back in arbitrary order.
     items = (
         query.options(selectinload(PipelineItem.join_keys), joinedload(PipelineItem.obligation))
-        .order_by(PipelineItem.last_seen_at.desc())
+        .order_by(
+            # anything we can date reads in true chronological order; what we cannot
+            # date follows, rather than jumping the queue on our ingestion clock
+            PipelineItem.published_at.is_(None),
+            func.coalesce(PipelineItem.published_at, PipelineItem.first_seen_at).desc(),
+            PipelineItem.id.desc(),
+        )
         .limit(limit)
         .offset(offset)
         .all()

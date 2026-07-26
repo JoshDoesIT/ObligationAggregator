@@ -138,3 +138,43 @@ The `deploy-verify` GitHub Action polls production `/openapi.json` for the merge
 `__version__` after each push to `main` and fails loudly if it never appears —
 catching a merge whose production deploy silently never started. Override the URL
 with a `PROD_URL` repository variable if it changes.
+
+## Rebuilding the data
+
+Adapter fixes only reach rows a source still lists, so a parser bug that mangled a
+title (or a column added later, like `published_at`) leaves older rows stale forever.
+`rebuild` is the repair: re-read the record rather than hand-edit the database.
+
+```bash
+# re-read every source over two years, then retire what the enumerating ones dropped
+curl -H "Authorization: Bearer $OBLAG_CRON_SECRET" \
+  "$PROD_URL/api/internal/rebuild?confirm=REBUILD&days=730"
+
+# add history without retiring anything (safe to repeat)
+curl -H "Authorization: Bearer $OBLAG_CRON_SECRET" \
+  "$PROD_URL/api/internal/backfill?days=730"
+```
+
+Self-hosted: `oblag rebuild --days 730` (add `--no-prune` to only add).
+
+It refreshes first and prunes second, on purpose. A wipe-then-refill assumes every
+source answers; the first live trial proved otherwise (iso.org served 403 to the
+catalogue adapter, which would have deleted those items with nothing to restore them
+from). So a source that fails keeps everything it gave us before, and only a source
+that answered can retire its own rows.
+
+Never retired: items carrying a curated date (a human asserted it), anything from a
+source that errored or was skipped, and all tenancy, catalog and snapshot rows.
+Pruning is also limited to sources that enumerate their whole corpus each run — a
+sitemap, or a date-windowed API asked for the full window. An RSS feed rolling an old
+post off the bottom does not mean the item is gone.
+
+**How far back each source reaches.** Only the Federal Register, regulations.gov and
+EUR-Lex accept a date window, so only they can be asked for years of history. Sitemap
+sources (HITRUST, AICPA) list their whole corpus anyway. Everything else is a feed and
+serves what it carries today; a rebuild refreshes those but cannot invent history the
+publisher no longer lists.
+
+Measured live at `days=730`: 326 items in ~70s, well inside the 300s function ceiling.
+If a run does hit the budget it returns a `deferred` list and skips pruning entirely,
+because a partial run has not heard from every source yet.

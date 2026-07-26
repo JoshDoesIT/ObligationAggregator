@@ -18,6 +18,8 @@ from oblag.config import get_settings
 from oblag.core.reducer import tick as run_tick
 from oblag.core.runner import run_adapter
 from oblag.notify import alert_unhealthy_adapters, dispatch_pending
+from oblag.rebuild import backfill_plan, run_plan
+from oblag.rebuild import rebuild as do_rebuild
 from oblag.scheduler import ADAPTER_GROUPS, weekly_due_today
 from oblag.web.deps import get_db
 
@@ -116,6 +118,8 @@ def relink_items(request: Request, db: Session = Depends(get_db)):
 # returns cleanly — committing what ran and recording the rest as deferred — instead of
 # being killed mid-write. Deferred adapters run on the next daily invocation.
 _GROUP_TIME_BUDGET_S = 240.0
+# leaves headroom under the 300s function ceiling for the final commits and response
+_REBUILD_BUDGET_S = 230.0
 
 
 @router.get("/run-group/{group}")
@@ -161,6 +165,47 @@ def run_group(group: str, request: Request, db: Session = Depends(get_db)):
         "notifications_delivered": delivered,
         "ops_alerted": alerted,
     }
+
+
+@router.get("/rebuild")
+def rebuild_endpoint(
+    request: Request,
+    confirm: str = "",
+    days: int = 730,
+    adapters: str = "",
+    prune: bool = True,
+    db: Session = Depends(get_db),
+):
+    """Re-read every source over `days`, then retire rows the enumerating ones dropped.
+
+    Can delete data, so it needs `confirm=REBUILD` on top of the cron secret. Items a
+    human annotated are never retired, and a source that errors keeps everything it
+    gave us before. Pass prune=false to add history without retiring anything."""
+    _authorize(request)
+    if confirm != "REBUILD":
+        raise HTTPException(400, "refusing to rebuild: pass confirm=REBUILD")
+    names = [a for a in adapters.split(",") if a] or None
+    report = do_rebuild(
+        db,
+        days=min(max(days, 1), 3650),
+        adapters=names,
+        budget_s=_REBUILD_BUDGET_S,
+        prune=prune,
+    )
+    return report.as_dict()
+
+
+@router.get("/backfill")
+def backfill_endpoint(
+    request: Request, days: int = 730, adapters: str = "", db: Session = Depends(get_db)
+):
+    """Re-ingest with a historical window WITHOUT purging. Safe to repeat: the reducer
+    dedups by join key, so this only adds what the sources still carry."""
+    _authorize(request)
+    names = [a for a in adapters.split(",") if a] or None
+    plan = backfill_plan(min(max(days, 1), 3650), names)
+    report = run_plan(db, plan, budget_s=_REBUILD_BUDGET_S)
+    return report.as_dict()
 
 
 @router.get("/tick")

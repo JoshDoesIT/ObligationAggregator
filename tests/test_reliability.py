@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+
 import oblag.db.session as dbsession
 from oblag.catalog import seed_obligations
 from oblag.db.models import AdapterHealth, KVMeta
@@ -138,3 +140,200 @@ def test_ops_alert_noop_without_smtp(db, monkeypatch):
         )(),
     )
     assert notify.alert_unhealthy_adapters(db) == 0
+
+
+# --- rebuild: refetch the record instead of hand-editing the database ---
+
+
+def _seed_for_rebuild(db, monkeypatch):
+    """Two items from a fake source, one carrying a hand-typed deadline."""
+    from oblag.adapters.base import NormalizedDate, NormalizedItem
+    from oblag.core.assertions import assert_date
+    from oblag.core.reducer import reduce_item
+    from oblag.db.models import Confidence, DateType
+
+    a = reduce_item(
+        db,
+        NormalizedItem(
+            source_system="federal_register",
+            external_key=("fr_doc_number", "2024-00001"),
+            jurisdiction="US-Federal",
+            title="MANGLED - title the parser broke",
+            native_status="PRORULE",
+            track="proposed",
+            dates=[NormalizedDate(DateType.comment_close, date(2026, 9, 1), Confidence.derived)],
+        ),
+    )
+    b = reduce_item(
+        db,
+        NormalizedItem(
+            source_system="federal_register",
+            external_key=("fr_doc_number", "2024-00002"),
+            jurisdiction="US-Federal",
+            title="Gone from the source",
+            native_status="PRORULE",
+            track="proposed",
+        ),
+    )
+    # a human typed this one; no feed carries it
+    assert_date(
+        db,
+        a.item.id,
+        DateType.effective,
+        date(2027, 1, 1),
+        Confidence.published_firm,
+        note="from the PDF",
+    )
+    db.commit()
+    return a.item.id, b.item.id
+
+
+def test_rebuild_refreshes_then_retires_what_the_source_dropped(db, monkeypatch):
+    """A rebuild re-reads the record: rows the source still lists are refreshed in
+    place (so a parser fix finally reaches them), and rows an enumerating source
+    stopped listing are retired."""
+    from oblag.db.models import PipelineItem
+    from oblag.rebuild import rebuild
+
+    _seed_for_rebuild(db, monkeypatch)
+
+    def fake_run(session, name, window=None, **kw):
+        """The source now lists item A with a clean title, and no longer lists B."""
+        from oblag.adapters.base import NormalizedItem
+        from oblag.core.reducer import reduce_item
+        from oblag.core.runner import RunStats
+
+        reduce_item(
+            session,
+            NormalizedItem(
+                source_system="federal_register",
+                external_key=("fr_doc_number", "2024-00001"),
+                jurisdiction="US-Federal",
+                title="Clean title straight from the record",
+                native_status="PRORULE",
+                track="proposed",
+            ),
+        )
+        return RunStats(adapter=name, pages=1, items=1, created=0)
+
+    monkeypatch.setattr(
+        "oblag.rebuild.backfill_plan", lambda d, a=None: [("federal_register", None)]
+    )
+    monkeypatch.setattr("oblag.core.runner.run_adapter", fake_run)
+
+    report = rebuild(db, days=30)
+
+    titles = [t for (t,) in db.query(PipelineItem.title).all()]
+    # the mangled row was REFRESHED, not deleted and re-created: the curated date it
+    # carries is still attached, which a wipe would have had to restore by hand
+    assert "MANGLED - title the parser broke" not in titles
+    assert "Clean title straight from the record" in titles
+    survivor = db.query(PipelineItem).filter_by(title="Clean title straight from the record").one()
+    assert any(kd.value == date(2027, 1, 1) for kd in survivor.key_dates)
+    # the item the source stopped listing was retired
+    assert "Gone from the source" not in titles
+    assert report.purged["pruned"]
+
+
+def test_rebuild_keeps_what_it_could_not_refetch(db, monkeypatch):
+    """The hazard a blind wipe hides: a source that fails (iso.org served 403 in the
+    first live trial) must keep every row it gave us before, and an item a human
+    annotated is never retired even when its source drops it."""
+    from oblag.adapters.base import NormalizedItem
+    from oblag.core.assertions import assert_date
+    from oblag.core.reducer import reduce_item
+    from oblag.db.models import Confidence, DateType, PipelineItem
+    from oblag.rebuild import rebuild
+
+    iso = reduce_item(
+        db,
+        NormalizedItem(
+            source_system="iso_catalog",
+            external_key=("iso_std", "27001"),
+            jurisdiction="Global",
+            title="ISO/IEC 27001:2022",
+            native_status="published",
+            track="final",
+        ),
+    )
+    annotated = reduce_item(
+        db,
+        NormalizedItem(
+            source_system="hitrust",
+            external_key=("hitrust_release", "11.0.0"),
+            jurisdiction="Global",
+            title="HITRUST CSF v11.0.0",
+            native_status="release",
+            track="final",
+        ),
+    )
+    assert_date(
+        db,
+        annotated.item.id,
+        DateType.effective,
+        date(2026, 5, 5),
+        Confidence.published_firm,
+        note="typed from the advisory PDF",
+    )
+    db.commit()
+
+    def fake_run(session, name, window=None, **kw):
+        from oblag.core.runner import RunStats
+
+        if name == "iso_catalog":
+            raise RuntimeError("403 Forbidden")
+        return RunStats(adapter=name, pages=1, items=0, created=0)
+
+    monkeypatch.setattr(
+        "oblag.rebuild.backfill_plan",
+        lambda d, a=None: [("iso_catalog", None), ("hitrust", None)],
+    )
+    monkeypatch.setattr("oblag.core.runner.run_adapter", fake_run)
+
+    report = rebuild(db, days=30)
+
+    assert any("iso_catalog" in e for e in report.errors)
+    # the unreachable source keeps its rows
+    assert db.get(PipelineItem, iso.item.id) is not None
+    # hitrust answered and lists nothing, but this row carries a human's date
+    assert db.get(PipelineItem, annotated.item.id) is not None
+    assert report.purged["kept_curated"] == 1
+
+
+def test_rebuild_keeps_tenancy_and_catalog(db, monkeypatch):
+    """Orgs, watchlists and the obligation catalog are not adapter output: a rebuild
+    must never touch them."""
+    from oblag.db.models import Obligation, Org, Watchlist
+    from oblag.rebuild import rebuild
+
+    seed_obligations(db)
+    _seed_for_rebuild(db, monkeypatch)
+    org = Org(slug="acme", name="Acme")
+    db.add(org)
+    db.flush()
+    db.add(Watchlist(name="keep me", channel="rss", filters={}, org_id=org.id))
+    db.commit()
+    obligations_before = db.query(Obligation).count()
+
+    monkeypatch.setattr("oblag.rebuild.backfill_plan", lambda days, adapters=None: [])
+    rebuild(db, days=30)
+
+    assert db.query(Watchlist).filter_by(name="keep me").count() == 1
+    assert db.query(Org).filter_by(name="Acme").count() == 1
+    assert db.query(Obligation).count() == obligations_before
+
+
+def test_backfill_plan_windows_only_sources_that_accept_them():
+    """Windowed sources get one slice per quarter so a rebuild can reach back years;
+    feed sources get a single run, because they only ever serve what they carry now."""
+    from oblag.rebuild import WINDOW_DAYS, backfill_plan
+
+    plan = backfill_plan(365, ["federal_register", "pci_ssc"])
+    fr = [w for name, w in plan if name == "federal_register"]
+    feed = [w for name, w in plan if name == "pci_ssc"]
+    assert feed == [None]
+    assert len(fr) >= 365 // WINDOW_DAYS
+    assert all(w is not None for w in fr)
+    # oldest first, so the feed fills in chronological order
+    assert fr == sorted(fr)
+    assert (fr[-1][1] - fr[0][0]).days >= 364

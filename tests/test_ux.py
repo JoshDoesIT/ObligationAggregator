@@ -398,3 +398,56 @@ def test_dateline_shows_the_readers_current_date(client, seeded):
     # the correction exists and targets the same element
     assert "[data-dateline]" in html
     assert "DL_MONTHS" in html and "getFullYear()" in html
+
+
+def test_undated_items_never_outrank_dated_ones(client, seeded, db):
+    """Some sources state no publication date at all (NERC standards projects). Falling
+    back to our own clock made every one of them read as today's news and fill the
+    briefs column after a rebuild — the exact lie that column exists to avoid. Dated
+    filings lead; undated ones appear only when there aren't enough dated ones."""
+    from datetime import timedelta
+
+    from oblag.adapters.base import NormalizedItem
+    from oblag.core.reducer import reduce_item
+    from oblag.db.models import utcnow
+
+    for n in range(5):
+        reduce_item(
+            db,
+            NormalizedItem(
+                source_system="nerc",
+                external_key=("nerc_project", f"2025-0{n}"),
+                jurisdiction="US-Federal",
+                title=f"NERC Project 2025-0{n}: undated, ingested just now",
+                native_status="in_development",
+                track="proposed",
+            ),
+        )
+    dated = reduce_item(
+        db,
+        NormalizedItem(
+            source_system="edpb",
+            external_key=("edpb_item", "dated-one"),
+            jurisdiction="EU",
+            title="A filing that states when it was published",
+            native_status="consultation",
+            track="proposed",
+            published_at=(utcnow() - timedelta(days=9)).date(),
+        ),
+    )
+    db.commit()
+
+    briefs = client.get("/").text.split("The latest filings")[1].split("How Gazette works")[0]
+    assert f'/items/{dated.item.id}"' in briefs, "a dated filing must lead the briefs"
+    # Dated filings come first; undated ones only fill slots left over, which is what
+    # happens here because the fixture has fewer than four datable items.
+    titles = re.findall(r'<h3><a href="[^"]+">(.*?)</a>', briefs, re.S)
+    first_undated = next((n for n, t in enumerate(titles) if "undated" in t), len(titles))
+    assert first_undated > 0, "an undated item must never lead the briefs"
+    assert all("undated" not in t for t in titles[:first_undated])
+
+    # the feed sorts the same way: datable first, in true chronological order
+    feed = client.get("/api/v1/items?limit=10").json()["items"]
+    first_undated = next((n for n, i in enumerate(feed) if i["published_at"] is None), len(feed))
+    assert all(i["published_at"] is not None for i in feed[:first_undated])
+    assert feed[0]["published_at"] is not None
