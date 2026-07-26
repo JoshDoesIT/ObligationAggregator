@@ -191,8 +191,9 @@ def test_homepage_is_a_live_landing_page(client, seeded):
     assert 'class="dateline"' in html
     assert "The latest filings" in html
     assert 'aria-label="Live regulatory horizon"' in html
-    # press-run motion: one-time stamp-in of the dots; no looping sweep
-    assert "stamp" in html and 'class="sweep"' not in html
+    # a printed page is still: no load animations at all. The only keyframe left is
+    # the working alarm ring on inside-7-day deadlines.
+    assert html.count("@keyframes") == 1 and "@keyframes halo" in html
     assert "prefers-reduced-motion" in html
     # the Fig. 1 dot plot draws real item links with readable labels (seeded data has
     # future deadlines)

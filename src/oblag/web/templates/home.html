@@ -20,10 +20,7 @@
 
   /* ---- nameplate: ears left and right, title center, dateline under ---- */
   .nameplate { display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
-               gap:1rem; padding:1.1rem 0 .8rem; position:relative; }
-  .nameplate::after { content:""; position:absolute; left:0; right:0; bottom:0; height:1px;
-                      background:var(--ink); transform:scaleX(0); transform-origin:left;
-                      animation:rule .6s ease-out .1s forwards; }
+               gap:1rem; padding:1.1rem 0 .8rem; border-bottom:1px solid var(--ink); }
   .np-title { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
               font-weight:700; font-size:clamp(2.6rem, 6svw, 4.4rem); line-height:1;
               letter-spacing:.01em; text-align:center; color:var(--ink); }
@@ -33,17 +30,13 @@
          padding:.35rem .55rem; line-height:1.6; max-width:180px; }
   .ear.right { justify-self:end; text-align:right; }
   .ear .accent { color:var(--accent); font-weight:700; }
-  /* the rules ink themselves across the page once, left to right, like a pen striking
-     a line. HTML transforms only: nothing here touches the WebKit SVG paths. */
+  /* A printed page is still. Nothing on this page animates on load; motion happens
+     only in response to the reader (letterpress buttons, row hovers) plus the one
+     working signal: the red ring on deadlines inside seven days. */
   .dateline { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;
               font-family:var(--mono); font-size:.66rem; letter-spacing:.14em;
               text-transform:uppercase; color:var(--muted); padding:.5rem 0;
-              position:relative; }
-  .dateline::after { content:""; position:absolute; left:0; right:0; bottom:0; height:4px;
-                     border-top:1px solid var(--ink); border-bottom:1px solid var(--ink);
-                     transform:scaleX(0); transform-origin:left;
-                     animation:rule .7s ease-out .25s forwards; }
-  @keyframes rule { to { transform:scaleX(1); } }
+              border-bottom:3px double var(--ink); }
 
   /* ---- lead story + boxed figure ---- */
   .lead { display:flex; flex-wrap:wrap; gap:clamp(1.4rem,4svw,3rem);
@@ -92,7 +85,7 @@
   .fx-grid { position:absolute; top:0; bottom:0; width:0;
              border-left:1px dashed var(--line); pointer-events:none; }
   .fx-row { display:block; padding:.42rem 0 .5rem; border-top:1px solid var(--line2);
-            color:inherit; opacity:0; animation:stamp .5s ease-out forwards; }
+            color:inherit; }
   .fx-row:hover { text-decoration:none; background:var(--bg); }
   .fx-row:first-of-type { border-top:0; }
   .fx-line1 { display:flex; justify-content:space-between; gap:.8rem; align-items:baseline; }
@@ -113,7 +106,6 @@
   .fx-dot.hot::after { content:""; position:absolute; inset:-5px; border-radius:50%;
                        border:2px solid var(--accent); opacity:0;
                        animation:halo 2.1s ease-in-out infinite; }
-  @keyframes stamp { from { opacity:0; } to { opacity:1; } }
   @keyframes halo { 0%, 100% { opacity:0; } 50% { opacity:.55; } }
   .fig-cap { font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; color:var(--muted);
              padding:.55rem .7rem .65rem; border-top:1px solid var(--line); }
@@ -172,8 +164,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .fx-dot.hot::after { display:none; }
-    .fx-row { animation:none; opacity:1; }
-    .nameplate::after, .dateline::after { animation:none; transform:scaleX(1); }
   }
   @media (max-width:720px) {
     .front { margin-top:-1rem; }
@@ -229,8 +219,7 @@
             {% for g in gridlines %}<i class="fx-grid" style="left:{{ g.pct }}%"></i>{% endfor %}
             {% for r in rows %}
             <a class="fx-row r-{{ r.cls }}" href="/items/{{ r.item_id }}"
-               aria-label="{{ r.title }} · {{ r.date_type }} in {{ r.days }} days"
-               style="animation-delay:{{ loop.index0 * 100 }}ms">
+               aria-label="{{ r.title }} · {{ r.date_type }} in {{ r.days }} days">
               <span class="fx-line1">
                 <span class="fx-title">{{ r.title }}</span>
                 <span class="fx-days">{{ r.days }}d</span>
