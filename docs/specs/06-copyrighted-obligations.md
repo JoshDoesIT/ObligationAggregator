@@ -14,11 +14,42 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   explicitly Confidence.derived, never presented as firm). Everything else in the blog
   is ignored (no weak signals). Verified live: "Request for Comments: PCI DSS v4.0.1"
   present in the feed (2026-06-03).
-- **iso_catalog** (weekly): iso.org catalog pages for *watched* standards (obligations
-  with an iso.org canonical_url). Parses harmonized stage code, edition, publication
-  date. Stage → state map (open enum): 40.20 DIS ballot → comment_open; 40.6x/40.9x →
-  comment_closed; 50.x → final_pending_effective; 60.x → effective (60.60 published);
-  90.x (review) → effective; 95.x → withdrawn. Edition changes → content_changed.
+- **iso_catalog** (weekly): editions, amendments and publication dates for *watched*
+  standards (obligations with an iso.org canonical_url), read from **IEC — the
+  co-publisher** — because iso.org itself cannot be read:
+  - `www.iso.org` is behind a Cloudflare managed challenge. Our User-Agent and a full
+    Chrome one both get 403, and `/robots.txt` itself returns the challenge page.
+  - `standards.iso.org` IS reachable, and publishes `User-agent: * / Disallow: /`.
+    That is a crawl policy stated the standard way, so it is a no, not a "not yet".
+  - `obp.iso.org` is an Angular shell whose `/api/*` returns 401 without a login.
+  - ISO/IEC 27001, 27002, 27017, 27018, 27701 and 42001 are ISO/IEC JTC 1/SC 27 *joint*
+    publications, so **IEC is an equally authoritative source of record**.
+    `webstore.iec.ch/robots.txt` is empty (no restriction) and its search is backed by
+    a public JSON API (`POST https://webstore-search-api.iec.ch/api/search`), so this
+    needs no browser and runs on serverless.
+
+  Number search is a substring search, so only references matching
+  `^(ISO/IEC|ISO) <number>(:|/|$)` are kept, and `-HBK`/`-GUIDE` (handbooks and guides
+  that quote a standard without being it) are dropped. `validOnly` keeps superseded
+  editions from reading as new filings. Base editions keep the legacy
+  `("iso_project", canonical_url)` key so the switch of source refreshes the existing
+  rows in place; amendments and corrigenda are separate publications and get their own
+  `("iec_pub", <id>)` key. Status → state: `published` → effective, `withdrawn` →
+  withdrawn; the ISO harmonized stage codes (60.60 → effective, 95.x → withdrawn, …)
+  stay mapped for rows ingested while iso.org was still readable.
+
+  **Coverage, measured live, not assumed:** 27002, 42001, 27701, 27017 and 27018 return
+  current editions with publication dates; 27001 returns `ISO/IEC 27001:2022/AMD1:2024`
+  (an amendment to the most-watched standard in the catalog that no other source
+  surfaced). Two gaps stay operator-curated: **ISO 22301** is ISO-only so IEC has no
+  listing, and IEC's store carries 27001's 2013 and 2005 editions but not the 2022 one.
+  Both emit **nothing** rather than a placeholder item, so the curated rows survive
+  intact instead of being overwritten by a stub.
+
+  One trap worth naming: an ISO version is the year in its *reference*, not the year it
+  was printed. `ISO/IEC 27001:2022/AMD1:2024` amends the 2022 edition, and reading the
+  version off `publication_date` would have proposed a bogus 2024 bump
+  (`versionsuggest._published_version`).
 - **Formerly-unparseable sources (resolved in M8, feed-first + browser tier):**
   - **EDPB** — news RSS (`/feed/news_en`), filtered to formal signals (consultation
     launches with parsed deadlines, adopted guidelines) on obligation `gdpr`.

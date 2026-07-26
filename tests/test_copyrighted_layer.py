@@ -98,28 +98,105 @@ def test_pci_rfc_lifecycle(db):
 # --- ISO catalog ---
 
 
-def test_iso_catalog_parse_and_state(db):
-    adapter = IsoCatalogAdapter()
-    raw = RawDocument(
-        url="https://www.iso.org/standard/27001",
-        content=load_fixture("iso_catalog", "iso_27001.html"),
-        content_type="text/html",
-        meta={"obligation_slug": "iso-27001", "catalog_url": "https://www.iso.org/standard/27001"},
+def _iec_raw(fixture: str, slug: str, number: str, catalog_url: str) -> RawDocument:
+    return RawDocument(
+        url="https://webstore-search-api.iec.ch/api/search",
+        content=load_fixture("iso_catalog", fixture),
+        content_type="application/json",
+        meta={"obligation_slug": slug, "catalog_url": catalog_url, "number": number},
     )
-    items = list(adapter.normalize(raw))
+
+
+def test_iso_catalog_parse_and_state(db):
+    # the base standard, read from the co-publisher's search API
+    items = list(
+        IsoCatalogAdapter().normalize(
+            _iec_raw(
+                "iec_27002.json", "iso-27002", "27002", "https://www.iso.org/standard/75652.html"
+            )
+        )
+    )
     assert len(items) == 1
     item = items[0]
-    assert item.native_status == "60.60"
-    assert "27001" in item.title
+    assert item.title == "ISO/IEC 27002:2022"
+    assert item.native_status == "published"
     assert item.native_meta["edition"] == "3"
-    assert item.native_meta["publication_date"].startswith("2022")
+    assert item.native_meta["publication_date"] == "2022-02-15"
+    assert item.published_at == date(2022, 2, 15)
+    assert item.url == "https://webstore.iec.ch/en/publication/74287"
+    # keeps the identity the iso.org-era rows carry, so the switch refreshes in place
+    assert item.external_key == ("iso_project", "https://www.iso.org/standard/75652.html")
     res = reduce_item(db, item, today=date(2026, 7, 14))
     assert res.item.state is ItemState.effective
+
+
+def test_iso_catalog_finds_amendments_and_drops_handbooks(db):
+    # the 27001 search returns a handbook ABOUT the standard and a real amendment TO it
+    items = list(
+        IsoCatalogAdapter().normalize(
+            _iec_raw("iec_27001.json", "iso-27001", "27001", "https://www.iso.org/standard/27001")
+        )
+    )
+    assert len(items) == 1, "ISO/IEC 27001-HBK is a handbook, not the standard"
+    amd = items[0]
+    assert amd.title == "ISO/IEC 27001:2022/AMD1:2024 Amendment 1: Climate action changes"
+    # its own publication, so its own key — it must not overwrite the 2022 edition
+    assert amd.external_key == ("iec_pub", "92579")
+    assert amd.published_at == date(2024, 2, 23)
+    res = reduce_item(db, amd, today=date(2026, 7, 14))
+    assert res.item.state is ItemState.effective
+
+
+def test_iso_catalog_emits_nothing_for_iso_only_standards():
+    """ISO 22301 is not a joint publication, so IEC returns no hits for it. Emitting a
+    stub would overwrite the curated row with a placeholder; emitting nothing leaves it
+    alone."""
+    empty = b'{"primary": {"hits": {"hits": []}}}'
+    raw = RawDocument(
+        url="https://webstore-search-api.iec.ch/api/search",
+        content=empty,
+        meta={
+            "obligation_slug": "iso-22301",
+            "catalog_url": "https://www.iso.org/standard/75106.html",
+            "number": "22301",
+        },
+    )
+    assert list(IsoCatalogAdapter().normalize(raw)) == []
+
+
+def test_iso_catalog_survives_malformed_payload():
+    raw = RawDocument(
+        url="https://webstore-search-api.iec.ch/api/search",
+        content=b"<html>nope</html>",
+        meta={"obligation_slug": "iso-27002", "catalog_url": "u", "number": "27002"},
+    )
+    assert list(IsoCatalogAdapter().normalize(raw)) == []
+
+
+def test_amendment_year_does_not_become_the_standards_version():
+    """ISO/IEC 27001:2022/AMD1:2024 amends the 2022 edition. Reading the version off the
+    publication date would have proposed a bogus 2024 bump."""
+    from oblag.versionsuggest import _published_version
+
+    class _Fake:
+        source_system = "iso_catalog"
+        state = ItemState.effective
+        native_status = "published"
+        native_meta = {
+            "reference": "ISO/IEC 27001:2022/AMD1:2024",
+            "publication_date": "2024-02-23",
+        }
+
+    assert _published_version(_Fake()) == "2022"
 
 
 @pytest.mark.parametrize(
     ("stage", "expected"),
     [
+        # IEC publication status (the live path)
+        ("published", ItemState.effective),
+        ("withdrawn", ItemState.withdrawn),
+        # ISO harmonized stage codes, still carried by rows ingested from iso.org
         ("30.60", ItemState.proposed),
         ("40.20", ItemState.comment_open),  # DIS ballot
         ("40.60", ItemState.comment_closed),

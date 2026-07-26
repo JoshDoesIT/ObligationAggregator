@@ -1,0 +1,23 @@
+{
+ "primary": {
+  "hits": {
+   "total": {
+    "value": 1,
+    "relation": "eq"
+   },
+   "hits": [
+    {
+     "_source": {
+      "id": 74287,
+      "reference": "ISO/IEC 27002:2022",
+      "title": "Information security, cybersecurity and privacy protection - Information security controls",
+      "edition": "3",
+      "publication_date": "2022-02-15",
+      "status": "PUBLISHED",
+      "abstract": "This document provides a reference set of generic information security controls including implementation guidance. This document is designed to be used by organizations:\na) within the context of an information security management system (ISMS) based on ISO/IEC27001;\nb) for implementing information security controls based on internationally recognized best practices;\nc) for developing organization-specific information security management guidelines."
+     }
+    }
+   ]
+  }
+ }
+}

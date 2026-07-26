@@ -256,7 +256,12 @@ def pci_ssc_statemap(
 def iso_catalog_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
 ) -> ItemState | None:
-    """ISO harmonized stage codes (ISO Guide 69). Open map: unknown → anomaly."""
+    """IEC publication status, plus the ISO harmonized stage codes (ISO Guide 69) that
+    older rows still carry from when iso.org was readable. Open map: unknown → anomaly."""
+    if native_status == "published":
+        return ItemState.effective
+    if native_status == "withdrawn":
+        return ItemState.withdrawn
     if not re.fullmatch(r"\d{2}\.\d{2}", native_status):
         return None
     stage, sub = native_status.split(".")
