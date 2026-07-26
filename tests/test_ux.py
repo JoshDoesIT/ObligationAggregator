@@ -315,3 +315,15 @@ def test_abstract_renders_as_clean_paragraphs(client, seeded, db):
     body = html.split('class="lede prose"')[1].split("</div>")[0]
     assert body.count("<p>") >= 3, "hard newlines should become paragraphs"
     assert "Read the rest from the source" in html, "long abstracts fold"
+
+
+def test_paper_theme_is_the_only_edition(client, seeded):
+    """The paper prints the same in any light: no dark scheme, the browser told not to
+    invent one, mobile chrome tinted to the stock, and the print grain present. A
+    reintroduced dark block would silently split the design again."""
+    html = client.get("/").text
+    assert "prefers-color-scheme: dark" not in html
+    assert "color-scheme: only light" in html
+    assert 'name="theme-color" content="#f3eee1"' in html
+    assert "feTurbulence" in html  # the grain is a texture, not an effect — still static
+    assert html.count("@keyframes") == 1  # the stillness doctrine holds
