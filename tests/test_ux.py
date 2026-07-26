@@ -213,3 +213,40 @@ def test_feed_moved_to_changes_with_legacy_redirects(client, seeded):
     assert r.headers["location"] == "/changes?obligation=circia"
     # and the nav's Changes entry points at the feed, not the homepage
     assert 'href="/changes"' in client.get("/").text
+
+
+def test_latest_filings_orders_by_activity_not_id(client, seeded, db):
+    """A filing that moved yesterday is news even if it was first seen weeks ago. The
+    briefs column ranks by most recent event, so an old item with fresh activity must
+    outrank a newer-id item that has been quiet. Curated timeline entries never count
+    as filings."""
+    from datetime import timedelta
+
+    from oblag.db.models import Event, EventType, PipelineItem, utcnow
+
+    items = (
+        db.query(PipelineItem)
+        .filter(PipelineItem.source_system != "curated")  # timelines aren't filings
+        .order_by(PipelineItem.id)
+        .all()
+    )
+    oldest, newest = items[0], items[-1]
+    # age every event, then give the OLDEST item the freshest activity
+    db.query(Event).update({Event.occurred_at: utcnow() - timedelta(days=30)})
+    db.add(
+        Event(
+            pipeline_item_id=oldest.id,
+            type=EventType.date_changed,
+            payload={},
+            occurred_at=utcnow(),
+        )
+    )
+    db.commit()
+
+    html = client.get("/").text
+    briefs = html.split("The latest filings")[1].split("In this edition")[0]
+    first_link = re.search(r'href="/items/(\d+)"', briefs)
+    assert first_link and int(first_link.group(1)) == oldest.id, (
+        "the item with the newest activity should lead the briefs"
+    )
+    assert f"/items/{newest.id}" in briefs or newest.id != oldest.id  # sanity
