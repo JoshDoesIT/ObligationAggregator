@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f3eee1">
   <title>{% block title %}Gazette{% endblock %}</title>
+  {# Social cards: Open Graph carries Facebook, LinkedIn, Slack, Discord, WhatsApp,
+     Telegram and iMessage; X reads its own twitter: names. Both mirror the SAME
+     title, description and banner so a shared link renders identically everywhere. #}
+  <meta name="description" content="{% block meta_desc %}Regulation moves, and you'll see it coming. Gazette watches laws, frameworks and standards at their official sources — every change tracked, every date with evidence.{% endblock %}">
+  {% set _base = site_base(request) %}
+  {% set _canon = _base ~ request.url.path %}
+  <link rel="canonical" href="{{ _canon }}">
+  <meta property="og:site_name" content="Gazette">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ self.title() }}">
+  <meta property="og:description" content="{{ self.meta_desc() }}">
+  <meta property="og:url" content="{{ _canon }}">
+  <meta property="og:image" content="{{ _base }}/og-banner.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Gazette front page: Regulation moves, and you'll see it coming.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ self.title() }}">
+  <meta name="twitter:description" content="{{ self.meta_desc() }}">
+  <meta name="twitter:image" content="{{ _base }}/og-banner.jpg">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23c22f10%22 d=%22M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z%22/><path fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22m8.5 12 2.5 2.5 4.5-5%22/></svg>">
   <style>
     /* THE LEDGER — the site's own design language, drawn from the material it tracks:

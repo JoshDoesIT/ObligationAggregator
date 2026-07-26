@@ -325,7 +325,34 @@ templates.env.filters.update(
     reldate=_reldate,
     event_text=_event_text,
 )
-templates.env.globals.update(conf_help=CONF_HELP, state_labels=STATE_LABELS)
+
+
+def _site_base(request: Request) -> str:
+    """Absolute origin for canonical links and social-card image URLs. The configured
+    base_url wins; an unconfigured install (localhost default) falls back to the
+    request's own origin so self-hosted cards still point somewhere real."""
+    from oblag.config import get_settings
+
+    base = get_settings().base_url.rstrip("/")
+    if base and "localhost" not in base:
+        return base
+    return str(request.base_url).rstrip("/")
+
+
+templates.env.globals.update(conf_help=CONF_HELP, state_labels=STATE_LABELS, site_base=_site_base)
+
+
+@router.get("/og-banner.jpg", include_in_schema=False)
+def og_banner():
+    """The social share card (1200×630, the front page in miniature). Served from the
+    package so self-hosted installs get it too; long cache — it changes with releases."""
+    from fastapi.responses import FileResponse
+
+    return FileResponse(
+        Path(__file__).parent / "static" / "og-banner.jpg",
+        media_type="image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @router.get("/", response_class=HTMLResponse)

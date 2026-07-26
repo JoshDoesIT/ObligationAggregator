@@ -2,6 +2,7 @@
 {% from "_macros.html" import state_badge, conf, due_chip %}
 {% from "_icons.html" import icon %}
 {% block title %}{{ item.title }} · Gazette{% endblock %}
+{% block meta_desc %}{% set _paras = item.abstract | prose %}{% if _paras %}{{ _paras[0] | truncate(200) }}{% else %}{{ item.title }} — tracked by Gazette through its lifecycle, every date with evidence.{% endif %}{% endblock %}
 {% block content %}
 <p style="margin:.2rem 0"><a href="/changes">&larr; Change feed</a></p>
 <h2 class="page" style="max-width:60rem">{{ item.title }}</h2>
