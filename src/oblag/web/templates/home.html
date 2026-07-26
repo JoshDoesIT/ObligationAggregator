@@ -207,8 +207,8 @@
       <div class="lead-story">
         {# no eyebrow: papers don't caption their own layout ("the lead" was newsroom
            jargon in print). The banner headline stands alone. #}
-        <h2 class="headline">Regulation moves.</h2>
-        <p class="deck">and you'll see it coming.</p>
+        <h2 class="headline">The rules keep moving.</h2>
+        <p class="deck">this is where you find out.</p>
         <p class="standfirst">Gazette watches {{ stats.obligations }} laws, frameworks and
         standards at their official sources. Every rulemaking, consultation and release gets
         tracked through its lifecycle, and every date comes with evidence you can check.</p>
@@ -270,7 +270,9 @@
 {% endif %}
 
 <section aria-label="How it works">
-  <div class="flag"><h2>In this edition</h2></div>
+  {# "In this edition" promised a table of contents; what follows is the statement of
+     practice (sources, lifecycle, proof), so the flag says what it actually heads. #}
+  <div class="flag"><h2>How Gazette works</h2></div>
   <div class="creed">
     <div class="c">
       <span class="cl-no">§ 1 · SOURCES</span>

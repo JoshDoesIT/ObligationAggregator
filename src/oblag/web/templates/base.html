@@ -8,7 +8,7 @@
   {# Social cards: Open Graph carries Facebook, LinkedIn, Slack, Discord, WhatsApp,
      Telegram and iMessage; X reads its own twitter: names. Both mirror the SAME
      title, description and banner so a shared link renders identically everywhere. #}
-  <meta name="description" content="{% block meta_desc %}Regulation moves, and you'll see it coming. Gazette watches laws, frameworks and standards at their official sources — every change tracked, every date with evidence.{% endblock %}">
+  <meta name="description" content="{% block meta_desc %}The rules keep moving, and this is where you find out. Gazette watches laws, frameworks and standards at their official sources, tracks every change through its lifecycle, and shows where each date came from.{% endblock %}">
   {% set _base = site_base(request) %}
   {% set _canon = _base ~ request.url.path %}
   <link rel="canonical" href="{{ _canon }}">
@@ -20,7 +20,7 @@
   <meta property="og:image" content="{{ _base }}/og-banner.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Gazette front page: Regulation moves, and you'll see it coming.">
+  <meta property="og:image:alt" content="Gazette front page: The rules keep moving, and this is where you find out.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ self.title() }}">
   <meta name="twitter:description" content="{{ self.meta_desc() }}">
