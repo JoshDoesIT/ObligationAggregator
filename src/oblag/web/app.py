@@ -144,6 +144,22 @@ def create_app() -> FastAPI:
     _NO_CACHE_PREFIXES = ("/api/internal", "/admin", "/auth")
 
     @app.middleware("http")
+    async def _head_as_get(request, call_next):
+        # FastAPI registers GET-only routes, so HEAD 405s app-wide (verified live) —
+        # and link crawlers/validators probe with HEAD before fetching a social card.
+        # Serve HEAD as GET with the body stripped; content-length still describes
+        # the body a GET would return, which is exactly what HEAD promises.
+        if request.method != "HEAD":
+            return await call_next(request)
+        request.scope["method"] = "GET"
+        resp = await call_next(request)
+        async for _ in resp.body_iterator:  # drain so the app's exit stack closes clean
+            pass
+        from starlette.responses import Response
+
+        return Response(status_code=resp.status_code, headers=dict(resp.headers))
+
+    @app.middleware("http")
     async def _cdn_cache(request, call_next):
         resp = await call_next(request)
         # The read surface is global and single-writer (crons) in single-org mode — let
