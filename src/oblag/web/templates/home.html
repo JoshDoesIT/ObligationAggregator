@@ -2,6 +2,8 @@
 {% from "_icons.html" import icon %}
 {% from "_macros.html" import state_badge %}
 {% block title %}Gazette · regulatory change intelligence{% endblock %}
+{# the nameplate is the brand on this page; the shell keeps only the G. mark #}
+{% block brandword %}{% endblock %}
 {% block content %}
 {# ================= THE GAZETTE, FRONT PAGE =================
    A real newspaper anatomy, not a landing page wearing one: nameplate with ears and
@@ -42,7 +44,11 @@
   .headline { margin:0 0 .5rem; font-weight:900; text-transform:uppercase;
               font-size:clamp(2.4rem, 6.4svw, 4.6rem); line-height:.96; letter-spacing:-.015em;
               color:var(--ink);
-              text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28); }
+              text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28);
+              animation:register .8s ease-out; }
+  @keyframes register {
+    from { text-shadow:.14em .12em 0 var(--accent-soft), .26em .22em 0 rgba(194,47,16,.28); }
+    to   { text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28); } }
   .deck { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; font-style:italic;
           font-size:clamp(1.15rem, 2.6svw, 1.6rem); color:var(--accent); margin:0 0 1.1rem; }
   .standfirst { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
@@ -60,7 +66,7 @@
   .hz-cta .ghost { background:var(--panel); color:var(--fg); }
 
   /* the chart is a boxed newspaper figure with rule and caption */
-  .figure { flex:1 1 340px; min-width:0; border:1.5px solid var(--ink); background:var(--panel);
+  .figure { flex:1 1 340px; min-width:0; max-width:100%; border:1.5px solid var(--ink); background:var(--panel);
             box-shadow:var(--shadow); align-self:center; }
   .figure .fig-head { font-family:var(--mono); font-size:.64rem; letter-spacing:.16em;
                       text-transform:uppercase; color:var(--fg2); padding:.45rem .7rem;
@@ -71,21 +77,22 @@
   .radar .ring { fill:none; stroke:var(--ink); stroke-opacity:.28; stroke-width:1; }
   .radar .ring-label { fill:var(--muted); font-size:12.5px; font-family:var(--mono); letter-spacing:.1em; }
   .radar .axis { stroke:var(--ink); stroke-opacity:.14; stroke-width:1; stroke-dasharray:3 5; }
-  .sweep { position:absolute; inset:0; border-radius:50%; pointer-events:none;
-    background:conic-gradient(from 0deg, var(--ink) 0deg, transparent 2.2deg),
-               conic-gradient(from 0deg, rgba(194,47,16,.10) 0deg, transparent 26deg);
-    opacity:.5; animation:sweep 16s linear infinite;
-    mask-image:radial-gradient(circle, #000 0 46.5%, transparent 46.5%);
-    -webkit-mask-image:radial-gradient(circle, #000 0 46.5%, transparent 46.5%); }
-  @keyframes sweep { to { transform:rotate(360deg); } }
+  /* Press motion, not product motion: everything animates ONCE, on load, the way a
+     page comes off the press, then holds still. The only persistent movement is the
+     halo on deadlines inside seven days. */
   .dot-hot  { fill:var(--accent); }
   .dot-warm { fill:none; stroke:var(--accent); stroke-width:2.4; }
   .dot-far  { fill:var(--ink); fill-opacity:.55; }
   .radar a circle { cursor:pointer; }
+  /* opacity only: WebKit's transform-box on SVG shapes is unreliable, and a scale
+     running from the wrong origin reads as the whole chart zooming. Ink soaking in
+     needs no transforms. */
+  .radar circle.d { opacity:0; animation:stamp .5s ease-out forwards; }
+  @keyframes stamp { from { opacity:0; } to { opacity:1; } }
   .radar a:hover circle, .radar a:focus-visible circle { stroke:var(--ink); stroke-width:2; fill-opacity:1; }
-  .halo { fill:none; stroke:var(--accent); stroke-width:1.5;
-          animation:halo 2.1s ease-out infinite; transform-box:fill-box; transform-origin:center; }
-  @keyframes halo { 0% { opacity:.8; transform:scale(1);} 100% { opacity:0; transform:scale(2.4);} }
+  .halo { fill:none; stroke:var(--accent); stroke-width:2; opacity:0;
+          animation:halo 2.1s ease-in-out infinite; }
+  @keyframes halo { 0%, 100% { opacity:0; } 50% { opacity:.55; } }
   .today-mark { stroke:var(--ink); stroke-width:1.6; }
   .fig-cap { font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; color:var(--muted);
              padding:.55rem .7rem .65rem; border-top:1px solid var(--line); }
@@ -104,7 +111,6 @@
   .pulse a:first-child { border-left:0; }
   .pulse a:hover { text-decoration:none; background:var(--panel); }
   .pulse .n { font-size:2.3rem; font-weight:700; font-family:var(--mono); line-height:1.05; }
-  .pulse .n::after { content:"."; color:var(--accent); }
   .pulse .l { color:var(--muted); font-size:.7rem; text-transform:uppercase;
               letter-spacing:.12em; margin-top:.3rem; }
 
@@ -144,8 +150,9 @@
             font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; }
 
   @media (prefers-reduced-motion: reduce) {
-    .sweep, .halo { animation:none; }
-    .sweep { display:none; }
+    .halo { display:none; }
+    .radar circle.d { animation:none; opacity:1; }
+    .headline { animation:none; }
   }
   @media (max-width:720px) {
     .front { margin-top:-1rem; }
@@ -206,12 +213,13 @@
             {% for d in dots %}
             <a href="/items/{{ d.item_id }}" aria-label="{{ d.title }}">
               <title>{{ d.title }}</title>
-              {% if d.cls == 'hot' %}<circle class="halo" cx="{{ d.x }}" cy="{{ d.y }}" r="7"/>{% endif %}
-              <circle class="dot-{{ d.cls }}" cx="{{ d.x }}" cy="{{ d.y }}" r="{{ 7 if d.cls == 'hot' else 6 }}"/>
+              {% if d.cls == 'hot' %}<circle class="halo" cx="{{ d.x }}" cy="{{ d.y }}" r="12"
+                style="animation-delay:{{ 400 + loop.index0 * 110 }}ms"/>{% endif %}
+              <circle class="d dot-{{ d.cls }}" cx="{{ d.x }}" cy="{{ d.y }}" r="{{ 7 if d.cls == 'hot' else 6 }}"
+                style="animation-delay:{{ loop.index0 * 110 }}ms"/>
             </a>
             {% endfor %}
           </svg>
-          <div class="sweep" aria-hidden="true"></div>
         </div>
         <figcaption class="fig-cap">The next {{ dots | length }} deadlines, closest ones near
         the center. The center is today. Tap a point to open it.</figcaption>

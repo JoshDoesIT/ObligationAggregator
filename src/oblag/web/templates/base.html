@@ -32,7 +32,9 @@
       }
     }
     * { box-sizing:border-box; }
-    html { -webkit-text-size-adjust:100%; }
+    /* overflow-x is clipped on BOTH html and body: Safari does not reliably apply a
+       body-only clip to the viewport, which left real devices with a sideways wiggle */
+    html { -webkit-text-size-adjust:100%; overflow-x:clip; }
     body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
            "Helvetica Neue", Arial, sans-serif; color:var(--fg); background:var(--bg);
            overflow-x:clip; /* full-bleed sections use 100vw, which includes the scrollbar
@@ -307,7 +309,7 @@
 <a class="skip" href="#content">Skip to content</a>
 <header class="site">
   {% set ctx = request.state.ctx if (request.state.ctx is defined) else none %}
-  <a class="brand" href="/"><span class="logo">G.</span> Gazette</a>
+  <a class="brand" href="/"><span class="logo">G.</span>{% block brandword %} Gazette{% endblock %}</a>
   <nav class="site">
     {% set path = request.url.path %}
     {# Five primary destinations — the daily-use surfaces. Operator/reference pages
