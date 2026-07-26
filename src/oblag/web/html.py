@@ -334,32 +334,26 @@ def home_page(
 
     horizon = api.upcoming_deadlines(db=db, date_type=None, within_days=365)["deadlines"]
 
-    # Polar plot: radius grows with log(days) so the near future — where decisions
-    # happen — gets most of the canvas; golden-angle spacing scatters dots organically
-    # without collisions. Every dot links to its item: the painting is navigation.
-    def _radius(days: int) -> float:
-        return 62 + 218 * (math.log1p(max(days, 0)) / math.log1p(365))
+    # Fig. 1 is a print-style dot plot: one row per deadline, a shared log time axis
+    # (the near future gets the room), the dot placed by days until impact. Every row
+    # links to its item, and unlike the old radar the labels read without hovering.
+    def _pct(days: int) -> float:
+        return round(100 * math.log1p(max(days, 0)) / math.log1p(365), 2)
 
-    dots = []
-    for i, d in enumerate(horizon[:48]):
-        a = i * 2.399963  # golden angle
-        r = _radius(d["days_until"])
-        dots.append(
-            {
-                "x": round(300 + r * math.cos(a), 1),
-                "y": round(300 + r * math.sin(a), 1),
-                "cls": "hot"
-                if d["days_until"] <= 7
-                else "warm"
-                if d["days_until"] <= 30
-                else "far",
-                "item_id": d["item_id"],
-                "title": f"{d['title']} · {d['date_type'].replace('_', ' ')} in {d['days_until']}d",
-            }
-        )
-    rings = [
-        {"r": round(_radius(d)), "label": lbl}
-        for d, lbl in ((7, "7d"), (30, "30d"), (90, "90d"), (365, "1y"))
+    rows = [
+        {
+            "item_id": d["item_id"],
+            "title": d["title"],
+            "days": d["days_until"],
+            "date_type": d["date_type"].replace("_", " "),
+            "pct": _pct(d["days_until"]),
+            "cls": "hot" if d["days_until"] <= 7 else "warm" if d["days_until"] <= 30 else "far",
+        }
+        for d in horizon[:9]
+    ]
+    gridlines = [
+        {"pct": _pct(d), "label": lbl}
+        for d, lbl in ((7, "7D"), (30, "30D"), (90, "90D"), (365, "1Y"))
     ]
 
     state_counts: dict[ItemState, int] = {
@@ -397,8 +391,8 @@ def home_page(
         "home.html",
         {
             "ctx": ctx,
-            "dots": dots,
-            "rings": rings,
+            "rows": rows,
+            "gridlines": gridlines,
             "stats": stats,
             "latest": latest,
             "dateline": _date.today().strftime("%A, %d %B %Y").replace(" 0", " "),

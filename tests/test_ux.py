@@ -194,8 +194,12 @@ def test_homepage_is_a_live_landing_page(client, seeded):
     # press-run motion: one-time stamp-in of the dots; no looping sweep
     assert "stamp" in html and 'class="sweep"' not in html
     assert "prefers-reduced-motion" in html
-    # radar dots link to real items (seeded data has future deadlines)
-    assert re.search(r'<a href="/items/\d+" aria-label=', html), "radar should plot live deadlines"
+    # the Fig. 1 dot plot draws real item links with readable labels (seeded data has
+    # future deadlines)
+    assert re.search(r'class="fx-row[^"]*" href="/items/\d+"', html), (
+        "chart should plot live deadlines"
+    )
+    assert 'class="fx-axis"' in html and "TODAY" in html
     assert "tracked changes" in html and "obligations watched" in html
 
 
