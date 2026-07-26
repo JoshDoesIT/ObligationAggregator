@@ -185,7 +185,7 @@ def test_homepage_is_a_live_landing_page(client, seeded):
     """/ is the front door: a hero radar drawn from real deadline data and live stat
     links into the app. Not a mock — the dots must be real item links."""
     html = client.get("/").text
-    assert "Regulation moves." in html
+    assert "The rules keep moving." in html
     # front-page furniture: nameplate, dateline, and the latest-filings briefs
     assert 'class="np-title"' in html and "Gazette" in html
     assert 'class="dateline"' in html
@@ -243,7 +243,7 @@ def test_latest_filings_orders_by_activity_not_id(client, seeded, db):
     db.commit()
 
     html = client.get("/").text
-    briefs = html.split("The latest filings")[1].split("In this edition")[0]
+    briefs = html.split("The latest filings")[1].split("How Gazette works")[0]
     first_link = re.search(r'href="/items/(\d+)"', briefs)
     assert first_link and int(first_link.group(1)) == oldest.id, (
         "the item with the newest activity should lead the briefs"
@@ -282,7 +282,7 @@ def test_latest_filings_ranks_by_source_publication_date(client, seeded, db):
     db.commit()
 
     html = client.get("/").text
-    briefs = html.split("The latest filings")[1].split("In this edition")[0]
+    briefs = html.split("The latest filings")[1].split("How Gazette works")[0]
     links = [int(m) for m in re.findall(r'href="/items/(\d+)"', briefs)]
     assert recent_id in links, "a recently published filing belongs in the briefs"
     assert backfilled_id not in links or links.index(recent_id) < links.index(backfilled_id), (
