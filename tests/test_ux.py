@@ -191,7 +191,9 @@ def test_homepage_is_a_live_landing_page(client, seeded):
     assert 'class="dateline"' in html
     assert "The latest filings" in html
     assert 'aria-label="Live regulatory horizon"' in html
-    assert 'class="sweep"' in html and "prefers-reduced-motion" in html
+    # press-run motion: one-time stamp-in of the dots; no looping sweep
+    assert "stamp" in html and 'class="sweep"' not in html
+    assert "prefers-reduced-motion" in html
     # radar dots link to real items (seeded data has future deadlines)
     assert re.search(r'<a href="/items/\d+" aria-label=', html), "radar should plot live deadlines"
     assert "tracked changes" in html and "obligations watched" in html
