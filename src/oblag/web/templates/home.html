@@ -42,8 +42,6 @@
   .lead { display:flex; flex-wrap:wrap; gap:clamp(1.4rem,4svw,3rem);
           padding:clamp(1.4rem,3.5svw,2.6rem) 0 clamp(1.6rem,3svw,2.4rem); }
   .lead-story { flex:1 1 380px; min-width:0; }
-  .kicker { font-family:var(--mono); font-size:.68rem; letter-spacing:.2em;
-            text-transform:uppercase; color:var(--accent); font-weight:700; margin:0 0 .7rem; }
   .headline { margin:0 0 .5rem; font-weight:900; text-transform:uppercase;
               font-size:clamp(2.4rem, 6.4svw, 4.6rem); line-height:.96; letter-spacing:-.015em;
               color:var(--ink);
@@ -207,7 +205,8 @@
 
     <div class="lead">
       <div class="lead-story">
-        <p class="kicker">The lead</p>
+        {# no eyebrow: papers don't caption their own layout ("the lead" was newsroom
+           jargon in print). The banner headline stands alone. #}
         <h2 class="headline">Regulation moves.</h2>
         <p class="deck">and you'll see it coming.</p>
         <p class="standfirst">Gazette watches {{ stats.obligations }} laws, frameworks and
