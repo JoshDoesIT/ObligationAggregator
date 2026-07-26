@@ -28,7 +28,12 @@ def _published_version(item: PipelineItem) -> str | None:
     if item.source_system == "hitrust" and item.native_status == "release":
         return meta.get("published_version")
     if item.source_system == "iso_catalog" and item.state == ItemState.effective:
-        # an ISO edition's version IS its publication year
+        # An ISO edition's version is the year in its reference, not the year it was
+        # printed: ISO/IEC 27001:2022/AMD1:2024 is an amendment TO the 2022 edition and
+        # must not read as a 2024 version. Older rows predate the reference field.
+        m = re.search(r":(\d{4})", meta.get("reference") or "")
+        if m:
+            return m.group(1)
         m = re.match(r"(\d{4})", meta.get("publication_date") or "")
         return m.group(1) if m else None
     return None

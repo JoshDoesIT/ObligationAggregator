@@ -74,7 +74,8 @@ SOURCE_LABELS = {
     "have_your_say": "EU Have Your Say",
     "legiscan": "LegiScan",
     "pci_ssc": "PCI SSC",
-    "iso_catalog": "ISO",
+    # read from IEC, the co-publisher of the ISO/IEC joint standards
+    "iso_catalog": "ISO/IEC",
     "edpb": "EDPB",
     "esma": "ESMA",
     "cppa": "CPPA",
@@ -190,7 +191,11 @@ def _signal_kind(item: dict) -> str:
     if src == "pci_ssc":
         return "Publication" if native == "publication" else "RFC"
     if src == "iso_catalog":
-        return "Standard revision"
+        # An amendment is its own publication, and calling it a revision of the edition
+        # it amends would be wrong. Read off the title, which carries the ISO reference
+        # ("ISO/IEC 27001:2022/AMD1:2024") in every view — native_meta is detail-only.
+        title = (item.get("title") or "").upper()
+        return "Amendment" if ("/AMD" in title or "/COR" in title) else "Standard revision"
     if src == "legiscan":
         return "State bill"
     if src == "aicpa":
