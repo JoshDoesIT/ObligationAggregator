@@ -568,6 +568,23 @@ def test_scoped_pages_never_count_what_they_do_not_show(client, seeded, db):
         assert label in band
 
 
+def test_front_page_coda_offers_the_scope_it_promises(client, seeded, db):
+    """ "Make it your paper" is a promise only scoping keeps, and scoping was reachable
+    only by wandering into the catalog. The coda leads with it, and once a scope is set
+    the same button reads as an edit rather than a fresh choice."""
+    coda = client.get("/").text.split('class="coda"')[1].split("</div>\n</div>")[0]
+    assert 'href="/obligations"' in coda
+    assert "Choose your obligations" in coda
+    assert "Change what you follow" not in coda
+
+    _set_scope(client, db, ["gdpr"])
+    coda = client.get("/").text.split('class="coda"')[1].split("</div>\n</div>")[0]
+    assert "Change what you follow" in coda
+    # the denominator has to survive scoping, or "1 of 1" reads as nothing hidden
+    assert "1 of " in coda
+    assert "1 of 1 obligations" not in coda
+
+
 def test_catalog_picker_is_thumb_shaped_on_mobile(client, seeded):
     """Stacked as an ordinary data cell, the "mine" checkbox rendered centred under a
     MINE heading, orphaned above the name it belongs to, in a card ~304px tall — fifty

@@ -157,7 +157,9 @@
   .coda h2 { font-weight:900; text-transform:uppercase; letter-spacing:-.01em;
              font-size:clamp(1.6rem,4svw,2.6rem); margin:0 0 .5rem;
              text-shadow:.05em .05em 0 var(--accent-soft); }
-  .coda p { color:var(--muted); margin:.2rem 0 1.2rem; font-size:.98rem;
+  /* a measure, like any other column of body text: run full width and the last line
+     strands two words under 1180px of white */
+  .coda p { color:var(--muted); margin:.2rem auto 1.2rem; font-size:.98rem; max-width:58ch;
             font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -296,12 +298,22 @@
   </div>
 </section>
 
+{# The heading promises a personal edition, so the first button has to be the one that
+   actually makes it personal. Scoping is otherwise only discoverable by wandering into
+   the catalog, and the front page is where someone decides this is worth their time. #}
 <div class="coda">
   <h2>Make it your paper.</h2>
-  <p>It's Apache-2.0, so you can self-host it, fork it, or wire the <a href="/docs">JSON API</a>
-  into whatever you already run.</p>
+  {% if ctx and ctx.scoped %}
+  <p>You're following {{ stats.obligations }} of {{ stats.catalog_total }} obligations, so the
+  feed, the deadlines and this front page only show those. Change the list whenever your
+  scope does.</p>
+  {% else %}
+  <p>Tick the obligations you're actually subject to and the feed, the deadlines and this
+  front page narrow to just those. It's Apache-2.0 as well, so you can self-host it or wire
+  the <a href="/docs">JSON API</a> into whatever you already run.</p>
+  {% endif %}
   <div class="hz-cta" style="justify-content:center">
-    <a class="primary" href="/changes" style="background:var(--accent); color:#fff; border:1.5px solid var(--ink); box-shadow:2px 2px 0 var(--ink)">Start with the feed</a>
+    <a class="primary" href="/obligations" style="background:var(--accent); color:#fff; border:1.5px solid var(--ink); box-shadow:2px 2px 0 var(--ink)">{% if ctx and ctx.scoped %}Change what you follow{% else %}Choose your obligations{% endif %}</a>
     <a class="ghost" href="/watchlists" style="background:var(--panel); color:var(--fg); border:1.5px solid var(--ink); box-shadow:2px 2px 0 var(--ink)">Create a watchlist</a>
   </div>
 </div>
