@@ -73,8 +73,8 @@
   .figure .fig-head .accent { color:var(--accent); font-weight:700; }
   /* Fig. 1: a print dot plot. One row per deadline, a shared log time axis, the dot
      placed by days until impact. Pure HTML: no SVG, no transforms, nothing for WebKit
-     to mishandle. Press motion only: rows soak in once, staggered; the sole persistent
-     movement is the blinking ring on deadlines inside seven days. */
+     to mishandle. The page prints still — the sole movement anywhere is the alarm
+     ring on deadlines inside seven days. */
   .fx { padding:.8rem .9rem .4rem; }
   .fx-axis { position:relative; height:1.1rem; margin-left:0;
              font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; color:var(--muted); }
@@ -178,6 +178,18 @@
     .pulse a { border-left:0; border-top:1px solid var(--line); }
     .pulse a:first-child { border-top:0; }
   }
+  /* Fig. 1 on narrow paper: measured at 375px the head wrapped INTO the right-hand
+     "Live data" label ("what's ... live / due next data"), and nine rows sat at
+     .42rem padding with gridlines running through — cramped. Drop the head's tail,
+     keep both labels to one line each, and let every row breathe. */
+  @media (max-width:520px) {
+    .figure .fig-head { gap:.6rem; align-items:baseline; }
+    .figure .fig-head .fh-more { display:none; }
+    .fx { padding:.7rem .75rem .35rem; }
+    .fx-row { padding:.62rem 0 .7rem; }
+    .fx-track { margin-top:.42rem; }
+    .fx-grid { border-left-color:var(--line2); }  /* quieter rules through the rows */
+  }
 </style>
 
 <section class="front bleed" aria-label="Live regulatory horizon">
@@ -208,7 +220,7 @@
       </div>
 
       <figure class="figure" style="margin:0">
-        <div class="fig-head"><span>Fig. 1 · The horizon · what's due next</span><span class="accent">Live data</span></div>
+        <div class="fig-head"><span>Fig.&nbsp;1 · The horizon<span class="fh-more"> · what's due next</span></span><span class="accent">Live&nbsp;data</span></div>
         <div class="fx" role="img"
              aria-label="Chart of {{ rows | length }} upcoming deadlines on a time axis">
           <div class="fx-axis">
