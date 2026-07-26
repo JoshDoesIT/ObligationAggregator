@@ -72,28 +72,43 @@
                       text-transform:uppercase; color:var(--fg2); padding:.45rem .7rem;
                       border-bottom:1px solid var(--line); display:flex; justify-content:space-between; }
   .figure .fig-head .accent { color:var(--accent); font-weight:700; }
-  .radar { position:relative; width:100%; max-width:470px; aspect-ratio:1; margin:0 auto; }
-  .radar svg { width:100%; height:100%; display:block; }
-  .radar .ring { fill:none; stroke:var(--ink); stroke-opacity:.28; stroke-width:1; }
-  .radar .ring-label { fill:var(--muted); font-size:12.5px; font-family:var(--mono); letter-spacing:.1em; }
-  .radar .axis { stroke:var(--ink); stroke-opacity:.14; stroke-width:1; stroke-dasharray:3 5; }
-  /* Press motion, not product motion: everything animates ONCE, on load, the way a
-     page comes off the press, then holds still. The only persistent movement is the
-     halo on deadlines inside seven days. */
-  .dot-hot  { fill:var(--accent); }
-  .dot-warm { fill:none; stroke:var(--accent); stroke-width:2.4; }
-  .dot-far  { fill:var(--ink); fill-opacity:.55; }
-  .radar a circle { cursor:pointer; }
-  /* opacity only: WebKit's transform-box on SVG shapes is unreliable, and a scale
-     running from the wrong origin reads as the whole chart zooming. Ink soaking in
-     needs no transforms. */
-  .radar circle.d { opacity:0; animation:stamp .5s ease-out forwards; }
+  /* Fig. 1: a print dot plot. One row per deadline, a shared log time axis, the dot
+     placed by days until impact. Pure HTML: no SVG, no transforms, nothing for WebKit
+     to mishandle. Press motion only: rows soak in once, staggered; the sole persistent
+     movement is the blinking ring on deadlines inside seven days. */
+  .fx { padding:.8rem .9rem .4rem; }
+  .fx-axis { position:relative; height:1.1rem; margin-left:0;
+             font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; color:var(--muted); }
+  .fx-axis span { position:absolute; transform:translateX(-50%); }
+  .fx-axis span:first-child { transform:none; }
+  .fx-axis span:last-child { transform:translateX(-100%); }
+  .fx-plot { position:relative; }
+  .fx-grid { position:absolute; top:0; bottom:0; width:0;
+             border-left:1px dashed var(--line); pointer-events:none; }
+  .fx-row { display:block; padding:.42rem 0 .5rem; border-top:1px solid var(--line2);
+            color:inherit; opacity:0; animation:stamp .5s ease-out forwards; }
+  .fx-row:hover { text-decoration:none; background:var(--bg); }
+  .fx-row:first-of-type { border-top:0; }
+  .fx-line1 { display:flex; justify-content:space-between; gap:.8rem; align-items:baseline; }
+  .fx-title { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+              font-size:.86rem; line-height:1.3; color:var(--fg);
+              overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .fx-row:hover .fx-title { color:var(--accent); }
+  .fx-days { font-family:var(--mono); font-size:.72rem; font-weight:700; color:var(--fg2);
+             white-space:nowrap; }
+  .fx-row.r-hot .fx-days { color:var(--accent); }
+  .fx-track { position:relative; display:block; height:14px; margin-top:.28rem;
+              background:linear-gradient(var(--line) 0 0) 0 50%/100% 1px no-repeat; }
+  .fx-dot { position:absolute; top:50%; width:10px; height:10px; border-radius:50%;
+            transform:translate(-50%,-50%); }
+  .fx-dot.hot { background:var(--accent); }
+  .fx-dot.warm { background:var(--panel); border:2.5px solid var(--accent); }
+  .fx-dot.far { background:var(--fg2); }
+  .fx-dot.hot::after { content:""; position:absolute; inset:-5px; border-radius:50%;
+                       border:2px solid var(--accent); opacity:0;
+                       animation:halo 2.1s ease-in-out infinite; }
   @keyframes stamp { from { opacity:0; } to { opacity:1; } }
-  .radar a:hover circle, .radar a:focus-visible circle { stroke:var(--ink); stroke-width:2; fill-opacity:1; }
-  .halo { fill:none; stroke:var(--accent); stroke-width:2; opacity:0;
-          animation:halo 2.1s ease-in-out infinite; }
   @keyframes halo { 0%, 100% { opacity:0; } 50% { opacity:.55; } }
-  .today-mark { stroke:var(--ink); stroke-width:1.6; }
   .fig-cap { font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; color:var(--muted);
              padding:.55rem .7rem .65rem; border-top:1px solid var(--line); }
 
@@ -150,8 +165,8 @@
             font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; }
 
   @media (prefers-reduced-motion: reduce) {
-    .halo { display:none; }
-    .radar circle.d { animation:none; opacity:1; }
+    .fx-dot.hot::after { display:none; }
+    .fx-row { animation:none; opacity:1; }
     .headline { animation:none; }
   }
   @media (max-width:720px) {
@@ -198,31 +213,29 @@
 
       <figure class="figure" style="margin:0">
         <div class="fig-head"><span>Fig. 1 · The horizon</span><span class="accent">Live data</span></div>
-        <div class="radar">
-          <svg viewBox="0 0 600 600" role="img"
-               aria-label="Chart of {{ dots | length }} upcoming deadlines, nearest at the center">
-            {% for ring in rings %}
-            <circle class="ring" cx="300" cy="300" r="{{ ring.r }}"/>
-            <text class="ring-label" x="300" y="{{ 293 - ring.r }}" text-anchor="middle">{{ ring.label }}</text>
-            {% endfor %}
-            <line class="axis" x1="300" y1="16" x2="300" y2="584"/>
-            <line class="axis" x1="16" y1="300" x2="584" y2="300"/>
-            <line class="today-mark" x1="292" y1="300" x2="308" y2="300"/>
-            <line class="today-mark" x1="300" y1="292" x2="300" y2="308"/>
-            <text class="ring-label" x="300" y="326" text-anchor="middle">TODAY</text>
-            {% for d in dots %}
-            <a href="/items/{{ d.item_id }}" aria-label="{{ d.title }}">
-              <title>{{ d.title }}</title>
-              {% if d.cls == 'hot' %}<circle class="halo" cx="{{ d.x }}" cy="{{ d.y }}" r="12"
-                style="animation-delay:{{ 400 + loop.index0 * 110 }}ms"/>{% endif %}
-              <circle class="d dot-{{ d.cls }}" cx="{{ d.x }}" cy="{{ d.y }}" r="{{ 7 if d.cls == 'hot' else 6 }}"
-                style="animation-delay:{{ loop.index0 * 110 }}ms"/>
+        <div class="fx" role="img"
+             aria-label="Chart of {{ rows | length }} upcoming deadlines on a time axis">
+          <div class="fx-axis">
+            <span>TODAY</span>
+            {% for g in gridlines %}<span style="left:{{ g.pct }}%">{{ g.label }}</span>{% endfor %}
+          </div>
+          <div class="fx-plot">
+            {% for g in gridlines %}<i class="fx-grid" style="left:{{ g.pct }}%"></i>{% endfor %}
+            {% for r in rows %}
+            <a class="fx-row r-{{ r.cls }}" href="/items/{{ r.item_id }}"
+               aria-label="{{ r.title }} · {{ r.date_type }} in {{ r.days }} days"
+               style="animation-delay:{{ loop.index0 * 100 }}ms">
+              <span class="fx-line1">
+                <span class="fx-title">{{ r.title }}</span>
+                <span class="fx-days">{{ r.days }}d</span>
+              </span>
+              <span class="fx-track"><i class="fx-dot {{ r.cls }}" style="left:{{ r.pct }}%"></i></span>
             </a>
             {% endfor %}
-          </svg>
+          </div>
         </div>
-        <figcaption class="fig-cap">The next {{ dots | length }} deadlines, closest ones near
-        the center. The center is today. Tap a point to open it.</figcaption>
+        <figcaption class="fig-cap">The next {{ rows | length }} deadlines on a log time
+        scale. Today is the left edge. Tap a row to open it.</figcaption>
       </figure>
     </div>
   </div>
