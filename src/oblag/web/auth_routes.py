@@ -5,11 +5,9 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from oblag import auth
@@ -17,8 +15,13 @@ from oblag.config import get_settings
 from oblag.db.models import LoginToken, utcnow
 from oblag.web.deps import Context, check_csrf, get_context, get_db
 
+# ONE Jinja environment for the whole app: base.html leans on filters and globals
+# registered in html.py (human_source, site_base, …), so a second bare
+# Jinja2Templates instance renders it with UndefinedErrors (bit us live when the
+# social-card block reached the auth pages).
+from oblag.web.html import templates
+
 router = APIRouter(include_in_schema=False)
-templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 log = logging.getLogger(__name__)
 
 _MAX_LOGIN_REQUESTS_PER_HOUR = 5

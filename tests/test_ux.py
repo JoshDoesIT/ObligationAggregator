@@ -327,3 +327,36 @@ def test_paper_theme_is_the_only_edition(client, seeded):
     assert 'name="theme-color" content="#f3eee1"' in html
     assert "feTurbulence" in html  # the grain is a texture, not an effect — still static
     assert html.count("@keyframes") == 1  # the stillness doctrine holds
+
+
+def test_social_cards_consistent_across_platforms(client, seeded, db):
+    """A shared link must render the same card everywhere: Open Graph (Facebook,
+    LinkedIn, Slack, Discord, WhatsApp, Telegram, iMessage) and X's twitter: names
+    mirror the same title, description and banner. The banner route serves the real
+    1200x630 image."""
+    html = client.get("/").text
+    for tag in (
+        'property="og:site_name" content="Gazette"',
+        'property="og:image:width" content="1200"',
+        'property="og:image:height" content="630"',
+        'name="twitter:card" content="summary_large_image"',
+    ):
+        assert tag in html, tag
+    og_title = re.search(r'property="og:title" content="([^"]*)"', html).group(1)
+    tw_title = re.search(r'name="twitter:title" content="([^"]*)"', html).group(1)
+    assert og_title == tw_title
+    og_img = re.search(r'property="og:image" content="([^"]*)"', html).group(1)
+    tw_img = re.search(r'name="twitter:image" content="([^"]*)"', html).group(1)
+    assert og_img == tw_img and og_img.startswith("http") and og_img.endswith("/og-banner.jpg")
+
+    # item pages carry their own headline + abstract into the card
+    from oblag.db.models import PipelineItem
+
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    ihtml = client.get(f"/items/{item.id}").text
+    assert f'property="og:title" content="{item.title} · Gazette"' in ihtml
+
+    r = client.get("/og-banner.jpg")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/jpeg"
+    assert len(r.content) > 10_000  # the real banner, not a placeholder
