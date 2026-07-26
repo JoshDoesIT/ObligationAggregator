@@ -360,3 +360,14 @@ def test_social_cards_consistent_across_platforms(client, seeded, db):
     assert r.status_code == 200
     assert r.headers["content-type"] == "image/jpeg"
     assert len(r.content) > 10_000  # the real banner, not a placeholder
+
+
+def test_head_requests_answered_like_get(client, seeded):
+    """Link crawlers and validators probe with HEAD before fetching a card; FastAPI's
+    GET-only routes 405'd them app-wide. HEAD must mirror GET's status and headers
+    with no body."""
+    for path in ("/", "/changes", "/og-banner.jpg"):
+        r = client.head(path)
+        assert r.status_code == 200, path
+        assert r.content == b"", path
+    assert client.head("/og-banner.jpg").headers["content-type"] == "image/jpeg"
