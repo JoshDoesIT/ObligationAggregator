@@ -209,25 +209,32 @@ def test_join_key_conflict_same_track_is_anomaly(db):
     assert EventType.anomaly in {e.type for e in res.events}
 
 
-def test_published_at_set_on_create_and_fill_if_none(db):
-    """The source publication date is captured on create, backfilled once for legacy
-    rows, and never overwritten — a sitemap-lastmod page touch must not make an old
-    document look newly published."""
+def test_published_at_derived_and_never_overwritten(db):
+    """The source publication date is captured on create and backfilled once for legacy
+    rows, but never overwritten — a sitemap-lastmod touch must not make an old document
+    look newly published. When a source states no publication date of its own, it is
+    derived from the item's earliest origin date (proposed/adopted/comment-open) so
+    feed-shaped sources don't sort as if published the moment we ingested them."""
+    # nprm() carries proposal_date 2024-04-04 and no explicit publication date
     res = reduce_item(db, nprm(), today=TODAY)
-    assert res.item.published_at is None  # adapter stated no publication date
-
-    filled = nprm(published_at=date(2024, 4, 4))
-    reduce_item(db, filled, today=TODAY)
-    assert res.item.published_at is not None
-    assert res.item.published_at.date() == date(2024, 4, 4)
+    assert res.item.published_at.date() == date(2024, 4, 4), "derived from the origin date"
 
     drifted = nprm(published_at=date(2024, 5, 1))  # page touched later
     reduce_item(db, drifted, today=TODAY)
     assert res.item.published_at.date() == date(2024, 4, 4)
 
-    fresh = reduce_item(
+    # an explicit publication date beats the derivation
+    explicit = reduce_item(
         db,
-        nprm(external_key=("fr_doc_number", "2024-99999"), published_at=date(2024, 4, 30)),
+        nprm(
+            external_key=("fr_doc_number", "2024-99999"),
+            published_at=date(2024, 4, 30),
+        ),
         today=TODAY,
     )
-    assert fresh.created and fresh.item.published_at.date() == date(2024, 4, 30)
+    assert explicit.created and explicit.item.published_at.date() == date(2024, 4, 30)
+
+    # nothing to derive from and nothing stated → left null rather than guessed
+    bare = nprm(external_key=("fr_doc_number", "2024-88888"), comment_close=None)
+    bare.dates = []
+    assert reduce_item(db, bare, today=TODAY).item.published_at is None

@@ -146,6 +146,7 @@ class NistCsrcAdapter(SourceAdapter):
             native_meta={"stage_name": stage_name, "feed_link": entry.get("link") or ""},
             anomalies=anomalies,
             retract_dates=retract_dates,
+            published_at=published,
         )
 
 

@@ -252,3 +252,34 @@ def _dispatch() -> None:
 
 if __name__ == "__main__":
     app()
+
+
+@app.command()
+def rebuild(
+    days: int = typer.Option(730, help="how far back to reach on sources that allow it"),
+    adapters: str = typer.Option("", help="comma-separated subset (default: all)"),
+    prune: bool = typer.Option(True, help="retire rows enumerating sources no longer list"),
+    yes: bool = typer.Option(False, "--yes", help="skip the confirmation prompt"),
+) -> None:
+    """Re-read every source, then retire rows the enumerating ones dropped.
+
+    Use this after a parser fix so old rows stop carrying mangled values the source
+    never had. Items a human annotated are never retired, and a source that fails to
+    answer keeps everything it gave us before."""
+    from oblag.rebuild import rebuild as do_rebuild
+
+    init_db()
+    names = [a for a in adapters.split(",") if a] or None
+    if not yes:
+        typer.confirm(f"Re-read every source over {days} days?", abort=True)
+    with session_scope() as session:
+        report = do_rebuild(session, days=days, adapters=names, prune=prune)
+    created = sum(r["created"] for r in report.ran)
+    typer.echo(f"ingested {created} new items across {len(report.ran)} runs")
+    pruned = report.purged.get("pruned") or []
+    typer.echo(
+        f"retired {len(pruned)} stale rows from {report.purged.get('sources') or 'nothing'}; "
+        f"kept {report.purged.get('kept_curated', 0)} with curated dates"
+    )
+    for err in report.errors:
+        typer.echo(f"  error: {err}")

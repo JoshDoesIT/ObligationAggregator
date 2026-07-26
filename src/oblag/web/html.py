@@ -425,7 +425,16 @@ def home_page(
         .join(Event, Event.pipeline_item_id == PipelineItem.id)
         .filter(PipelineItem.source_system != "curated")
         .group_by(PipelineItem.id)
-        .order_by(news_date.desc(), PipelineItem.id.desc())
+        # Dated filings always outrank undated ones. Some sources state no publication
+        # date at all (NERC standards projects), and falling back to our own clock made
+        # them all read as today's news — they filled this column after a rebuild, which
+        # is the exact lie this column exists to avoid. Undated items only appear here
+        # when there are not four dated ones to show.
+        .order_by(
+            PipelineItem.published_at.is_(None),
+            news_date.desc(),
+            PipelineItem.id.desc(),
+        )
         .limit(4)
         .all()
     )

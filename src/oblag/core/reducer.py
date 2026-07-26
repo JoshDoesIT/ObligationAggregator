@@ -10,6 +10,7 @@ from oblag.adapters.base import NormalizedItem
 from oblag.core.statemap import CurrentDateMap, compute_state
 from oblag.core.transitions import Verdict, classify_transition
 from oblag.db.models import (
+    DateType,
     Event,
     EventType,
     ItemState,
@@ -19,13 +20,27 @@ from oblag.db.models import (
     PipelineItem,
 )
 
+# Date types that mark a document ENTERING the record, as opposed to a deadline it
+# sets. When a source states no publication date of its own, the earliest of these is
+# the best available answer to "when did this appear?".
+_ORIGIN_DATE_TYPES = (DateType.proposal_date, DateType.adopted, DateType.comment_open)
+
 
 def _published_dt(ni: NormalizedItem) -> datetime | None:
-    """Adapter publication dates are calendar dates; stored as midnight UTC so they
-    order cleanly against event timestamps in one COALESCE."""
-    if ni.published_at is None:
+    """When the source put this document on the record, as midnight UTC so it orders
+    cleanly against event timestamps in one COALESCE.
+
+    Adapters that carry an explicit publication date win. Otherwise we derive it from
+    the item's own origin dates: EUR-Lex states a document date, an EBA consultation
+    states when it opened. Without this, feed-shaped sources land undated and sort as
+    if they were published the moment we happened to ingest them."""
+    value = ni.published_at
+    if value is None:
+        origins = [d.value for d in ni.dates if d.date_type in _ORIGIN_DATE_TYPES]
+        value = min(origins) if origins else None
+    if value is None:
         return None
-    return datetime(ni.published_at.year, ni.published_at.month, ni.published_at.day, tzinfo=UTC)
+    return datetime(value.year, value.month, value.day, tzinfo=UTC)
 
 
 def _resolve_obligation(session: Session, slug: str | None, title: str | None = None) -> int | None:

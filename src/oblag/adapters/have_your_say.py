@@ -117,6 +117,7 @@ class HaveYourSayAdapter(SourceAdapter):
                 "reference": ini.get("reference") or "",
                 "topic": topic,
             },
+            published_at=start,
         )
 
 
