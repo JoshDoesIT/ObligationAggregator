@@ -142,3 +142,12 @@ def test_due_date_flipping_to_ongoing_retracts_and_reopens(db, items):
     res4 = reduce_item(db, reasserted, today=date(2026, 7, 22))
     cur = current_dates(db, res4.item.id)
     assert cur[(DateType.comment_close, None)].value == date(2026, 7, 13)
+
+
+def test_nccoe_project_description_gets_separator(items):
+    """NIST's feed jams the series name straight into NCCoE titles ("Project
+    Description Asset Management as a Foundation for…", read live) while numbered
+    series get a comma. The adapter adds the separator NIST forgot."""
+    pd = next(i for i in items.values() if i.title.startswith("Project Description"))
+    assert pd.title.startswith("Project Description: Asset Management as a Foundation"), pd.title
+    assert "CybersecurityInitial" not in pd.title  # stage suffix stripped too

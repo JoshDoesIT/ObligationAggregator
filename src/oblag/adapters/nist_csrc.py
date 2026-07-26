@@ -90,6 +90,14 @@ class NistCsrcAdapter(SourceAdapter):
             # feed titles concatenate the stage phrase onto the title; strip it
             if title.endswith(stage_name):
                 title = title[: -len(stage_name)].rstrip(" ,;–-")
+        # NCCoE items carry the series name "Project Description" jammed straight into
+        # the title with no separator (numbered series get a comma: "SP 800-73-6, …").
+        # Read live: "Project Description Asset Management as a Foundation for…" —
+        # add the separator NIST forgot so it reads as type-then-title.
+        if title.startswith("Project Description ") and not title.startswith(
+            ("Project Description:", "Project Description,")
+        ):
+            title = "Project Description: " + title[len("Project Description ") :]
 
         dates: list[NormalizedDate] = []
         retract_dates: list[DateType] = []
