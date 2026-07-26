@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}ObligationAggregator{% endblock %}</title>
+  <title>{% block title %}Gazette{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23c22f10%22 d=%22M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z%22/><path fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22m8.5 12 2.5 2.5 4.5-5%22/></svg>">
   <style>
     /* THE LEDGER — the site's own design language, drawn from the material it tracks:
@@ -307,7 +307,7 @@
 <a class="skip" href="#content">Skip to content</a>
 <header class="site">
   {% set ctx = request.state.ctx if (request.state.ctx is defined) else none %}
-  <a class="brand" href="/"><span class="logo">OA</span> ObligationAggregator</a>
+  <a class="brand" href="/"><span class="logo">G.</span> Gazette</a>
   <nav class="site">
     {% set path = request.url.path %}
     {# Five primary destinations — the daily-use surfaces. Operator/reference pages

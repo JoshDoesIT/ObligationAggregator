@@ -26,7 +26,7 @@ def _uuid(kind: str, key: str) -> str:
 
 def export_catalog(session: Session, obligation_slug: str | None = None) -> dict[str, Any]:
     query = session.query(PipelineItem)
-    title = "ObligationAggregator tracked regulatory pipeline"
+    title = "Gazette tracked regulatory pipeline"
     if obligation_slug:
         obligation = session.query(Obligation).filter_by(slug=obligation_slug).one_or_none()
         if obligation is None:

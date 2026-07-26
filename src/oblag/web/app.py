@@ -113,9 +113,9 @@ def _seed_milestones() -> None:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="ObligationAggregator",
+        title="Gazette",
         version=__version__,
-        description="Open-source regulatory & framework change-intelligence for GRC engineers.",
+        description="Gazette: open-source regulatory change intelligence for GRC engineers.",
     )
     # Boot work is idempotent but costs ~30 DB round trips (migrations, catalog sync,
     # tenancy, repairs, milestones). Run it once per deployment version; every other

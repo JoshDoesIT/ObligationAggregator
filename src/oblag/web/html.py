@@ -62,7 +62,7 @@ CONF_HELP = {
     "statutory_hard": "Fixed by statute. It won't move without new legislation",
     "published_firm": "Published by the issuing body in an official document",
     "agency_estimate": "The agency's own projection, so it may slip",
-    "derived": "Inferred by ObligationAggregator, not stated by the source",
+    "derived": "Inferred by Gazette, not stated by the source",
 }
 SOURCE_LABELS = {
     "federal_register": "Federal Register",
@@ -372,8 +372,37 @@ def home_page(
         "deadlines_30d": sum(1 for d in horizon if d["days_until"] <= 30),
         "obligations": db.query(Obligation).count(),
     }
+    # Front-page furniture: the dateline under the nameplate, and the latest filings
+    # column (the four most recently ingested items, as news briefs).
+    from datetime import date as _date
+
+    latest = [
+        {
+            "id": it.id,
+            "title": it.title,
+            "source": it.source_system,
+            "state": it.state.value,
+            "kind": _signal_kind(
+                {
+                    "source_system": it.source_system,
+                    "native_status": it.native_status,
+                    "track": it.track,
+                }
+            ),
+        }
+        for it in db.query(PipelineItem).order_by(PipelineItem.id.desc()).limit(4)
+    ]
     return templates.TemplateResponse(
-        request, "home.html", {"ctx": ctx, "dots": dots, "rings": rings, "stats": stats}
+        request,
+        "home.html",
+        {
+            "ctx": ctx,
+            "dots": dots,
+            "rings": rings,
+            "stats": stats,
+            "latest": latest,
+            "dateline": _date.today().strftime("%A, %d %B %Y").replace(" 0", " "),
+        },
     )
 
 
@@ -765,7 +794,7 @@ def deadlines_ics(
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//ObligationAggregator//deadlines//EN",
+        "PRODID:-//Gazette//deadlines//EN",
         "CALSCALE:GREGORIAN",
         "X-WR-CALNAME:Regulatory deadlines",
     ]

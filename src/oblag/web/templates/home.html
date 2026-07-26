@@ -1,41 +1,55 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}ObligationAggregator · the regulatory ledger{% endblock %}
+{% from "_macros.html" import state_badge %}
+{% block title %}Gazette · regulatory change intelligence{% endblock %}
 {% block content %}
-{# ================= THE LEDGER =================
-   Identity drawn from the material this site tracks: the printed regulation. Paper,
-   ink, one vermillion stamp. The hero chart is a live drafting-table plot of this
-   instance's actual regulatory horizon — every upcoming deadline is a dot, distance
-   from center is time until it lands, every dot is a link. Drawn server-side from
-   the same query the deadlines page uses, so the artwork can never drift from the
-   truth. Pure CSS/SVG; no libraries; honors prefers-reduced-motion. #}
+{# ================= THE GAZETTE, FRONT PAGE =================
+   A real newspaper anatomy, not a landing page wearing one: nameplate with ears and
+   a dateline, a lead story with deck and drop cap, the chart as a boxed figure, a
+   latest-filings briefs column, and section flags under Oxford rules (thick over
+   thin). Homepage prose is set in serif, the way news body type is; the app keeps
+   its working sans. The chart stays live data: every dot is an item link, drawn
+   from the same query the deadlines page uses. Pure CSS/SVG; reduced-motion safe. #}
 <style>
   .bleed { margin-inline: calc(50% - 50vw); margin-inline: calc(50% - 50svw); }
+  .front { background:var(--bg); margin-top:-1.4rem; padding:0 1.25rem; }
+  .front-inner { max-width:1180px; margin:0 auto; }
+  .serif { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; }
 
-  /* ---- masthead hero: a gazette front page, not a SaaS gradient ---- */
-  .horizon { background:var(--bg); margin-top:-1.4rem; padding:0 1.25rem clamp(2rem,4svw,3rem);
-             position:relative; }
-  .hz-inner { max-width:1180px; margin:0 auto; }
-  .mast { display:flex; justify-content:space-between; gap:1rem; align-items:baseline;
-          border-bottom:1px solid var(--ink); padding:.55rem 0; font-family:var(--mono);
-          font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
-  .mast .live { color:var(--accent); font-weight:700; }
+  /* ---- nameplate: ears left and right, title center, dateline under ---- */
+  .nameplate { display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+               gap:1rem; padding:1.1rem 0 .8rem; border-bottom:1px solid var(--ink); }
+  .np-title { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+              font-weight:700; font-size:clamp(2.6rem, 6svw, 4.4rem); line-height:1;
+              letter-spacing:.01em; text-align:center; color:var(--ink); }
+  .np-title .np-dot { color:var(--accent); }
+  .ear { font-family:var(--mono); font-size:.64rem; letter-spacing:.12em;
+         text-transform:uppercase; color:var(--muted); border:1px solid var(--line);
+         padding:.35rem .55rem; line-height:1.6; max-width:180px; }
+  .ear.right { justify-self:end; text-align:right; }
+  .ear .accent { color:var(--accent); font-weight:700; }
+  .dateline { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+              font-family:var(--mono); font-size:.66rem; letter-spacing:.14em;
+              text-transform:uppercase; color:var(--muted); padding:.5rem 0;
+              border-bottom:3px double var(--ink); }
 
-  .hz-grid { display:flex; flex-wrap:wrap; gap:clamp(1.2rem,4svw,3rem); align-items:center;
-             padding-top:clamp(1.6rem,4svw,3rem); }
-  .hz-copy { flex:1 1 360px; min-width:0; }
-  .headline { margin:0 0 1.2rem; font-weight:900; text-transform:uppercase;
-              font-size:clamp(2.6rem, 7.2vw, 5.2rem);
-              font-size:clamp(2.6rem, 7.2svw, 5.2rem); line-height:.94; letter-spacing:-.015em;
+  /* ---- lead story + boxed figure ---- */
+  .lead { display:flex; flex-wrap:wrap; gap:clamp(1.4rem,4svw,3rem);
+          padding:clamp(1.4rem,3.5svw,2.6rem) 0 clamp(1.6rem,3svw,2.4rem); }
+  .lead-story { flex:1 1 380px; min-width:0; }
+  .kicker { font-family:var(--mono); font-size:.68rem; letter-spacing:.2em;
+            text-transform:uppercase; color:var(--accent); font-weight:700; margin:0 0 .7rem; }
+  .headline { margin:0 0 .5rem; font-weight:900; text-transform:uppercase;
+              font-size:clamp(2.4rem, 6.4svw, 4.6rem); line-height:.96; letter-spacing:-.015em;
               color:var(--ink);
-              /* misregistered print: the vermillion plate sits a hair off the ink plate */
               text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28); }
-  .headline .over { display:block; font-family:Georgia,'Iowan Old Style','Times New Roman',serif;
-                    font-style:italic; font-weight:400; text-transform:none;
-                    font-size:.62em; letter-spacing:0; color:var(--accent); text-shadow:none;
-                    margin-top:.18em; }
-  .hz-sub { color:var(--fg2); font-size:1rem; line-height:1.7; max-width:52ch; margin:0 0 1.5rem;
-            border-left:3px solid var(--accent); padding-left:.9rem; }
+  .deck { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; font-style:italic;
+          font-size:clamp(1.15rem, 2.6svw, 1.6rem); color:var(--accent); margin:0 0 1.1rem; }
+  .standfirst { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+                font-size:1.04rem; line-height:1.75; color:var(--fg2); max-width:56ch;
+                margin:0 0 1.5rem; }
+  .standfirst::first-letter { font-size:3.1em; font-weight:700; float:left;
+                              line-height:.82; padding:.06em .09em 0 0; color:var(--ink); }
   .hz-cta { display:flex; gap:.7rem; flex-wrap:wrap; }
   .hz-cta a { display:inline-flex; align-items:center; gap:.45rem; padding:.68rem 1.15rem;
               font-weight:700; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em;
@@ -45,15 +59,18 @@
   .hz-cta .primary { background:var(--accent); color:#fff; }
   .hz-cta .ghost { background:var(--panel); color:var(--fg); }
 
-  /* ---- the drafting chart ---- */
-  .radar-wrap { flex:1 1 340px; display:flex; flex-direction:column; align-items:center; min-width:0; }
-  .radar { position:relative; width:min(88vw, 470px); width:min(88svw, 470px); aspect-ratio:1; }
+  /* the chart is a boxed newspaper figure with rule and caption */
+  .figure { flex:1 1 340px; min-width:0; border:1.5px solid var(--ink); background:var(--panel);
+            box-shadow:var(--shadow); align-self:center; }
+  .figure .fig-head { font-family:var(--mono); font-size:.64rem; letter-spacing:.16em;
+                      text-transform:uppercase; color:var(--fg2); padding:.45rem .7rem;
+                      border-bottom:1px solid var(--line); display:flex; justify-content:space-between; }
+  .figure .fig-head .accent { color:var(--accent); font-weight:700; }
+  .radar { position:relative; width:100%; max-width:470px; aspect-ratio:1; margin:0 auto; }
   .radar svg { width:100%; height:100%; display:block; }
   .radar .ring { fill:none; stroke:var(--ink); stroke-opacity:.28; stroke-width:1; }
-  .radar .ring:nth-of-type(1) { stroke-dasharray:none; }
   .radar .ring-label { fill:var(--muted); font-size:12.5px; font-family:var(--mono); letter-spacing:.1em; }
   .radar .axis { stroke:var(--ink); stroke-opacity:.14; stroke-width:1; stroke-dasharray:3 5; }
-  /* the sweep is a drafting-compass hairline, not a glow */
   .sweep { position:absolute; inset:0; border-radius:50%; pointer-events:none;
     background:conic-gradient(from 0deg, var(--ink) 0deg, transparent 2.2deg),
                conic-gradient(from 0deg, rgba(194,47,16,.10) 0deg, transparent 26deg);
@@ -70,78 +87,100 @@
           animation:halo 2.1s ease-out infinite; transform-box:fill-box; transform-origin:center; }
   @keyframes halo { 0% { opacity:.8; transform:scale(1);} 100% { opacity:0; transform:scale(2.4);} }
   .today-mark { stroke:var(--ink); stroke-width:1.6; }
-  /* rubber stamp, slightly misapplied */
-  .stamp { position:absolute; right:-2%; top:4%; transform:rotate(7deg);
-           border:2.5px solid var(--accent); color:var(--accent); border-radius:3px;
-           font-family:var(--mono); font-size:.62rem; font-weight:700; letter-spacing:.18em;
-           text-transform:uppercase; padding:.4rem .6rem; line-height:1.5;
-           opacity:.85; mix-blend-mode:multiply; pointer-events:none; }
-  @media (prefers-color-scheme: dark) { .stamp { mix-blend-mode:normal; opacity:.9; } }
-  .radar-cap { color:var(--muted); font-size:.75rem; font-family:var(--mono); letter-spacing:.04em;
-               margin-top:.7rem; text-align:center; max-width:44ch; }
+  .fig-cap { font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; color:var(--muted);
+             padding:.55rem .7rem .65rem; border-top:1px solid var(--line); }
+
+  /* ---- section flags: Oxford rule (thick over thin) ---- */
+  .flag { border-top:3px solid var(--ink); position:relative; margin:1.9rem 0 1rem; padding-top:.55rem; }
+  .flag::before { content:""; position:absolute; top:5px; left:0; right:0; height:1px; background:var(--ink); }
+  .flag h2 { margin:0; font-family:var(--mono); font-size:.72rem; letter-spacing:.22em;
+             text-transform:uppercase; color:var(--fg2); font-weight:700; }
+  .flag h2 .accent { color:var(--accent); }
 
   /* ---- ledger figures ---- */
   .pulse { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
-           border-block:3px double var(--ink); margin:1.8rem 0 0; }
+           border-block:3px double var(--ink); }
   .pulse a { padding:1.1rem 1.2rem; display:block; color:inherit; border-left:1px solid var(--line); }
   .pulse a:first-child { border-left:0; }
   .pulse a:hover { text-decoration:none; background:var(--panel); }
   .pulse .n { font-size:2.3rem; font-weight:700; font-family:var(--mono); line-height:1.05; }
-  /* the figures end in a vermillion full stop, same as the headline. A count is a
-     fact, so it gets a period, and no trend arrow pretending it's a chart. */
   .pulse .n::after { content:"."; color:var(--accent); }
   .pulse .l { color:var(--muted); font-size:.7rem; text-transform:uppercase;
               letter-spacing:.12em; margin-top:.3rem; }
 
-  /* ---- clauses: newspaper columns, not cards ---- */
+  /* ---- latest filings: news briefs in ruled columns ---- */
+  .briefs { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:0; }
+  .brief { padding:.2rem 1.3rem .9rem 0; border-left:1px solid var(--line); padding-left:1.3rem; }
+  .brief:first-child { border-left:0; padding-left:0; }
+  .brief .b-kicker { font-family:var(--mono); font-size:.62rem; letter-spacing:.14em;
+                     text-transform:uppercase; color:var(--muted); margin-bottom:.35rem; }
+  .brief .b-kicker .accent { color:var(--accent); font-weight:700; }
+  .brief h3 { margin:0; font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+              font-size:1.02rem; line-height:1.35; font-weight:700; letter-spacing:0; }
+  .brief h3 a { color:var(--ink); }
+  .brief h3 a:hover { color:var(--accent); text-decoration:none; }
+  .briefs-more { font-family:var(--mono); font-size:.72rem; letter-spacing:.08em;
+                 text-transform:uppercase; margin-top:.9rem; }
+
+  /* ---- clauses ---- */
   .creed { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
-           gap:0; margin:2.4rem 0 1rem; border-block:1px solid var(--ink); }
-  .creed .c { padding:1.4rem 1.5rem 1.6rem; border-left:1px solid var(--line); position:relative; }
+           gap:0; }
+  .creed .c { padding:.2rem 1.5rem 1.6rem 0; border-left:1px solid var(--line); position:relative; }
+  .creed .c + .c { padding-left:1.5rem; }
   .creed .c:first-child { border-left:0; }
   .creed .cl-no { font-family:var(--mono); font-weight:700; color:var(--accent);
                   font-size:.72rem; letter-spacing:.18em; }
   .creed h3 { margin:.5rem 0 .55rem; font-size:1.28rem; font-weight:900; text-transform:uppercase;
               letter-spacing:-.01em; line-height:1.12; }
-  .creed p { margin:0; color:var(--fg2); font-size:.9rem; line-height:1.65; }
-  .creed .c::after { content:""; position:absolute; left:1.5rem; bottom:.9rem; width:34px;
-                     height:3px; background:var(--accent); }
+  .creed p { margin:0; color:var(--fg2); font-size:.95rem; line-height:1.7;
+             font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; }
 
   /* ---- coda ---- */
-  .coda { text-align:center; margin:3rem 0 1rem; }
+  .coda { text-align:center; margin:2.8rem 0 1rem; }
   .coda h2 { font-weight:900; text-transform:uppercase; letter-spacing:-.01em;
-             font-size:clamp(1.6rem,4vw,2.6rem);
              font-size:clamp(1.6rem,4svw,2.6rem); margin:0 0 .5rem;
              text-shadow:.05em .05em 0 var(--accent-soft); }
-  .coda p { color:var(--muted); margin:.2rem 0 1.2rem; font-size:.92rem; }
+  .coda p { color:var(--muted); margin:.2rem 0 1.2rem; font-size:.98rem;
+            font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; }
 
   @media (prefers-reduced-motion: reduce) {
     .sweep, .halo { animation:none; }
     .sweep { display:none; }
   }
   @media (max-width:720px) {
-    .horizon { margin-top:-1rem; }
-    .mast { font-size:.6rem; gap:.7rem; letter-spacing:.1em; }
-    .mast span:last-child { display:none; }
+    .front { margin-top:-1rem; }
+    .nameplate { grid-template-columns:1fr; gap:.5rem; padding:.9rem 0 .7rem; }
+    .ear { display:none; }
+    .dateline { justify-content:center; text-align:center; font-size:.6rem; }
+    .dateline span:last-child { display:none; }
     .hz-cta a { width:100%; justify-content:center; }
-    .stamp { right:2%; }
+    .brief, .creed .c { border-left:0; padding-left:0; border-top:1px solid var(--line);
+                        padding-top:.8rem; margin-top:.2rem; }
+    .brief:first-child, .creed .c:first-child { border-top:0; }
     .pulse a { border-left:0; border-top:1px solid var(--line); }
     .pulse a:first-child { border-top:0; }
-    .creed .c { border-left:0; border-top:1px solid var(--line); }
-    .creed .c:first-child { border-top:0; }
   }
 </style>
 
-<section class="horizon bleed" aria-label="Live regulatory horizon">
-  <div class="hz-inner">
-    <div class="mast">
-      <span>The Regulatory Ledger</span>
-      <span class="live">Live edition</span>
-      <span>Apache-2.0 · self-hosted</span>
+<section class="front bleed" aria-label="Live regulatory horizon">
+  <div class="front-inner">
+    <header class="nameplate">
+      <div class="ear">Vol. I · No. {{ stats.changes }}<br>{{ stats.obligations }} obligations watched</div>
+      <h1 class="np-title">Gazette<span class="np-dot">.</span></h1>
+      <div class="ear right"><span class="accent">Live edition</span><br>Apache-2.0 · self-hosted</div>
+    </header>
+    <div class="dateline">
+      <span>{{ dateline }}</span>
+      <span>Regulatory change intelligence</span>
+      <span>Printed continuously</span>
     </div>
-    <div class="hz-grid">
-      <div class="hz-copy">
-        <h1 class="headline">Regulation moves.<span class="over">and you'll see it coming.</span></h1>
-        <p class="hz-sub">ObligationAggregator watches {{ stats.obligations }} laws, frameworks and
+
+    <div class="lead">
+      <div class="lead-story">
+        <p class="kicker">The lead</p>
+        <h2 class="headline">Regulation moves.</h2>
+        <p class="deck">and you'll see it coming.</p>
+        <p class="standfirst">Gazette watches {{ stats.obligations }} laws, frameworks and
         standards at their official sources. Every rulemaking, consultation and release gets
         tracked through its lifecycle, and every date comes with evidence you can check.</p>
         <div class="hz-cta">
@@ -149,7 +188,9 @@
           <a class="ghost" href="/deadlines">{{ icon('calendar', 14) }} This week's deadlines</a>
         </div>
       </div>
-      <div class="radar-wrap">
+
+      <figure class="figure" style="margin:0">
+        <div class="fig-head"><span>Fig. 1 · The horizon</span><span class="accent">Live data</span></div>
         <div class="radar">
           <svg viewBox="0 0 600 600" role="img"
                aria-label="Chart of {{ dots | length }} upcoming deadlines, nearest at the center">
@@ -171,41 +212,58 @@
             {% endfor %}
           </svg>
           <div class="sweep" aria-hidden="true"></div>
-          <div class="stamp">Live data<br>not a mock</div>
         </div>
-        <p class="radar-cap">Fig. 1: the next {{ dots | length }} deadlines, closest ones near
-        the center. The center is today. Tap a point to open it.</p>
-      </div>
+        <figcaption class="fig-cap">The next {{ dots | length }} deadlines, closest ones near
+        the center. The center is today. Tap a point to open it.</figcaption>
+      </figure>
     </div>
   </div>
 </section>
 
-<div class="pulse bleed" role="list" aria-label="Live counts" style="padding-inline:max(1.25rem, calc(50vw - 590px))">
+<div class="pulse bleed" role="list" aria-label="Live counts" style="padding-inline:max(1.25rem, calc(50vw - 590px)); padding-inline:max(1.25rem, calc(50svw - 590px))">
   <a role="listitem" href="/changes"><span class="n">{{ stats.changes }}</span><div class="l">tracked changes</div></a>
   <a role="listitem" href="/changes?state=comment_open"><span class="n">{{ stats.open_windows }}</span><div class="l">comment windows open</div></a>
   <a role="listitem" href="/deadlines"><span class="n">{{ stats.deadlines_30d }}</span><div class="l">deadlines in 30 days</div></a>
   <a role="listitem" href="/obligations"><span class="n">{{ stats.obligations }}</span><div class="l">obligations watched</div></a>
 </div>
 
-<section class="creed" aria-label="How it works">
-  <div class="c">
-    <span class="cl-no">§ 1 · SOURCES</span>
-    <h3>Watched at the source</h3>
-    <p>We check the Federal Register, EUR-Lex, NIST, PCI SSC, EDPB and more on a schedule,
-    straight from the official record. Each source reports its own health too, so you'll
-    know if one goes quiet.</p>
+{% if latest %}
+<section aria-label="Latest filings">
+  <div class="flag"><h2><span class="accent">The latest filings</span> · fresh off the wire</h2></div>
+  <div class="briefs">
+    {% for b in latest %}
+    <article class="brief">
+      <div class="b-kicker"><span class="accent">{{ b.kind }}</span> · {{ b.source | human_source }}</div>
+      <h3><a href="/items/{{ b.id }}">{{ b.title | truncate(90) }}</a></h3>
+    </article>
+    {% endfor %}
   </div>
-  <div class="c">
-    <span class="cl-no">§ 2 · LIFECYCLE</span>
-    <h3>Where things actually stand</h3>
-    <p>Every signal lands in one simple lifecycle: proposed, comment, final, effective.
-    You always know where a change stands and what's coming next.</p>
-  </div>
-  <div class="c">
-    <span class="cl-no">§ 3 · PROOF</span>
-    <h3>Dates you can defend</h3>
-    <p>Every date shows where it came from and how firm it is. If it's an estimate,
-    we say so.</p>
+  <p class="briefs-more"><a href="/changes">All {{ stats.changes }} tracked changes &rarr;</a></p>
+</section>
+{% endif %}
+
+<section aria-label="How it works">
+  <div class="flag"><h2>In this edition</h2></div>
+  <div class="creed">
+    <div class="c">
+      <span class="cl-no">§ 1 · SOURCES</span>
+      <h3>Watched at the source</h3>
+      <p>We check the Federal Register, EUR-Lex, NIST, PCI SSC, EDPB and more on a schedule,
+      straight from the official record. Each source reports its own health too, so you'll
+      know if one goes quiet.</p>
+    </div>
+    <div class="c">
+      <span class="cl-no">§ 2 · LIFECYCLE</span>
+      <h3>Where things actually stand</h3>
+      <p>Every signal lands in one simple lifecycle: proposed, comment, final, effective.
+      You always know where a change stands and what's coming next.</p>
+    </div>
+    <div class="c">
+      <span class="cl-no">§ 3 · PROOF</span>
+      <h3>Dates you can defend</h3>
+      <p>Every date shows where it came from and how firm it is. If it's an estimate,
+      we say so.</p>
+    </div>
   </div>
 </section>
 
