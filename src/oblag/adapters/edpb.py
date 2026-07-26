@@ -115,6 +115,7 @@ class EdpbAdapter(SourceAdapter):
                 dates=dates,
                 obligation_slug="gdpr",
                 anomalies=anomalies,
+                published_at=pub,
             )
 
 

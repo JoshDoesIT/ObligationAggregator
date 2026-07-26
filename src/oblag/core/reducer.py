@@ -20,6 +20,14 @@ from oblag.db.models import (
 )
 
 
+def _published_dt(ni: NormalizedItem) -> datetime | None:
+    """Adapter publication dates are calendar dates; stored as midnight UTC so they
+    order cleanly against event timestamps in one COALESCE."""
+    if ni.published_at is None:
+        return None
+    return datetime(ni.published_at.year, ni.published_at.month, ni.published_at.day, tzinfo=UTC)
+
+
 def _resolve_obligation(session: Session, slug: str | None, title: str | None = None) -> int | None:
     """Adapter-stated slug wins; otherwise infer the obligation from the title
     (oblag.linking) so signals like 'guidance on the Cyber Resilience Act' link."""
@@ -220,6 +228,7 @@ def reduce_item(
             track=ni.track,
             content_fingerprint=ni.content_fingerprint,
             obligation_id=_resolve_obligation(session, ni.obligation_slug, ni.title),
+            published_at=_published_dt(ni),
         )
         session.add(item)
         session.flush()
@@ -415,6 +424,11 @@ def reduce_item(
 
     if item.obligation_id is None:
         item.obligation_id = _resolve_obligation(session, ni.obligation_slug, ni.title)
+    # Fill-if-None only: the first observed value approximates publication; letting a
+    # later sitemap-lastmod touch overwrite it would make old documents look newly
+    # published every time their page is edited.
+    if item.published_at is None:
+        item.published_at = _published_dt(ni)
     item.last_seen_at = datetime.now(UTC)
     _note_item_anomalies(session, item, ni, snapshot_id, events)
     session.flush()

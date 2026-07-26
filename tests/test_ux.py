@@ -216,10 +216,9 @@ def test_feed_moved_to_changes_with_legacy_redirects(client, seeded):
 
 
 def test_latest_filings_orders_by_activity_not_id(client, seeded, db):
-    """A filing that moved yesterday is news even if it was first seen weeks ago. The
-    briefs column ranks by most recent event, so an old item with fresh activity must
-    outrank a newer-id item that has been quiet. Curated timeline entries never count
-    as filings."""
+    """Legacy rows with no publication date fall back to most recent event, so an old
+    item with fresh activity must outrank a newer-id item that has been quiet. Curated
+    timeline entries never count as filings."""
     from datetime import timedelta
 
     from oblag.db.models import Event, EventType, PipelineItem, utcnow
@@ -250,3 +249,44 @@ def test_latest_filings_orders_by_activity_not_id(client, seeded, db):
         "the item with the newest activity should lead the briefs"
     )
     assert f"/items/{newest.id}" in briefs or newest.id != oldest.id  # sanity
+
+
+def test_latest_filings_ranks_by_source_publication_date(client, seeded, db):
+    """The column is the SOURCE's chronology. A document published two days ago must
+    outrank one published months ago, even when the old one was ingested last (higher
+    id, fresher events) — a backfill batch must not read as today's news (observed
+    live: CSF v11.4.0 leading over v11.7.0 because both arrived in one batch)."""
+    from datetime import timedelta
+
+    from oblag.adapters.base import NormalizedItem
+    from oblag.core.reducer import reduce_item
+    from oblag.db.models import utcnow
+
+    def filing(key: str, published_days_ago: int) -> int:
+        res = reduce_item(
+            db,
+            NormalizedItem(
+                source_system="hitrust",
+                external_key=("hitrust_release", key),
+                jurisdiction="Global",
+                title=f"HITRUST CSF v{key}",
+                native_status="release",
+                track="final",
+                published_at=(utcnow() - timedelta(days=published_days_ago)).date(),
+            ),
+        )
+        return res.item.id
+
+    recent_id = filing("90.1", published_days_ago=2)
+    backfilled_id = filing("90.0", published_days_ago=200)  # ingested last, published long ago
+    db.commit()
+
+    html = client.get("/").text
+    briefs = html.split("The latest filings")[1].split("In this edition")[0]
+    links = [int(m) for m in re.findall(r'href="/items/(\d+)"', briefs)]
+    assert recent_id in links, "a recently published filing belongs in the briefs"
+    assert backfilled_id not in links or links.index(recent_id) < links.index(backfilled_id), (
+        "publication date must beat ingestion order"
+    )
+    # the kicker prints the source's date, so the ordering is checkable at a glance
+    assert re.search(r'class="b-kicker">\d{1,2} \w{3} \d{4} ·', briefs)

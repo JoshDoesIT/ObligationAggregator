@@ -69,6 +69,7 @@ class CisAdapter(SourceAdapter):
                 dates=dates,
                 obligation_slug="cis-controls",
                 native_meta={"blog_title": title},
+                published_at=pub,
             )
 
 

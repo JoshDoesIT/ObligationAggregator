@@ -207,3 +207,27 @@ def test_join_key_conflict_same_track_is_anomaly(db):
     )
     res = reduce_item(db, ambiguous, today=TODAY)
     assert EventType.anomaly in {e.type for e in res.events}
+
+
+def test_published_at_set_on_create_and_fill_if_none(db):
+    """The source publication date is captured on create, backfilled once for legacy
+    rows, and never overwritten — a sitemap-lastmod page touch must not make an old
+    document look newly published."""
+    res = reduce_item(db, nprm(), today=TODAY)
+    assert res.item.published_at is None  # adapter stated no publication date
+
+    filled = nprm(published_at=date(2024, 4, 4))
+    reduce_item(db, filled, today=TODAY)
+    assert res.item.published_at is not None
+    assert res.item.published_at.date() == date(2024, 4, 4)
+
+    drifted = nprm(published_at=date(2024, 5, 1))  # page touched later
+    reduce_item(db, drifted, today=TODAY)
+    assert res.item.published_at.date() == date(2024, 4, 4)
+
+    fresh = reduce_item(
+        db,
+        nprm(external_key=("fr_doc_number", "2024-99999"), published_at=date(2024, 4, 30)),
+        today=TODAY,
+    )
+    assert fresh.created and fresh.item.published_at.date() == date(2024, 4, 30)

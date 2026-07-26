@@ -157,6 +157,12 @@ class PipelineItem(Base):
     resolved_change_id: Mapped[int | None] = mapped_column(ForeignKey("pipeline_item.id"))
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # When the SOURCE published this document (sitemap lastmod, RSS pubDate, FR
+    # publication_date) — as opposed to first_seen_at, which is when WE ingested it.
+    # A backfill run ingests years of history in one minute; anything ranked "newest"
+    # must use this, not our clock (observed live: CSF v11.4.0 leading "latest
+    # filings" over v11.7.0 because both arrived in the same batch).
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     obligation: Mapped[Obligation | None] = relationship(back_populates="items")
     join_keys: Mapped[list[JoinKey]] = relationship(

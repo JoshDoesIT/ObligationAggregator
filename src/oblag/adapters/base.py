@@ -49,6 +49,10 @@ class NormalizedItem:
     dates: list[NormalizedDate] = field(default_factory=list)
     obligation_slug: str | None = None
     track: str = "default"  # lifecycle track: "proposed" | "final" | "default" (spec 01)
+    # When the source published this document (sitemap lastmod, RSS pubDate, FR
+    # publication_date). Deliberately NOT part of the content fingerprint: a sitemap
+    # lastmod drifts when a page is touched, and a touch is not a content change.
+    published_at: date | None = None
     native_meta: dict[str, str] = field(default_factory=dict)  # extra statemap inputs
     anomalies: list[str] = field(default_factory=list)  # defensive-parse notes → anomaly events
     # Supplementary documents (comment extensions, corrections, delays, withdrawals)

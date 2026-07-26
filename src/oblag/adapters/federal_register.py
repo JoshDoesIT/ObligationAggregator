@@ -179,6 +179,7 @@ class FederalRegisterAdapter(SourceAdapter):
             },
             anomalies=anomalies,
             supplementary=is_supplementary,
+            published_at=pub,
         )
 
 

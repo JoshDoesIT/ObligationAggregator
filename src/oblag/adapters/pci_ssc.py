@@ -143,6 +143,7 @@ class PciSscAdapter(SourceAdapter):
                 obligation_slug=_pci_obligation(subject),
                 native_meta={"blog_title": title},
                 anomalies=anomalies,
+                published_at=pub,
             )
 
 
@@ -170,6 +171,7 @@ def _publication_item(
         dates=dates,
         obligation_slug=slug,
         native_meta={"published_version": version},
+        published_at=pub,
     )
 
 

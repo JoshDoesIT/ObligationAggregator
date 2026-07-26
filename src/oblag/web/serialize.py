@@ -96,6 +96,7 @@ def item_to_dict(
         "resolved_change_id": item.resolved_change_id,
         "first_seen_at": item.first_seen_at.isoformat() if item.first_seen_at else None,
         "last_seen_at": item.last_seen_at.isoformat() if item.last_seen_at else None,
+        "published_at": item.published_at.isoformat() if item.published_at else None,
         "join_keys": [{"type": k.type, "value": k.value} for k in item.join_keys],
         "current_dates": [
             key_date_to_dict(session, kd, provenance=detail) for kd in dates.values()
