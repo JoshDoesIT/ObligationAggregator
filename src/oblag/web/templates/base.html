@@ -75,6 +75,12 @@
     main { padding:1.4rem 1.25rem 3rem; max-width:1180px; margin:0 auto; }
     h2.page { margin:.2rem 0 .3rem; font-size:1.3rem; text-transform:uppercase; letter-spacing:.04em; font-weight:800; }
     p.lede { margin:.1rem 0 1.1rem; color:var(--muted); max-width:70ch; }
+    /* multi-paragraph source abstracts: real paragraph rhythm, never one wall */
+    div.lede.prose { margin:.1rem 0 1.1rem; color:var(--muted); max-width:70ch; }
+    div.lede.prose p { margin:0 0 .65rem; line-height:1.55; }
+    details.morecopy > summary { cursor:pointer; color:var(--accent); font-size:.88rem;
+                                 margin:.1rem 0 .5rem; }
+    details.morecopy > summary:hover { text-decoration:underline; }
 
     /* ---- cards & tables ---- */
     .panel { background:var(--panel); border:1.5px solid var(--ink); border-radius:var(--radius);

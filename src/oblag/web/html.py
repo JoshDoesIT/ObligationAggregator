@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -296,7 +297,22 @@ def _release_status(item: dict) -> str | None:
     return "superseded" if subject < current else "published"
 
 
+def _prose(text: str | None) -> list[str]:
+    """Source abstracts arrive as raw text with literal HTML entities and hard
+    newlines (observed live: NIST abstracts full of '&nbsp;'/'&mdash;' rendered
+    verbatim, with section-by-section change lists collapsed into one block). Return
+    clean paragraphs for the template to lay out; escaping stays with Jinja."""
+    if not text:
+        return []
+    from html import unescape
+
+    cleaned = unescape(unescape(text)).replace("\xa0", " ")
+    paras = [re.sub(r"[ \t]+", " ", p).strip() for p in re.split(r"\n+", cleaned)]
+    return [p for p in paras if p]
+
+
 templates.env.filters.update(
+    prose=_prose,
     signal_kind=_signal_kind,
     revision_flavor=_revision_flavor,
     release_status=_release_status,

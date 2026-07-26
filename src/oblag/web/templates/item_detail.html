@@ -20,7 +20,22 @@
       style="display:inline-flex; align-items:center; gap:.35rem">{{ icon('bell', 14) }} Subscribe</button>
   </form>
 </p>
-{% if item.abstract %}<p class="lede">{{ item.abstract }}</p>{% endif %}
+{% set paras = item.abstract | prose %}
+{% if paras %}
+<div class="lede prose">
+  <p>{{ paras[0] }}</p>
+  {% if paras | length > 1 %}
+    {% if item.abstract | length > 600 %}
+    {# long abstracts fold: the page answers "where does this stand?" first #}
+    <details class="morecopy"><summary>Read the rest from the source</summary>
+      {% for p in paras[1:] %}<p>{{ p }}</p>{% endfor %}
+    </details>
+    {% else %}
+      {% for p in paras[1:] %}<p>{{ p }}</p>{% endfor %}
+    {% endif %}
+  {% endif %}
+</div>
+{% endif %}
 
 {% set mainline = ['proposed', 'comment_open', 'comment_closed', 'final_pending_effective', 'effective'] %}
 {% set rstatus = item | release_status %}

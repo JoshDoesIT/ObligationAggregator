@@ -164,4 +164,8 @@ _TAG_RE = re.compile(r"<[^>]+>")
 
 
 def _strip_html(text: str) -> str:
-    return _TAG_RE.sub("", text).strip()
+    """Tags out, entities decoded: CSRC summaries carry literal '&nbsp;'/'&mdash;'
+    (double-encoded in places), which otherwise end up verbatim in stored abstracts."""
+    from html import unescape
+
+    return unescape(unescape(_TAG_RE.sub("", text))).replace("\xa0", " ").strip()
