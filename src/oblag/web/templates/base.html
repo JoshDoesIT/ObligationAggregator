@@ -309,7 +309,7 @@
 <a class="skip" href="#content">Skip to content</a>
 <header class="site">
   {% set ctx = request.state.ctx if (request.state.ctx is defined) else none %}
-  <a class="brand" href="/"><span class="logo">G.</span> Gazette</a>
+  <a class="brand" href="/"><span class="logo">G.</span>{% block brandword %} Gazette{% endblock %}</a>
   <nav class="site">
     {% set path = request.url.path %}
     {# Five primary destinations — the daily-use surfaces. Operator/reference pages
