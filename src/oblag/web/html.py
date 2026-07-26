@@ -367,15 +367,29 @@ def home_page(
         "obligations": db.query(Obligation).count(),
     }
     # Front-page furniture: the dateline under the nameplate, and the latest filings
-    # column (the four most recently ingested items, as news briefs).
+    # column. "Latest" means most recent SOURCE ACTIVITY (any event: created, a date
+    # moved, a state changed), not smallest-database-id — an item filed weeks ago that
+    # moved yesterday is news; a curated timeline entry is not a filing at all.
     from datetime import date as _date
 
+    from oblag.db.models import Event
+
+    recent = (
+        db.query(PipelineItem, func.max(Event.occurred_at).label("last_seen"))
+        .join(Event, Event.pipeline_item_id == PipelineItem.id)
+        .filter(PipelineItem.source_system != "curated")
+        .group_by(PipelineItem.id)
+        .order_by(func.max(Event.occurred_at).desc())
+        .limit(4)
+        .all()
+    )
     latest = [
         {
             "id": it.id,
             "title": it.title,
             "source": it.source_system,
             "state": it.state.value,
+            "when": last_seen.strftime("%d %b").lstrip("0") if last_seen else "",
             "kind": _signal_kind(
                 {
                     "source_system": it.source_system,
@@ -384,7 +398,7 @@ def home_page(
                 }
             ),
         }
-        for it in db.query(PipelineItem).order_by(PipelineItem.id.desc()).limit(4)
+        for it, last_seen in recent
     ]
     return templates.TemplateResponse(
         request,

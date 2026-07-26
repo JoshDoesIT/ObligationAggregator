@@ -208,7 +208,7 @@
       </div>
 
       <figure class="figure" style="margin:0">
-        <div class="fig-head"><span>Fig. 1 · The horizon</span><span class="accent">Live data</span></div>
+        <div class="fig-head"><span>Fig. 1 · The horizon · what's due next</span><span class="accent">Live data</span></div>
         <div class="fx" role="img"
              aria-label="Chart of {{ rows | length }} upcoming deadlines on a time axis">
           <div class="fx-axis">
@@ -245,11 +245,11 @@
 
 {% if latest %}
 <section aria-label="Latest filings">
-  <div class="flag"><h2><span class="accent">The latest filings</span> · fresh off the wire</h2></div>
+  <div class="flag"><h2><span class="accent">The latest filings</span> · newest source activity</h2></div>
   <div class="briefs">
     {% for b in latest %}
     <article class="brief">
-      <div class="b-kicker"><span class="accent">{{ b.kind }}</span> · {{ b.source | human_source }}</div>
+      <div class="b-kicker">{{ b.when }} · <span class="accent">{{ b.kind }}</span> · {{ b.source | human_source }}</div>
       <h3><a href="/items/{{ b.id }}">{{ b.title | truncate(90) }}</a></h3>
     </article>
     {% endfor %}
