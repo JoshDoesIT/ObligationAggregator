@@ -52,4 +52,5 @@ class AicpaAdapter(SitemapAdapter):
                 track="proposed",
                 dates=dates,
                 obligation_slug="soc2" if _SOC_RE.search(loc) else None,
+                published_at=lastmod,
             )

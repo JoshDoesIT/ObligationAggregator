@@ -80,6 +80,7 @@ class EsmaAdapter(SourceAdapter):
                 dates=dates,
                 obligation_slug="dora" if _DORA_RE.search(title) else None,
                 anomalies=anomalies,
+                published_at=published,
             )
 
 

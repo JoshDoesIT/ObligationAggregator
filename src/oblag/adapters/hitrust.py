@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import html as html_lib
 import re
 from collections.abc import Iterable
+from datetime import date
 
 from oblag.adapters import register
 from oblag.adapters.base import FetchContext, NormalizedItem, RawDocument
@@ -30,6 +32,9 @@ _TITLE_RE = re.compile(r"<title>\s*([^<]+?)\s*</title>", re.IGNORECASE)
 # how many of the newest bare-id advisory pages to fetch per run (idempotent — the
 # reducer dedups by advisory id; a small constant keeps runs cheap)
 _BARE_FETCH_LIMIT = 12
+# CSF majors below this are decommissioned history (v7/v8 advisories date to 2016);
+# ingesting them now would only add noise to the hitrust-csf timeline
+_MIN_MAJOR = 9
 
 
 @register
@@ -50,26 +55,26 @@ class HitrustAdapter(SitemapAdapter):
             return
         # newest bare-id advisories regardless of lastmod: ids sort chronologically,
         # and the since-window must not hide releases announced before first ingest
-        bare = sorted(
-            {
-                m.group(1).lower()
-                for loc, _ in self._iter_all_urls(sitemap_doc)
-                if (m := _BARE_ADVISORY_RE.search(loc))
-            },
-            reverse=True,
-        )[:_BARE_FETCH_LIMIT]
-        for advisory_id in bare:
+        by_id: dict[str, date | None] = {}
+        for loc, lastmod in self._iter_all_urls(sitemap_doc):
+            if m := _BARE_ADVISORY_RE.search(loc):
+                by_id[m.group(1).lower()] = lastmod
+        for advisory_id in sorted(by_id, reverse=True)[:_BARE_FETCH_LIMIT]:
             url = f"https://hitrustalliance.net/advisories/{advisory_id}"
             resp = ctx.client.get(url, headers={"Accept": "text/html"}, follow_redirects=True)
             if resp.status_code != 200:
                 continue
+            lastmod = by_id[advisory_id]
             yield RawDocument(
                 url=url,
                 content=resp.content,
                 content_type="text/html",
                 http_status=resp.status_code,
                 http_headers=dict(resp.headers),
-                meta={"advisory_id": advisory_id},
+                meta={
+                    "advisory_id": advisory_id,
+                    **({"lastmod": lastmod.isoformat()} if lastmod else {}),
+                },
             )
 
     def normalize(self, raw: RawDocument) -> Iterable[NormalizedItem]:
@@ -77,13 +82,21 @@ class HitrustAdapter(SitemapAdapter):
             yield from self._normalize_advisory_page(raw)
             return
         seen_versions: set[str] = set()
-        for loc, _lastmod in self.iter_urls(raw):
+        # Deliberately NOT windowed by lastmod (unlike other sitemap adapters):
+        # releases and advisories are final-track HISTORY, not "appeared = new
+        # proposal" signals, so re-reading old entries is harmless — and the window
+        # permanently hid any release page last modified before it (observed live:
+        # the v11.8.0 release advisory, lastmod 8 May, invisible to every 3/10-day
+        # scheduled run). The reducer makes re-yields idempotent.
+        for loc, lastmod in self._iter_all_urls(raw):
             section = _SECTION_RE.search(loc)
             if not section:
                 continue
             version_match = _VERSION_RE.search(loc)
             advisory_match = _ADVISORY_RE.search(loc)
             version = (version_match.group(1) or version_match.group(2)) if version_match else None
+            if version and _too_old(version):
+                continue
             slug = loc.rstrip("/").rsplit("/", 1)[-1]
             if version and (
                 section.group(1) in ("press-releases", "blog")
@@ -94,29 +107,33 @@ class HitrustAdapter(SitemapAdapter):
                 if version in seen_versions:
                     continue
                 seen_versions.add(version)
-                yield self._release_item(version, loc)
+                yield self._release_item(version, loc, lastmod)
             elif advisory_match and version:
                 # advisories only when tied to a CSF version (formal lifecycle signal,
                 # e.g. version submission deadlines) — general advisories are noise
-                yield self._advisory_item(advisory_match.group(1), loc)
+                yield self._advisory_item(advisory_match.group(1), loc, lastmod)
 
     def _normalize_advisory_page(self, raw: RawDocument) -> Iterable[NormalizedItem]:
         """Classify a bare-id advisory from its page title, e.g.
         'HAA 2025-001 HITRUST CSF Version 11.5.0 Release'."""
         advisory_id = raw.meta["advisory_id"]
+        lastmod = date.fromisoformat(raw.meta["lastmod"]) if raw.meta.get("lastmod") else None
         html = raw.content.decode("utf-8", errors="replace")
         title_match = _TITLE_RE.search(html)
         if not title_match:
             return
-        title = title_match.group(1)
+        title = _clean_text(title_match.group(1))
         version_match = _VERSION_RE.search(title)
         if not version_match:
             return  # advisory without a CSF version subject — noise, skip
         version = version_match.group(1) or version_match.group(2)
+        if _too_old(version):
+            return
         if _RELEASE_HINT_RE.search(title):
-            yield self._release_item(version, raw.url)
+            yield self._release_item(version, raw.url, lastmod)
         else:
-            subject = re.sub(rf"(?i)^haa\s*{advisory_id[4:]}\s*", "", title).strip()
+            subject = re.sub(rf"(?i)^haa\s*{advisory_id[4:]}\s*", "", title)
+            subject = re.sub(r"^[\s:–—-]+", "", subject).strip()
             yield NormalizedItem(
                 source_system=self.name,
                 external_key=("hitrust_advisory", advisory_id),
@@ -126,9 +143,10 @@ class HitrustAdapter(SitemapAdapter):
                 native_status="advisory",
                 track="final",
                 obligation_slug="hitrust-csf",
+                published_at=lastmod,
             )
 
-    def _release_item(self, version: str, url: str) -> NormalizedItem:
+    def _release_item(self, version: str, url: str, lastmod: date | None) -> NormalizedItem:
         return NormalizedItem(
             source_system=self.name,
             external_key=("hitrust_release", version),
@@ -139,9 +157,10 @@ class HitrustAdapter(SitemapAdapter):
             track="final",
             obligation_slug="hitrust-csf",
             native_meta={"published_version": version},
+            published_at=lastmod,
         )
 
-    def _advisory_item(self, advisory_id: str, loc: str) -> NormalizedItem:
+    def _advisory_item(self, advisory_id: str, loc: str, lastmod: date | None) -> NormalizedItem:
         # the slug starts with the advisory id — strip it so the title
         # doesn't read "HAA-2017-003: Haa 2017 003 interim assessment…"
         subject_slug = re.sub(rf"(?i)^{advisory_id}-?", "", loc.rstrip("/").rsplit("/", 1)[-1])
@@ -154,4 +173,18 @@ class HitrustAdapter(SitemapAdapter):
             native_status="advisory",
             track="final",
             obligation_slug="hitrust-csf",
+            published_at=lastmod,
         )
+
+
+def _too_old(version: str) -> bool:
+    try:
+        return int(version.split(".")[0]) < _MIN_MAJOR
+    except ValueError:
+        return False
+
+
+def _clean_text(text: str) -> str:
+    """Page titles arrive with HTML entities and non-breaking spaces
+    ('HITRUST&nbsp;CSF v11.5' — observed live in prod item titles)."""
+    return re.sub(r"\s+", " ", html_lib.unescape(text).replace("\xa0", " ")).strip()

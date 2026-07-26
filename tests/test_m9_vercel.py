@@ -157,6 +157,42 @@ def test_hitrust_version_releases_and_advisories(db):
     assert ("hitrust_release", "99.41") not in by_key
 
 
+def test_hitrust_scan_ignores_since_window_and_old_majors():
+    """HITRUST releases/advisories are final-track history, not appearance signals, so
+    the sitemap since-window must not apply: the v11.8.0 release advisory (lastmod
+    8 May) was invisible to every 3/10-day scheduled run. Decommissioned majors
+    (< v9) stay out."""
+    sitemap = b"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://hitrustalliance.net/advisories/haa-2026-002-csf-version-11.8.0-release</loc>
+<lastmod>2026-05-08</lastmod></url>
+<url><loc>https://hitrustalliance.net/press-releases/hitrust-announces-csf-v8-launch</loc>
+<lastmod>2016-02-01</lastmod></url>
+</urlset>"""
+    raw = RawDocument(url="https://t", content=sitemap, meta={"since": "2026-07-20"})
+    items = list(HitrustAdapter().normalize(raw))
+    keys = {i.external_key for i in items}
+    assert ("hitrust_release", "11.8.0") in keys  # lastmod 8 May < since, still found
+    assert ("hitrust_release", "8") not in keys  # decommissioned major
+    release = next(i for i in items if i.external_key == ("hitrust_release", "11.8.0"))
+    assert release.published_at == date(2026, 5, 8)  # sitemap lastmod = publication
+
+
+def test_hitrust_bare_advisory_published_at_and_title_cleanup():
+    """Bare advisory pages get their publication date from the sitemap lastmod passed
+    through meta, and page titles are cleaned of entities/nbsp and dangling
+    separators (observed live: 'HAA-2024-007: - CSF…', 'HITRUST&nbsp;CSF')."""
+    page = RawDocument(
+        url="https://hitrustalliance.net/advisories/haa-2025-004",
+        content=b"<html><head><title>HAA 2025-004 - HITRUST&nbsp;CSF v11.5 Creation "
+        b"Deadline</title></head></html>",
+        meta={"advisory_id": "haa-2025-004", "lastmod": "2025-08-22"},
+    )
+    (adv,) = HitrustAdapter().normalize(page)
+    assert adv.published_at == date(2025, 8, 22)
+    assert adv.title == "HITRUST advisory HAA-2025-004: HITRUST CSF v11.5 Creation Deadline"
+
+
 # --- storage backends ---
 
 

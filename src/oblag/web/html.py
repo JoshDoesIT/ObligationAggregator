@@ -367,19 +367,22 @@ def home_page(
         "obligations": db.query(Obligation).count(),
     }
     # Front-page furniture: the dateline under the nameplate, and the latest filings
-    # column. "Latest" means most recent SOURCE ACTIVITY (any event: created, a date
-    # moved, a state changed), not smallest-database-id — an item filed weeks ago that
-    # moved yesterday is news; a curated timeline entry is not a filing at all.
+    # column. "Latest" means the SOURCE's chronology: the date the source published
+    # the document (published_at), falling back to our newest event only for legacy
+    # rows that predate the column. Ranking by our own event clock made every backfill
+    # batch read as today's news (observed live: CSF v11.4.0 leading over v11.7.0).
+    # A curated timeline entry is not a filing at all.
     from datetime import date as _date
 
     from oblag.db.models import Event
 
+    news_date = func.coalesce(PipelineItem.published_at, func.max(Event.occurred_at))
     recent = (
-        db.query(PipelineItem, func.max(Event.occurred_at).label("last_seen"))
+        db.query(PipelineItem, news_date.label("news_date"))
         .join(Event, Event.pipeline_item_id == PipelineItem.id)
         .filter(PipelineItem.source_system != "curated")
         .group_by(PipelineItem.id)
-        .order_by(func.max(Event.occurred_at).desc())
+        .order_by(news_date.desc(), PipelineItem.id.desc())
         .limit(4)
         .all()
     )
@@ -389,7 +392,7 @@ def home_page(
             "title": it.title,
             "source": it.source_system,
             "state": it.state.value,
-            "when": last_seen.strftime("%d %b").lstrip("0") if last_seen else "",
+            "when": when.strftime("%d %b %Y").lstrip("0") if when else "",
             "kind": _signal_kind(
                 {
                     "source_system": it.source_system,
@@ -398,7 +401,7 @@ def home_page(
                 }
             ),
         }
-        for it, last_seen in recent
+        for it, when in recent
     ]
     return templates.TemplateResponse(
         request,

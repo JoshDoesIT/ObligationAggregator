@@ -46,7 +46,12 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   the sitemap carries formal signals in slugs: CSF version releases
   (`…csf-v11.3.0-launch`, `…release-of-version-11.4.0…`) and version-tied HAA
   advisories. Marketing/case-study slugs never match. `events_only` display posture
-  unchanged — these items are metadata-only by construction.
+  unchanged — these items are metadata-only by construction. v0.14.0: the scan
+  ignores the sitemap since-window (releases/advisories are final-track history, not
+  appearance signals; the window permanently hid the v11.8.0 release advisory, lastmod
+  8 May, from every scheduled run), floors at CSF major ≥ 9, and records the sitemap
+  lastmod as each item's `published_at` so "newest" rankings follow the source's
+  chronology instead of ingestion batches.
 
 ## Headless-browser tier (addendum)
 

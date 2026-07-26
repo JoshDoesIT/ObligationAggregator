@@ -116,6 +116,14 @@ def init_db(engine: Engine | None = None) -> None:
             conn.execute(
                 sql_text("ALTER TABLE obligation ADD COLUMN confirmed_version VARCHAR(64)")
             )
+    # v0.14.0: pipeline_item.published_at — when the SOURCE published the document,
+    # so "newest" rankings survive backfill batches (nullable; filled as adapters
+    # re-observe items)
+    pi_cols = {c["name"] for c in sa_inspect(eng).get_columns("pipeline_item")}
+    if "published_at" not in pi_cols:
+        ts_type = "TIMESTAMPTZ" if eng.dialect.name == "postgresql" else "TIMESTAMP"
+        with eng.begin() as conn:
+            conn.execute(sql_text(f"ALTER TABLE pipeline_item ADD COLUMN published_at {ts_type}"))
 
 
 @contextmanager
