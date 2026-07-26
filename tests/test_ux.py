@@ -451,3 +451,118 @@ def test_undated_items_never_outrank_dated_ones(client, seeded, db):
     first_undated = next((n for n, i in enumerate(feed) if i["published_at"] is None), len(feed))
     assert all(i["published_at"] is not None for i in feed[:first_undated])
     assert feed[0]["published_at"] is not None
+
+
+def _set_scope(client, db, slugs):
+    from oblag.db.models import Org
+
+    org = db.query(Org).first()
+    org.scoped_obligations = slugs
+    db.commit()
+    return org
+
+
+def test_scope_narrows_the_reading_surfaces_but_never_the_catalog(client, seeded, db):
+    """ "The obligations you're subject to" is a promise the feed's own subtitle already
+    made. Ticking them narrows the feed, the deadlines and the front page together —
+    but never the catalog, which is where you do the ticking."""
+    from oblag.db.models import PipelineItem
+
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    assert item.obligation is not None, "fixture item should be linked to an obligation"
+    mine, theirs = item.obligation.slug, "dora"
+    assert mine != theirs
+    _set_scope(client, db, [theirs])  # scope to something this item is NOT
+
+    assert item.title not in client.get("/changes").text
+    assert item.title not in client.get("/deadlines").text
+    assert item.title not in client.get("/").text
+    # the catalog still lists everything, or you could never widen the scope again
+    catalog = client.get("/obligations").text
+    assert mine in catalog and theirs in catalog
+
+    _set_scope(client, db, [mine])
+    assert item.title in client.get("/changes").text
+
+
+def test_scope_is_announced_wherever_it_hides_something(client, seeded, db):
+    """Hidden data must never be invisible: every scoped page carries a band saying so,
+    with the count and a way out. The catalog page is exempt — it hides nothing."""
+    _set_scope(client, db, ["dora", "gdpr"])
+    for path in ("/", "/changes", "/deadlines"):
+        html = client.get(path).text
+        assert "Your edition" in html, path
+        assert "2 obligations" in html, path
+        assert 'href="/obligations"' in html, path
+    assert "Your edition" not in client.get("/obligations").text
+
+
+def test_empty_scope_shows_everything(client, seeded, db):
+    """A fresh instance must not hide anything before anyone has chosen, and clearing
+    the selection restores the whole site rather than emptying it."""
+    from oblag.db.models import PipelineItem
+
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    _set_scope(client, db, [])
+    assert item.title in client.get("/changes").text
+    assert "Your edition" not in client.get("/changes").text
+
+
+def test_saving_the_scope_ignores_unknown_slugs(client, seeded, db):
+    from oblag.db.models import Org
+
+    r = client.post(
+        "/obligations/scope",
+        data={"slugs": ["gdpr", "not-a-real-obligation"]},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    db.expire_all()
+    assert db.query(Org).first().scoped_obligations == ["gdpr"]
+
+
+def test_json_api_is_never_scoped_behind_a_clients_back(client, seeded, db):
+    """Narrowing a programmatic client's results because of a UI setting it cannot see
+    would be a trap. The API only filters when asked."""
+    from oblag.db.models import PipelineItem
+
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    _set_scope(client, db, ["dora"])
+    ids = [i["id"] for i in client.get("/api/v1/items?limit=200").json()["items"]]
+    assert item.id in ids
+    assert "scope" not in client.get("/openapi.json").text.split('"/api/v1/items"')[1][:800]
+
+
+def test_watchlist_can_bind_live_to_the_scope(client, seeded, db):
+    """A watchlist bound to the scope follows it as it changes, so the same list is
+    never maintained twice."""
+    from oblag.db.models import Event, EventType, PipelineItem, Watchlist
+    from oblag.notify import matches
+
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    mine = item.obligation.slug
+    org = _set_scope(client, db, ["dora"])
+    wl = Watchlist(name="mine", channel="rss", filters={"use_org_scope": True}, org_id=org.id)
+    db.add(wl)
+    db.commit()
+    ev = Event(pipeline_item_id=item.id, type=EventType.state_changed, payload={})
+    db.add(ev)
+    db.commit()
+
+    assert not matches(wl, ev, item), "out of scope, so out of the watchlist"
+    org.scoped_obligations = [mine]
+    db.commit()
+    db.refresh(wl)
+    assert matches(wl, ev, item), "the watchlist follows the scope without being edited"
+
+
+def test_scoped_pages_never_count_what_they_do_not_show(client, seeded, db):
+    """Caught in a screenshot: the feed was scoped to three EU obligations while the
+    attention band beside it still announced 29 open NERC projects. Every number on a
+    scoped page counts only what that page would show."""
+    _set_scope(client, db, ["gdpr"])
+    html = client.get("/changes").text
+    band = html.split('aria-label="Needs attention"')[1].split("</section>")[0]
+    assert "NERC" not in band
+    for label in ("comment windows closing", "deadlines in 30 days", "awaiting outcome"):
+        assert label in band

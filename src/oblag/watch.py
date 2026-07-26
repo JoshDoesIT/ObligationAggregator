@@ -31,15 +31,23 @@ def _live(dates: dict[Any, Any], dtype: DateType) -> Any:
     return None
 
 
-def pending_outcomes(db: Session) -> list[dict[str, Any]]:
+def pending_outcomes(db: Session, scope: list[str] | None = None) -> list[dict[str, Any]]:
+    """Items whose comment window closed with no announced outcome yet.
+
+    `scope` narrows to an org's obligations. Without it the panel counted every source
+    while the feed beside it was scoped, so a reader following three EU obligations was
+    told about 29 open NERC projects."""
+    from oblag.db.models import Obligation
+
     out: list[dict[str, Any]] = []
-    items = (
-        db.query(PipelineItem)
-        .filter(
-            PipelineItem.state.in_([ItemState.comment_closed, ItemState.final_pending_effective])
-        )
-        .all()
+    query = db.query(PipelineItem).filter(
+        PipelineItem.state.in_([ItemState.comment_closed, ItemState.final_pending_effective])
     )
+    if scope:
+        query = query.join(Obligation, PipelineItem.obligation_id == Obligation.id).filter(
+            Obligation.slug.in_(scope)
+        )
+    items = query.all()
     # One dates query for the whole set — this runs on the landing page now, so a
     # per-item lookup would scale queries with the number of open consultations.
     live = current_dates_bulk(db, [i.id for i in items])

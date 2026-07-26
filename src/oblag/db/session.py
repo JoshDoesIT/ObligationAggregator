@@ -116,6 +116,10 @@ def init_db(engine: Engine | None = None) -> None:
             conn.execute(
                 sql_text("ALTER TABLE obligation ADD COLUMN confirmed_version VARCHAR(64)")
             )
+    # v0.18.0: org.scoped_obligations — the obligations an org is subject to
+    if "scoped_obligations" not in org_cols:
+        with eng.begin() as conn:
+            conn.execute(sql_text("ALTER TABLE org ADD COLUMN scoped_obligations JSON"))
     # v0.14.0: pipeline_item.published_at — when the SOURCE published the document,
     # so "newest" rankings survive backfill batches (nullable; filled as adapters
     # re-observe items)

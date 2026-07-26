@@ -23,14 +23,30 @@ log = logging.getLogger(__name__)
 MAX_EVENTS_PER_RUN = 500
 
 
+def _watchlist_slugs(watchlist: Watchlist) -> list[str] | None:
+    """The obligation slugs a watchlist matches on.
+
+    `use_org_scope` binds the watchlist LIVE to its org's "obligations I'm subject to"
+    rather than snapshotting them, so editing the scope updates these watchlists too and
+    nobody has to maintain the same list twice. An empty scope means the org follows
+    everything, which is what the watchlist then does."""
+    f: dict[str, Any] = watchlist.filters or {}
+    if f.get("use_org_scope"):
+        org = getattr(watchlist, "org", None)
+        scope = list(getattr(org, "scoped_obligations", None) or []) if org else []
+        return scope or None
+    return f.get("obligation_slugs") or None
+
+
 def matches(watchlist: Watchlist, event: Event, item: PipelineItem | None) -> bool:
     f: dict[str, Any] = watchlist.filters or {}
     if f.get("event_types") and event.type.value not in f["event_types"]:
         return False
     if item is None:
         # system events match only watchlists with no item-scoped filters
-        return not any(
-            f.get(k) for k in ("source_systems", "jurisdictions", "states", "obligation_slugs")
+        return not (
+            any(f.get(k) for k in ("source_systems", "jurisdictions", "states"))
+            or _watchlist_slugs(watchlist)
         )
     if f.get("source_systems") and item.source_system not in f["source_systems"]:
         return False
@@ -38,9 +54,10 @@ def matches(watchlist: Watchlist, event: Event, item: PipelineItem | None) -> bo
         return False
     if f.get("states") and item.state.value not in f["states"]:
         return False
-    if f.get("obligation_slugs"):
+    wanted_slugs = _watchlist_slugs(watchlist)
+    if wanted_slugs:
         slug = item.obligation.slug if item.obligation else None
-        if slug not in f["obligation_slugs"]:
+        if slug not in wanted_slugs:
             return False
     return True
 

@@ -189,3 +189,30 @@ publisher no longer lists.
 Measured live at `days=730`: 326 items in ~70s, well inside the 300s function ceiling.
 If a run does hit the budget it returns a `deferred` list and skips pruning entirely,
 because a partial run has not heard from every source yet.
+
+## Following only the obligations you're subject to
+
+The catalog page asks "which of these are you subject to?" — tick them and the change
+feed, the deadlines page and the front page narrow to those. Leaving every box clear
+means everything, so a fresh instance hides nothing before anyone has chosen.
+
+The scope lives on the org row (`org.scoped_obligations`), so in single-org mode it is
+an instance-wide setting and in magic-link mode each org keeps its own.
+
+Two deliberate exemptions:
+
+* **The catalog itself is never scoped.** It is where you choose, so it has to keep
+  showing the full list or you could never widen the scope again.
+* **The JSON API is never scoped.** Narrowing a programmatic client's results because
+  of a UI setting it cannot see would be a trap; API clients pass their own filters.
+
+Every page that hides something carries a band under the masthead saying so, with the
+count and a link back to the catalog. Hidden data must never be invisible — and every
+number on a scoped page counts only what that page would show.
+
+### How it relates to watchlists
+
+They answer different questions. The scope is *what you see*; a watchlist is *what gets
+sent to you*. Rather than keep the same list twice, a watchlist can tick **"Everything
+I'm subject to"**, which binds it to the scope LIVE (`filters.use_org_scope`) instead of
+copying the slugs — so editing your obligations updates those watchlists too.
