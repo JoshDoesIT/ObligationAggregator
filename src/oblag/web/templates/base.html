@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f3eee1">
+  {# The browser chrome sits directly above the sticky header, so it takes the HEADER's
+     colour, not the paper. With the paper tone here you saw a band of the wrong cream
+     above the menu as soon as Safari collapsed its URL bar into that strip. #}
+  <meta name="theme-color" content="#faf7ec">
   <title>{% block title %}Gazette{% endblock %}</title>
   {# Social cards: Open Graph carries Facebook, LinkedIn, Slack, Discord, WhatsApp,
      Telegram and iMessage; X reads its own twitter: names. Both mirror the SAME
@@ -71,6 +74,11 @@
     ::selection { background:var(--accent-soft); color:var(--ink); }
 
     /* ---- shell ---- */
+    /* Elastic overscroll at the top pulls the sheet down and reveals whatever sits
+       behind it — the paper, a shade off the header's cream. This carries the header's
+       own colour upward off-screen so the gap can never show a seam. */
+    header.site::before { content:""; position:absolute; left:0; right:0; bottom:100%;
+                          height:100vh; background:var(--panel); }
     header.site {
       position:sticky; top:0; z-index:10; background:var(--panel);
       border-bottom:2px solid var(--ink); padding:0 1.25rem;
@@ -431,6 +439,20 @@
       if (e.key === 'Escape' && util.open) { util.open = false; }
     });
   }
+  // 4. The dateline is the READER's date. It renders server-side so it works without
+  //    JS, but the server runs UTC: an evening reader in the Americas would be handed
+  //    tomorrow's date, and the 60s CDN cache can serve a few stale minutes either way
+  //    across midnight. Formatted by hand to match the server's exact wording rather
+  //    than trusting a locale to agree.
+  var DL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var DL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                   'August', 'September', 'October', 'November', 'December'];
+  document.querySelectorAll('[data-dateline]').forEach(function (el) {
+    var d = new Date();
+    var today = DL_DAYS[d.getDay()] + ', ' + d.getDate() + ' ' + DL_MONTHS[d.getMonth()] +
+                ' ' + d.getFullYear();
+    if (el.textContent.trim() !== today) { el.textContent = today; }
+  });
 </script>
 </body>
 </html>

@@ -324,7 +324,9 @@ def test_paper_theme_is_the_only_edition(client, seeded):
     html = client.get("/").text
     assert "prefers-color-scheme: dark" not in html
     assert "color-scheme: only light" in html
-    assert 'name="theme-color" content="#f3eee1"' in html
+    # chrome is tinted to the paper design (the exact shade, and why, is asserted in
+    # test_paper_meets_the_browser_chrome_at_the_top)
+    assert 'name="theme-color"' in html and "#161310" not in html
     assert "feTurbulence" in html  # the grain is a texture, not an effect — still static
     assert html.count("@keyframes") == 1  # the stillness doctrine holds
 
@@ -371,3 +373,28 @@ def test_head_requests_answered_like_get(client, seeded):
         assert r.status_code == 200, path
         assert r.content == b"", path
     assert client.head("/og-banner.jpg").headers["content-type"] == "image/jpeg"
+
+
+def test_paper_meets_the_browser_chrome_at_the_top(client, seeded):
+    """The chrome strip sits directly above the sticky header, so theme-color must be
+    the HEADER's cream, not the paper — with the paper tone you saw a band of the wrong
+    shade above the menu as soon as Safari collapsed its URL bar. The header also
+    carries its colour upward so elastic overscroll can't reveal a seam."""
+    html = client.get("/").text
+    assert 'name="theme-color" content="#faf7ec"' in html
+    assert "--panel:#faf7ec" in html, "theme-color must track the header's panel colour"
+    assert "header.site::before" in html and "bottom:100%" in html
+
+
+def test_dateline_shows_the_readers_current_date(client, seeded):
+    """The server renders today's date so the page works without JS, and a script
+    rewrites it to the reader's own date: the server runs UTC, so an evening reader in
+    the Americas would otherwise be shown tomorrow's date."""
+    from datetime import date
+
+    html = client.get("/").text
+    server_today = date.today().strftime("%A, %d %B %Y").replace(" 0", " ")
+    assert f"<span data-dateline>{server_today}</span>" in html
+    # the correction exists and targets the same element
+    assert "[data-dateline]" in html
+    assert "DL_MONTHS" in html and "getFullYear()" in html
