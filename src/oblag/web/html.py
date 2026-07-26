@@ -458,6 +458,9 @@ def home_page(
         "open_windows": state_counts.get(ItemState.comment_open, 0),
         "deadlines_30d": sum(1 for d in horizon if d["days_until"] <= 30),
         "obligations": len(ctx.scope) if ctx.scoped else db.query(Obligation).count(),
+        # the whole catalog, never narrowed: the coda offers scoping, and "3 obligations"
+        # with no denominator does not tell you what you are choosing from
+        "catalog_total": db.query(Obligation).count(),
     }
     # Front-page furniture: the dateline under the nameplate, and the latest filings
     # column. "Latest" means the SOURCE's chronology: the date the source published
