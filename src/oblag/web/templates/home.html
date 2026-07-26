@@ -64,7 +64,7 @@
   .hz-cta .ghost { background:var(--panel); color:var(--fg); }
 
   /* the chart is a boxed newspaper figure with rule and caption */
-  .figure { flex:1 1 340px; min-width:0; border:1.5px solid var(--ink); background:var(--panel);
+  .figure { flex:1 1 340px; min-width:0; max-width:100%; border:1.5px solid var(--ink); background:var(--panel);
             box-shadow:var(--shadow); align-self:center; }
   .figure .fig-head { font-family:var(--mono); font-size:.64rem; letter-spacing:.16em;
                       text-transform:uppercase; color:var(--fg2); padding:.45rem .7rem;
@@ -82,14 +82,15 @@
   .dot-warm { fill:none; stroke:var(--accent); stroke-width:2.4; }
   .dot-far  { fill:var(--ink); fill-opacity:.55; }
   .radar a circle { cursor:pointer; }
-  .radar circle.d { opacity:0; transform-box:fill-box; transform-origin:center;
-                    animation:stamp .32s cubic-bezier(.2,1.4,.5,1) forwards; }
-  @keyframes stamp { 0% { opacity:0; transform:scale(2.1); }
-                     70% { opacity:1; } 100% { opacity:1; transform:scale(1); } }
+  /* opacity only: WebKit's transform-box on SVG shapes is unreliable, and a scale
+     running from the wrong origin reads as the whole chart zooming. Ink soaking in
+     needs no transforms. */
+  .radar circle.d { opacity:0; animation:stamp .5s ease-out forwards; }
+  @keyframes stamp { from { opacity:0; } to { opacity:1; } }
   .radar a:hover circle, .radar a:focus-visible circle { stroke:var(--ink); stroke-width:2; fill-opacity:1; }
-  .halo { fill:none; stroke:var(--accent); stroke-width:1.5; opacity:0;
-          animation:halo 2.1s ease-out infinite; transform-box:fill-box; transform-origin:center; }
-  @keyframes halo { 0% { opacity:.8; transform:scale(1);} 100% { opacity:0; transform:scale(2.4);} }
+  .halo { fill:none; stroke:var(--accent); stroke-width:2; opacity:0;
+          animation:halo 2.1s ease-in-out infinite; }
+  @keyframes halo { 0%, 100% { opacity:0; } 50% { opacity:.55; } }
   .today-mark { stroke:var(--ink); stroke-width:1.6; }
   .fig-cap { font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; color:var(--muted);
              padding:.55rem .7rem .65rem; border-top:1px solid var(--line); }
@@ -210,7 +211,7 @@
             {% for d in dots %}
             <a href="/items/{{ d.item_id }}" aria-label="{{ d.title }}">
               <title>{{ d.title }}</title>
-              {% if d.cls == 'hot' %}<circle class="halo" cx="{{ d.x }}" cy="{{ d.y }}" r="7"
+              {% if d.cls == 'hot' %}<circle class="halo" cx="{{ d.x }}" cy="{{ d.y }}" r="12"
                 style="animation-delay:{{ 400 + loop.index0 * 110 }}ms"/>{% endif %}
               <circle class="d dot-{{ d.cls }}" cx="{{ d.x }}" cy="{{ d.y }}" r="{{ 7 if d.cls == 'hot' else 6 }}"
                 style="animation-delay:{{ loop.index0 * 110 }}ms"/>

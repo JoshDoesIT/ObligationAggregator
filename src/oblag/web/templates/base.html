@@ -32,7 +32,9 @@
       }
     }
     * { box-sizing:border-box; }
-    html { -webkit-text-size-adjust:100%; }
+    /* overflow-x is clipped on BOTH html and body: Safari does not reliably apply a
+       body-only clip to the viewport, which left real devices with a sideways wiggle */
+    html { -webkit-text-size-adjust:100%; overflow-x:clip; }
     body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
            "Helvetica Neue", Arial, sans-serif; color:var(--fg); background:var(--bg);
            overflow-x:clip; /* full-bleed sections use 100vw, which includes the scrollbar
