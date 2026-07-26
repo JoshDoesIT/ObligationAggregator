@@ -26,6 +26,18 @@
   <fieldset style="border:0; padding:.9rem 0 0; margin:0">
     <legend style="font-size:.8rem; color:var(--muted); padding:0">Obligations
       <span style="font-weight:400">(leave all unchecked to watch everything)</span></legend>
+    {# A live binding, not a snapshot: tick this and the watchlist follows your
+       obligation list as you edit it, so the same set is never kept in two places. #}
+    <label style="display:flex; gap:.5rem; align-items:baseline; margin:0 0 .55rem;
+                  padding:.5rem .6rem; border:1.5px solid var(--ink); background:var(--panel)">
+      <input type="checkbox" name="use_org_scope" value="1">
+      <span><strong>Everything I'm subject to</strong><br>
+      <span class="muted" style="font-size:.85rem">
+        {% if ctx and ctx.scoped %}Follows your {{ ctx.scope | length }} obligations, and keeps
+        following them when you change the list.{% else %}You haven't picked your obligations yet
+        — <a href="/obligations">choose them</a> and this will follow along.{% endif %}
+      </span></span>
+    </label>
     <div class="checkgrid scroll" data-pickfilter="Filter obligations…">
       {% for o in obligations %}
       <label><input type="checkbox" name="obligation_slugs" value="{{ o.slug }}"> {{ o.name }}</label>

@@ -5,16 +5,42 @@
 {% block content %}
 <h2 class="page">Obligation catalog</h2>
 <p class="lede">The regulations, frameworks and standards this instance tracks. Everything on
-the <a href="/">change feed</a> is a signal about one of these.</p>
+the <a href="/changes">change feed</a> is a signal about one of these.</p>
+
+{# The catalog is the one page that must always show EVERYTHING — it is where you
+   choose. Ticking rows here sets the scope every other page reads. #}
+<form method="post" action="/obligations/scope">
+  {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
+<div class="panel">
+  <h3>Which of these are you subject to?</h3>
+  <div class="pad">
+    <p class="muted" style="margin:0 0 .6rem; font-size:.9rem">Tick the ones that apply and the
+    change feed, deadlines and front page will only show those. Leave every box clear to see
+    everything.</p>
+    <div class="scopebar">
+      <button type="submit">Save my obligations</button>
+      {% if ctx and ctx.scoped %}
+        <span class="muted" style="font-size:.88rem">Currently showing {{ ctx.scope | length }}
+        of {{ rows | length }}</span>
+      {% else %}
+        <span class="muted" style="font-size:.88rem">Currently showing all {{ rows | length }}</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
 
 <div class="panel">
   <div class="tablewrap">
   <table class="rows stack">
-    <thead><tr><th>Obligation</th><th>Issuing body</th><th>Jurisdiction</th>
+    <thead><tr><th class="pick">Mine</th><th>Obligation</th><th>Issuing body</th><th>Jurisdiction</th>
       <th class="num">Active changes</th><th>Next deadline</th></tr></thead>
     <tbody>
     {% for o in rows %}
     <tr>
+      <td class="pick" data-label="Mine">
+        <input type="checkbox" name="slugs" value="{{ o.slug }}" aria-label="{{ o.name }}"
+               {{ 'checked' if ctx and o.slug in ctx.scope }}>
+      </td>
       <td class="titlecell">
         {% if o.total_items %}<a href="/changes?obligation={{ o.slug }}">{{ o.name }}</a>
         {% else %}<span style="font-weight:600">{{ o.name }}</span>{% endif %}
@@ -55,4 +81,5 @@ the <a href="/">change feed</a> is a signal about one of these.</p>
   their sources just don't have an open rulemaking or draft right now. Copyrighted standards
   (ISO, PCI DSS, HITRUST) are tracked as change events and version facts, never body text.</p>
 </details>
+</form>
 {% endblock %}

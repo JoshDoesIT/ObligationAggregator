@@ -41,6 +41,15 @@ class Context:
         return self.user is not None
 
     @property
+    def scope(self) -> list[str]:
+        """Obligation slugs this org is subject to; empty means everything."""
+        return list(getattr(self.org, "scoped_obligations", None) or []) if self.org else []
+
+    @property
+    def scoped(self) -> bool:
+        return bool(self.scope)
+
+    @property
     def can_admin_org(self) -> bool:
         """Manage keys, invites, members — org owners/admins (or instance admins)."""
         return self.is_admin or self.role in ("owner", "admin")

@@ -31,6 +31,10 @@ class WatchlistFilters(BaseModel):
     states: list[str] = Field(default_factory=list)
     obligation_slugs: list[str] = Field(default_factory=list)
     event_types: list[str] = Field(default_factory=list)
+    # Bind to the org's obligation scope LIVE rather than copying it: the watchlist
+    # then tracks edits to "obligations I'm subject to" instead of drifting out of
+    # date, and the same list is never maintained in two places.
+    use_org_scope: bool = False
 
 
 class WatchlistIn(BaseModel):

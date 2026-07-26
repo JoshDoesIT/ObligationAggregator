@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_
@@ -61,6 +62,10 @@ def list_items(
     obligation: str | None = None,
     limit: int = Query(50, le=500),
     offset: int = 0,
+    # The HTML pages pass the org's obligation scope here. Hidden from the schema and
+    # defaulted to None so the JSON API stays unscoped: narrowing a programmatic
+    # client's results behind its back would be a trap.
+    scope: Annotated[list[str] | None, Query(include_in_schema=False)] = None,
 ):
     try:
         query = _apply_item_filters(
@@ -72,6 +77,10 @@ def list_items(
             q=q,
             obligation=obligation,
         )
+        if scope:
+            query = query.join(
+                Obligation, PipelineItem.obligation_id == Obligation.id, isouter=False
+            ).filter(Obligation.slug.in_(scope))
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from None
     total = query.count()
@@ -147,6 +156,7 @@ def upcoming_deadlines(
     db: Session = Depends(get_db),
     date_type: list[str] | None = Query(None),
     within_days: int = Query(90, le=3650),
+    scope: Annotated[list[str] | None, Query(include_in_schema=False)] = None,
 ):
     """Countdown view: current (non-superseded) future *deadlines*, soonest first.
     proposal/adoption dates are milestones, not deadlines — excluded by default."""
@@ -176,10 +186,15 @@ def upcoming_deadlines(
             PipelineItem.id.in_({kd.pipeline_item_id for kd in kept})
         )
     } or {}
+    in_scope: set[int] | None = None
+    if scope:
+        in_scope = {oid for (oid,) in db.query(Obligation.id).filter(Obligation.slug.in_(scope))}
     out = []
     for kd in kept:
         item = items_by_id.get(kd.pipeline_item_id)
         if item is None or item.state.value in ("withdrawn", "superseded"):
+            continue
+        if in_scope is not None and item.obligation_id not in in_scope:
             continue
         out.append(
             {

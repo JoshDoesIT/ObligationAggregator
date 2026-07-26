@@ -261,6 +261,9 @@ class Watchlist(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+    # lets a watchlist read its org's obligation scope live (filters.use_org_scope)
+    org: Mapped[Org | None] = relationship()
+
 
 class NotificationLog(Base):
     __tablename__ = "notification_log"
@@ -316,6 +319,11 @@ class Org(Base):
     # watchlist emails; the instance SMTP still does the sending.
     notify_from_name: Mapped[str | None] = mapped_column(String(255))
     notify_reply_to: Mapped[str | None] = mapped_column(String(320))
+    # The obligations this org is actually subject to. Null or empty means "everything",
+    # so a fresh instance never hides anything before anyone has chosen. Read as a scope
+    # over the reading surfaces (feed, deadlines, front page) — never over the catalog
+    # page itself, which has to show the full list for the choosing.
+    scoped_obligations: Mapped[list[str] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

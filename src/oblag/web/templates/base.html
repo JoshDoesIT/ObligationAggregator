@@ -108,6 +108,18 @@
     .utilmenu a { padding:.5rem .7rem; font-size:.82rem; text-transform:uppercase; letter-spacing:.07em; color:var(--fg2); }
     .utilmenu a:hover { background:var(--line2); color:var(--fg); text-decoration:none; }
     .utilmenu a.active { color:var(--accent); font-weight:600; }
+    /* Scope band: shown on every page that is HIDING something. Hidden data must
+       never be invisible, so this states the count and offers the way out. */
+    .scopeband { border-bottom:1px solid var(--ink); background:var(--accent-soft); }
+    .scopeband .inner { max-width:1180px; margin:0 auto; padding:.45rem 1.25rem;
+      display:flex; gap:.8rem; align-items:baseline; flex-wrap:wrap;
+      font-family:var(--mono); font-size:.66rem; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--ink); }
+    .scopeband a { color:var(--accent); font-weight:700; }
+    .scopeband .sep { color:var(--line); }
+    .scopebar { display:flex; gap:.8rem; align-items:center; flex-wrap:wrap; }
+    th.pick, td.pick { width:3.2rem; text-align:center; }
+    td.pick input { width:18px; height:18px; }
     main { padding:1.4rem 1.25rem 3rem; max-width:1180px; margin:0 auto; }
     h2.page { margin:.2rem 0 .3rem; font-size:1.3rem; text-transform:uppercase; letter-spacing:.04em; font-weight:800; }
     p.lede { margin:.1rem 0 1.1rem; color:var(--muted); max-width:70ch; }
@@ -392,6 +404,20 @@
     {% endif %}
   {% endif %}
 </header>
+{# Shown on every page that is HIDING something. Hidden data must never be invisible,
+   so this states the count and offers the way out. The catalog is exempt: it shows the
+   full list by design, because that is where you choose. #}
+{% if ctx and ctx.scoped and request.url.path != '/obligations' %}
+<div class="scopeband">
+  <div class="inner">
+    <span>Your edition</span>
+    <span class="sep">·</span>
+    <span>{{ ctx.scope | length }} obligation{{ '' if ctx.scope | length == 1 else 's' }}</span>
+    <span class="sep">·</span>
+    <a href="/obligations">Change what you follow</a>
+  </div>
+</div>
+{% endif %}
 <main id="content">{% block content %}{% endblock %}</main>
 <script>
   // Progressive enhancement only — everything below still works with JS disabled.

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -355,6 +355,45 @@ def og_banner():
     )
 
 
+def _scoped_items(query, ctx: Context):
+    """Restrict a PipelineItem query to the obligations this org is subject to.
+
+    An empty scope means everything, so a fresh instance hides nothing before anyone
+    has chosen. Applied to the READING surfaces only: the catalog page has to show
+    every obligation for the choosing, and the JSON API stays unscoped because
+    silently narrowing a programmatic client's results is a trap."""
+    from oblag.db.models import Obligation
+
+    if not ctx.scoped:
+        return query
+    return query.join(Obligation, PipelineItem.obligation_id == Obligation.id).filter(
+        Obligation.slug.in_(ctx.scope)
+    )
+
+
+@router.post("/obligations/scope")
+def save_scope(
+    request: Request,
+    slugs: list[str] = Form(default=[]),
+    csrf_token: str = Form(default=""),
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    """Save which obligations this org is subject to. Empty selection clears the scope
+    back to everything rather than hiding the entire site."""
+    check_csrf(ctx, csrf_token)
+    if ctx.org is None:
+        raise HTTPException(400, "no org in context")
+    from oblag.db.models import Obligation
+
+    known = {slug for (slug,) in db.query(Obligation.slug)}
+    chosen = sorted(set(slugs) & known)
+    org = db.merge(ctx.org)
+    org.scoped_obligations = chosen or None
+    db.commit()
+    return RedirectResponse("/obligations", status_code=303)
+
+
 @router.get("/", response_class=HTMLResponse)
 def home_page(
     request: Request,
@@ -375,7 +414,11 @@ def home_page(
 
     from oblag.db.models import Obligation
 
-    horizon = api.upcoming_deadlines(db=db, date_type=None, within_days=365)["deadlines"]
+    # the chart, the briefs and the counts all narrow together — a scoped feed beside
+    # unscoped totals would just look broken
+    horizon = api.upcoming_deadlines(
+        db=db, date_type=None, within_days=365, scope=ctx.scope or None
+    )["deadlines"]
 
     # Fig. 1 is a print-style dot plot: one row per deadline, a shared log time axis
     # (the near future gets the room), the dot placed by days until impact. Every row
@@ -401,13 +444,15 @@ def home_page(
 
     state_counts: dict[ItemState, int] = {
         row[0]: row[1]
-        for row in db.query(PipelineItem.state, func.count()).group_by(PipelineItem.state)
+        for row in _scoped_items(db.query(PipelineItem.state, func.count()), ctx).group_by(
+            PipelineItem.state
+        )
     }
     stats = {
         "changes": sum(state_counts.values()),
         "open_windows": state_counts.get(ItemState.comment_open, 0),
         "deadlines_30d": sum(1 for d in horizon if d["days_until"] <= 30),
-        "obligations": db.query(Obligation).count(),
+        "obligations": len(ctx.scope) if ctx.scoped else db.query(Obligation).count(),
     }
     # Front-page furniture: the dateline under the nameplate, and the latest filings
     # column. "Latest" means the SOURCE's chronology: the date the source published
@@ -421,7 +466,7 @@ def home_page(
 
     news_date = func.coalesce(PipelineItem.published_at, func.max(Event.occurred_at))
     recent = (
-        db.query(PipelineItem, news_date.label("news_date"))
+        _scoped_items(db.query(PipelineItem, news_date.label("news_date")), ctx)
         .join(Event, Event.pipeline_item_id == PipelineItem.id)
         .filter(PipelineItem.source_system != "curated")
         .group_by(PipelineItem.id)
@@ -492,26 +537,31 @@ def items_page(
         obligation=obligation,
         limit=page_size,
         offset=(page - 1) * page_size,
+        scope=ctx.scope or None,
     )
     sources = sorted(row[0] for row in db.query(PipelineItem.source_system).distinct())
     from sqlalchemy import func
 
     state_counts: dict[ItemState, int] = {
         row[0]: row[1]
-        for row in db.query(PipelineItem.state, func.count()).group_by(PipelineItem.state)
+        for row in _scoped_items(db.query(PipelineItem.state, func.count()), ctx).group_by(
+            PipelineItem.state
+        )
     }
     # "Needs attention" band: the three things worth acting on, answered inline so the
     # landing page leads with a conclusion rather than a table to triage. All three come
     # from one deadlines query plus the derived pending-outcomes pass.
     from oblag.watch import pending_outcomes
 
-    deadlines_30 = api.upcoming_deadlines(db=db, date_type=None, within_days=30)["deadlines"]
+    deadlines_30 = api.upcoming_deadlines(
+        db=db, date_type=None, within_days=30, scope=ctx.scope or None
+    )["deadlines"]
     attention = {
         "closing": [
             d for d in deadlines_30 if d["date_type"] == "comment_close" and d["days_until"] <= 14
         ],
         "deadlines": deadlines_30,
-        "awaiting": pending_outcomes(db),
+        "awaiting": pending_outcomes(db, ctx.scope or None),
     }
     stats = {
         "total": sum(state_counts.values()),
@@ -896,8 +946,11 @@ def deadlines_page(
 ):
     from oblag.watch import pending_outcomes
 
-    data = api.upcoming_deadlines(db=db, date_type=None, within_days=within_days)
-    data["watch"] = pending_outcomes(db)
+    data = api.upcoming_deadlines(
+        db=db, date_type=None, within_days=within_days, scope=ctx.scope or None
+    )
+    data["watch"] = pending_outcomes(db, ctx.scope or None)
+    data["ctx"] = ctx
     return templates.TemplateResponse(request, "deadlines.html", data)
 
 
@@ -951,6 +1004,7 @@ async def watchlists_create(
             states=multi("states"),
             event_types=multi("event_types"),
             obligation_slugs=multi("obligation_slugs"),
+            use_org_scope=bool(form.get("use_org_scope")),
         ),
     )
     wl_api.create_watchlist(body, db=db, ctx=ctx)
