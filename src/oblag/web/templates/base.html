@@ -322,6 +322,21 @@
         content:attr(data-label); display:block; font-size:.68rem; text-transform:uppercase;
         letter-spacing:.04em; color:var(--muted); font-weight:600; margin:.4rem 0 .1rem;
       }
+      /* The "mine" checkbox is a control, not a data cell. Stacked as one it landed
+         centred under a MINE heading, orphaned above the name it belongs to — picking
+         six of fifty meant scrolling giant cards hunting stray boxes. On a phone it
+         rides beside the obligation name instead, where a thumb expects it. */
+      table.stack td.pick { float:left; width:auto; text-align:left;
+                            padding:.15rem .65rem 0 0; }
+      table.stack td.pick::before { content:none; }
+      /* width:auto matters: the stack rule forces every cell to 100%, so the title
+         could not shrink to fit beside the floated checkbox and dropped below it */
+      table.stack td.titlecell { overflow:hidden; width:auto; }
+      /* The catalog is a picking list on a phone, so each row has to stay thumb-sized:
+         its labels run inline with their values instead of each taking a line of its
+         own. Fifty rows at full card height is a very long scroll to choose six. */
+      table.catalog td[data-label]::before { display:inline; margin:0 .4rem 0 0; }
+      table.catalog td { padding:.05rem 0; }
       table.stack tr.group { padding:.4rem .2rem; }
       table.stack tr.group td::before { content:none; }
       /* date chips are nowrap for table columns; inside a stacked card they must wrap

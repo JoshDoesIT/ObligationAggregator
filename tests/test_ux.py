@@ -566,3 +566,18 @@ def test_scoped_pages_never_count_what_they_do_not_show(client, seeded, db):
     assert "NERC" not in band
     for label in ("comment windows closing", "deadlines in 30 days", "awaiting outcome"):
         assert label in band
+
+
+def test_catalog_picker_is_thumb_shaped_on_mobile(client, seeded):
+    """Stacked as an ordinary data cell, the "mine" checkbox rendered centred under a
+    MINE heading, orphaned above the name it belongs to, in a card ~304px tall — fifty
+    of those is a 15,000px scroll to choose six. On a phone the box rides beside the
+    obligation name and the metadata labels run inline with their values."""
+    html = client.get("/obligations").text
+    assert "table.stack td.pick { float:left" in html
+    assert "table.stack td.pick::before { content:none; }" in html
+    # the stack rule forces every cell to 100%; without width:auto the title cannot
+    # shrink to fit beside the float and drops onto its own line
+    assert "table.stack td.titlecell { overflow:hidden; width:auto; }" in html
+    assert "table.catalog td[data-label]::before { display:inline" in html
+    assert 'class="rows stack catalog"' in html
