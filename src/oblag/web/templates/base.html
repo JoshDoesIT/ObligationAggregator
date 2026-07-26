@@ -250,7 +250,10 @@
         text-transform:none; letter-spacing:0; font-weight:500; white-space:nowrap; }
       /* the nav scrolls horizontally, which would clip an absolutely-positioned child:
          pin the dropdown to the viewport instead so it escapes that scroll container */
-      .utilmenu { position:fixed; top:auto; left:.8rem; right:.8rem; min-width:0; margin-top:.35rem; }
+      /* iOS resolves top:auto on fixed elements inconsistently once the page has
+         scrolled, sometimes dropping the menu to the bottom of the screen. Pin it just
+         below the sticky header's measured height instead. */
+      .utilmenu { position:fixed; top:6.2rem; left:.8rem; right:.8rem; min-width:0; margin-top:0; }
 
       /* --- data tables become stacked cards. On a 375px screen a real table forced
          fixed-width columns to collide (the state badge overprinted the dates) and cut

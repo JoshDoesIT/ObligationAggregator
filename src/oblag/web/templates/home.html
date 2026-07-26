@@ -20,7 +20,10 @@
 
   /* ---- nameplate: ears left and right, title center, dateline under ---- */
   .nameplate { display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
-               gap:1rem; padding:1.1rem 0 .8rem; border-bottom:1px solid var(--ink); }
+               gap:1rem; padding:1.1rem 0 .8rem; position:relative; }
+  .nameplate::after { content:""; position:absolute; left:0; right:0; bottom:0; height:1px;
+                      background:var(--ink); transform:scaleX(0); transform-origin:left;
+                      animation:rule .6s ease-out .1s forwards; }
   .np-title { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
               font-weight:700; font-size:clamp(2.6rem, 6svw, 4.4rem); line-height:1;
               letter-spacing:.01em; text-align:center; color:var(--ink); }
@@ -30,10 +33,17 @@
          padding:.35rem .55rem; line-height:1.6; max-width:180px; }
   .ear.right { justify-self:end; text-align:right; }
   .ear .accent { color:var(--accent); font-weight:700; }
+  /* the rules ink themselves across the page once, left to right, like a pen striking
+     a line. HTML transforms only: nothing here touches the WebKit SVG paths. */
   .dateline { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;
               font-family:var(--mono); font-size:.66rem; letter-spacing:.14em;
               text-transform:uppercase; color:var(--muted); padding:.5rem 0;
-              border-bottom:3px double var(--ink); }
+              position:relative; }
+  .dateline::after { content:""; position:absolute; left:0; right:0; bottom:0; height:4px;
+                     border-top:1px solid var(--ink); border-bottom:1px solid var(--ink);
+                     transform:scaleX(0); transform-origin:left;
+                     animation:rule .7s ease-out .25s forwards; }
+  @keyframes rule { to { transform:scaleX(1); } }
 
   /* ---- lead story + boxed figure ---- */
   .lead { display:flex; flex-wrap:wrap; gap:clamp(1.4rem,4svw,3rem);
@@ -44,11 +54,7 @@
   .headline { margin:0 0 .5rem; font-weight:900; text-transform:uppercase;
               font-size:clamp(2.4rem, 6.4svw, 4.6rem); line-height:.96; letter-spacing:-.015em;
               color:var(--ink);
-              text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28);
-              animation:register .8s ease-out; }
-  @keyframes register {
-    from { text-shadow:.14em .12em 0 var(--accent-soft), .26em .22em 0 rgba(194,47,16,.28); }
-    to   { text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28); } }
+              text-shadow:.045em .04em 0 var(--accent-soft), .09em .08em 0 rgba(194,47,16,.28); }
   .deck { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif; font-style:italic;
           font-size:clamp(1.15rem, 2.6svw, 1.6rem); color:var(--accent); margin:0 0 1.1rem; }
   .standfirst { font-family:Georgia, 'Iowan Old Style', 'Times New Roman', serif;
@@ -167,7 +173,7 @@
   @media (prefers-reduced-motion: reduce) {
     .fx-dot.hot::after { display:none; }
     .fx-row { animation:none; opacity:1; }
-    .headline { animation:none; }
+    .nameplate::after, .dateline::after { animation:none; transform:scaleX(1); }
   }
   @media (max-width:720px) {
     .front { margin-top:-1rem; }
@@ -176,7 +182,7 @@
     .dateline { justify-content:center; text-align:center; font-size:.6rem; }
     .dateline span:last-child { display:none; }
     .hz-cta a { width:100%; justify-content:center; }
-    .brief, .creed .c { border-left:0; padding-left:0; border-top:1px solid var(--line);
+    .brief, .creed .c, .creed .c + .c { border-left:0; padding-left:0; border-top:1px solid var(--line);
                         padding-top:.8rem; margin-top:.2rem; }
     .brief:first-child, .creed .c:first-child { border-top:0; }
     .pulse a { border-left:0; border-top:1px solid var(--line); }
