@@ -290,3 +290,28 @@ def test_latest_filings_ranks_by_source_publication_date(client, seeded, db):
     )
     # the kicker prints the source's date, so the ordering is checkable at a glance
     assert re.search(r'class="b-kicker">\d{1,2} \w{3} \d{4} ·', briefs)
+
+
+def test_abstract_renders_as_clean_paragraphs(client, seeded, db):
+    """Source abstracts arrive with literal HTML entities and hard newlines (observed
+    live: NIST '&nbsp;'/'&mdash;' shown verbatim, a section-by-section change list
+    collapsed into one wall). They must render as clean paragraphs, and long
+    abstracts fold behind a disclosure so status stays above the fold."""
+    from oblag.db.models import PipelineItem
+
+    item = db.query(PipelineItem).filter_by(source_system="federal_register").first()
+    item.abstract = (
+        "Storage has evolved.&nbsp;Important updates include:\n\n"
+        "Section 2 &mdash; Removal of obsolete content.\n"
+        "Section 3 &mdash; Completely revised threat model. " + "More detail. " * 60
+    )
+    db.commit()
+
+    html = client.get(f"/items/{item.id}").text
+    assert "&amp;nbsp;" not in html and "&amp;mdash;" not in html, (
+        "entities must be decoded, not shown verbatim"
+    )
+    assert "Section 2 — Removal" in html
+    body = html.split('class="lede prose"')[1].split("</div>")[0]
+    assert body.count("<p>") >= 3, "hard newlines should become paragraphs"
+    assert "Read the rest from the source" in html, "long abstracts fold"
