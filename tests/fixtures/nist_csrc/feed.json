@@ -1,4 +1,4 @@
-{
+﻿{
  "title": "NIST Draft Publications Open for Comment",
  "subtitle": "Many of NIST's cybersecurity and privacy publications are posted as drafts for public comment. Comment periods are still open for the following publications. Visit the links for downloads, related content, and instructions for submitting comments. Your thoughtful reviews and comments are greatly appreciated and help us to improve our standards and guidance.",
  "updated": "2026-07-13T05:00:55.2163702-04:00",
@@ -49,6 +49,13 @@
    "updated": "2026-06-12T00:00:00",
    "link": "https://csrc.nist.gov/pubs/sp/800/73/pt1/6/iwd",
    "content": "Comments Due 12/31/2099"
+  },
+  {
+   "id": "https://csrc.nist.gov/pubs/pd/2026/06/25/asset-management-as-a-foundation-for-ot-cybersecur/ipd",
+   "title": "Project Description Asset Management as a Foundation for Operational Technology CybersecurityInitial Public Draft",
+   "summary": "<p>The NIST NCCoE is continuing its work to solve real-world cybersecurity challenges with a new project on OT asset management.</p><p><strong>The comment period is open through August 25, 2026.</strong></p>",
+   "updated": "2026-06-25T00:00:00-04:00",
+   "link": "https://csrc.nist.gov/pubs/pd/2026/06/25/asset-management-as-a-foundation-for-ot-cybersecur/ipd"
   }
  ]
 }
