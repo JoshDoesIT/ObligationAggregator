@@ -157,6 +157,17 @@ curl -H "Authorization: Bearer $OBLAG_CRON_SECRET" \
 
 Self-hosted: `oblag rebuild --days 730` (add `--no-prune` to only add).
 
+### Without holding the secret
+
+The daily cron drains the same historical backfill by itself, a slice at a time, using
+whatever budget the adapters leave behind. Vercel signs its own cron invocations, so
+nobody needs the secret in hand: deploy and the history fills in on the next run
+(resuming across runs if one is busy, and stopping for good once complete).
+
+`OBLAG_BACKFILL_CATCHUP_DAYS` controls it — default 730, set `0` to turn it off.
+The catch-up only ADDS: retiring stale rows still needs the explicit `rebuild` call
+above, because pruning is only safe when the whole plan ran in one pass.
+
 It refreshes first and prunes second, on purpose. A wipe-then-refill assumes every
 source answers; the first live trial proved otherwise (iso.org served 403 to the
 catalogue adapter, which would have deleted those items with nothing to restore them

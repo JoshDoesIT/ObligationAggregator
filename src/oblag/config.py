@@ -66,6 +66,10 @@ class Settings(BaseSettings):
     # (Vercel injects CRON_SECRET as the Authorization bearer on cron invocations).
     storage_backend: str = "local"
     cron_secret: str | None = None
+    # One-time historical backfill, drained by the daily cron a slice at a time. Exists
+    # so a fresh or long-stale deployment fills itself in without anyone holding a
+    # secret: Vercel signs its own cron calls. 0 disables it.
+    backfill_catchup_days: int = 730
     # A Vercel preview deployment skips mutating boot steps by default so a branch's
     # boot code can't edit the production DB it may be pointed at. Set true only on a
     # preview environment that has its OWN database (a Neon branch).
