@@ -337,3 +337,64 @@ def test_backfill_plan_windows_only_sources_that_accept_them():
     # oldest first, so the feed fills in chronological order
     assert fr == sorted(fr)
     assert (fr[-1][1] - fr[0][0]).days >= 364
+
+
+def test_catchup_resumes_across_runs_and_stops_when_done(db, monkeypatch):
+    """The daily cron drains the historical backfill a slice at a time, so a deployment
+    fills in its own past with nobody handling the cron secret. Progress survives
+    between invocations, and once the plan is finished it never runs again."""
+    from oblag.rebuild import catchup
+
+    calls: list[tuple] = []
+
+    def fake_run(session, name, window=None, **kw):
+        from oblag.core.runner import RunStats
+
+        calls.append((name, window))
+        return RunStats(adapter=name, pages=1, items=1, created=1)
+
+    plan = [("federal_register", ("a", "b")), ("federal_register", ("c", "d")), ("pci_ssc", None)]
+    monkeypatch.setattr("oblag.rebuild.backfill_plan", lambda d, a=None: plan)
+    monkeypatch.setattr("oblag.core.runner.run_adapter", fake_run)
+
+    # a budget of zero still makes one step of progress, so the queue can never stall
+    first = catchup(db, days=730, budget_s=0)
+    db.commit()
+    assert first["status"] == "in_progress" and first["step"] == 1
+
+    second = catchup(db, days=730)  # no budget: finishes the rest
+    db.commit()
+    assert second["status"] == "done" and second["step"] == len(plan)
+    assert len(calls) == len(plan), "every slice ran exactly once across the two runs"
+
+    # finished means finished: a later cron does no work at all
+    again = catchup(db, days=730)
+    assert again["status"] == "already_done"
+    assert len(calls) == len(plan)
+
+    # asking for a different depth re-arms it
+    monkeypatch.setattr("oblag.rebuild.backfill_plan", lambda d, a=None: plan[:1])
+    assert catchup(db, days=365)["status"] == "done"
+
+
+def test_catchup_survives_a_dead_source(db, monkeypatch):
+    """One unreachable source must not stall the queue behind it."""
+    from oblag.rebuild import catchup
+
+    def fake_run(session, name, window=None, **kw):
+        from oblag.core.runner import RunStats
+
+        if name == "iso_catalog":
+            raise RuntimeError("403 Forbidden")
+        return RunStats(adapter=name, pages=1, items=0, created=0)
+
+    monkeypatch.setattr(
+        "oblag.rebuild.backfill_plan",
+        lambda d, a=None: [("iso_catalog", None), ("pci_ssc", None)],
+    )
+    monkeypatch.setattr("oblag.core.runner.run_adapter", fake_run)
+
+    result = catchup(db, days=730)
+    assert result["status"] == "done"
+    assert any("iso_catalog" in e for e in result["errors"])
+    assert result["ran"] == 1  # the source behind it still ran

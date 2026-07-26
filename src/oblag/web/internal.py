@@ -18,7 +18,7 @@ from oblag.config import get_settings
 from oblag.core.reducer import tick as run_tick
 from oblag.core.runner import run_adapter
 from oblag.notify import alert_unhealthy_adapters, dispatch_pending
-from oblag.rebuild import backfill_plan, run_plan
+from oblag.rebuild import backfill_plan, catchup, run_plan
 from oblag.rebuild import rebuild as do_rebuild
 from oblag.scheduler import ADAPTER_GROUPS, weekly_due_today
 from oblag.web.deps import get_db
@@ -155,6 +155,19 @@ def run_group(group: str, request: Request, db: Session = Depends(get_db)):
         except Exception as exc:  # noqa: BLE001 — one adapter never blocks the group
             log.exception("cron run failed for %s", name)
             results.append({"adapter": name, "error": str(exc)[:200]})
+    # Spend whatever budget the adapters left on the one-time historical backfill, so
+    # a deployment fills in its own past without anyone holding the cron secret: this
+    # call is already authenticated, because Vercel signs its own cron invocations.
+    catchup_result = None
+    catchup_days = get_settings().backfill_catchup_days
+    spare = _GROUP_TIME_BUDGET_S - (monotonic() - start)
+    if group == "daily" and catchup_days > 0 and spare > 20:
+        try:
+            catchup_result = catchup(db, days=catchup_days, budget_s=spare)
+        except Exception as exc:  # noqa: BLE001 — never let it break the daily run
+            log.exception("backfill catchup failed")
+            catchup_result = {"status": "error", "detail": str(exc)[:200]}
+
     delivered = dispatch_pending(db)
     alerted = alert_unhealthy_adapters(db)
     return {
@@ -162,6 +175,7 @@ def run_group(group: str, request: Request, db: Session = Depends(get_db)):
         "runs": results,
         "weekly_included": weekly_included,
         "deferred": deferred,
+        "backfill_catchup": catchup_result,
         "notifications_delivered": delivered,
         "ops_alerted": alerted,
     }

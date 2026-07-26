@@ -234,6 +234,77 @@ def run_plan(
     return rep
 
 
+CATCHUP_KEY = "backfill_catchup"
+
+
+def catchup(db: Session, *, days: int = 730, budget_s: float | None = None) -> dict[str, Any]:
+    """Work through the historical backfill a slice at a time, resuming across runs.
+
+    The daily cron calls this, and Vercel signs its own cron invocations, so a
+    deployment fills in its own history with nobody handling a secret. Progress lives
+    in kv_meta, so an invocation that runs out of time picks up where it stopped and
+    the whole thing happens at most once per `days` setting.
+
+    Backfill only: it never prunes. Retiring rows needs the whole plan to have run in
+    one pass, which is exactly what a resumable job cannot promise."""
+    import json
+    from time import monotonic
+
+    from oblag.adapters import available_adapters, get_adapter
+    from oblag.core.runner import run_adapter
+    from oblag.db.models import KVMeta
+
+    row = db.get(KVMeta, CATCHUP_KEY)
+    state = json.loads(row.value) if row else {}
+    if state.get("done_for_days") == days:
+        return {"status": "already_done", "days": days}
+
+    plan = backfill_plan(days)
+    # a changed `days` restarts the plan; otherwise resume where the last run stopped
+    index = int(state.get("index", 0)) if state.get("days") == days else 0
+    started = monotonic()
+    ran = 0
+    stepped = 0
+    errors: list[str] = []
+    while index < len(plan):
+        # always take at least one slice per invocation: checking the budget first
+        # meant a run that arrived with none left made no progress at all, and the
+        # queue would sit there forever waiting for a quiet day that never comes
+        if stepped and budget_s is not None and monotonic() - started > budget_s:
+            break
+        stepped += 1
+        name, window = plan[index]
+        index += 1
+        if name not in available_adapters() or not get_adapter(name).enabled():
+            continue
+        try:
+            run_adapter(db, name, window=window)
+            ran += 1
+        except Exception as exc:  # noqa: BLE001 — a dead source must not stall the queue
+            log.exception("catchup run failed for %s", name)
+            errors.append(f"{name}: {str(exc)[:120]}")
+
+    finished = index >= len(plan)
+    new_state: dict[str, Any] = {"days": days, "index": index}
+    if finished:
+        new_state["done_for_days"] = days
+    payload = json.dumps(new_state)
+    if row is None:
+        db.add(KVMeta(key=CATCHUP_KEY, value=payload))
+    else:
+        row.value = payload
+        row.updated_at = utcnow()
+    db.flush()
+    return {
+        "status": "done" if finished else "in_progress",
+        "days": days,
+        "step": index,
+        "of": len(plan),
+        "ran": ran,
+        "errors": errors,
+    }
+
+
 def rebuild(
     db: Session,
     *,
