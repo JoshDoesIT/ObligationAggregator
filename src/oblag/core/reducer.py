@@ -130,6 +130,16 @@ def _find_item(session: Session, ni: NormalizedItem) -> tuple[PipelineItem | Non
     rows = session.query(JoinKey).filter(or_(tuple_(JoinKey.type, JoinKey.value).in_(keys))).all()
     if not rows:
         return None, None
+    # An adapter's EXTERNAL key is its 1:1 identity for a document, so an exact hit on
+    # it is the same document whatever track it currently sits on. The track filter
+    # below exists to keep a proposed rulemaking separate from its final rule, and
+    # those never share an external key — they have different document numbers. Without
+    # this, an adapter that revises how it tracks a source duplicates its whole corpus
+    # (observed live: iso_catalog moved from track "default" to "final" in v0.19.0 and
+    # every base ISO standard came back a second time beside its old row).
+    exact = {r.item.id: r.item for r in rows if (r.type, r.value) == ni.external_key}
+    if len(exact) == 1:
+        return next(iter(exact.values())), None
     items = {r.item.id: r.item for r in rows if r.item.track == ni.track}
     if items and not ni.supplementary:
         # Identity guard: a candidate whose own external-type keys all differ from this
@@ -439,6 +449,12 @@ def reduce_item(
 
     if item.obligation_id is None:
         item.obligation_id = _resolve_obligation(session, ni.obligation_slug, ni.title)
+    if item.track != ni.track:
+        # The adapter revised how it models this source. A real document never changes
+        # track mid-life — a proposed rule and its final rule are separate items with
+        # separate external keys — so a difference here is our modelling catching up,
+        # and leaving the old value would mislabel the row on every track filter.
+        item.track = ni.track
     # Fill-if-None only: the first observed value approximates publication; letting a
     # later sitemap-lastmod touch overwrite it would make old documents look newly
     # published every time their page is edited.
