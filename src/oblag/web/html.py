@@ -86,6 +86,7 @@ SOURCE_LABELS = {
     "aicpa": "AICPA",
     "hitrust": "HITRUST",
     "aiuc": "AIUC",
+    "standard_pages": "Publisher",
     "curated": "Curated",
 }
 EVENT_LABELS = {
@@ -194,7 +195,7 @@ def _signal_kind(item: dict) -> str:
         return "Rulemaking" if native == "proposed" else "Rulemaking package"
     if src == "pci_ssc":
         return "Publication" if native == "publication" else "RFC"
-    if src == "pci_docs":
+    if src in ("pci_docs", "standard_pages"):
         return "Standard"
     if src == "iso_catalog":
         # An amendment is its own publication, and calling it a revision of the edition

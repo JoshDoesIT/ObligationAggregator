@@ -161,6 +161,14 @@ def cis_statemap(
     return ItemState.effective if native_status == "release" else None
 
 
+@register_statemap("standard_pages")
+def standard_pages_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """The page states what is current, so what it states is in force."""
+    return ItemState.effective if native_status == "current" else None
+
+
 @register_statemap("pci_docs")
 def pci_docs_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

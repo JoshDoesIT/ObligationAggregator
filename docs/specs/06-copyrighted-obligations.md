@@ -14,6 +14,28 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   explicitly Confidence.derived, never presented as firm). Everything else in the blog
   is ignored (no weak signals). Verified live: "Request for Comments: PCI DSS v4.0.1"
   present in the feed (2026-06-03).
+- **standard_pages** (weekly): standards whose only publication surface is one page.
+  CIS Controls, the CSA Cloud Controls Matrix and NYDFS 23 NYCRR 500 have no feed, no
+  API and no document library — just a page saying what the current version is. All
+  three showed nothing, because every adapter we had was looking for a stream of events.
+
+  Each entry names the page, the obligation, and a pattern that extracts what the page
+  states. When the page starts saying something different, that IS the change signal —
+  the same idea as iso_catalog and nist_pubs, generalised to bodies that publish nothing
+  else. NYDFS has no version number at all, so its pattern captures the amendment DATE
+  instead ("On November 1, 2023, DFS announced amendments to Cybersecurity Regulation").
+
+  Two guards, both from live evidence:
+  * A pattern must anchor on words the body uses about its own standard, never a bare
+    version number. The CSA page carries `?ver=4.0.13` on a WordPress asset, and a loose
+    `v(\d+\.\d+)` matched that instead of the standard.
+  * A page saying **"There is a new version of…"** outranks everything else on it and
+    yields nothing. CSA leaves superseded artifact pages up with that notice, and
+    without the guard we would have published CCM v4.0 (2021) as current while v4.1
+    (2026) was out — the exact staleness this adapter exists to catch.
+
+  No match yields nothing rather than a guess.
+
 - **pci_docs** (weekly): the PCI standards themselves. `pci_ssc` reads the Perspectives
   blog for RFC announcements, so a standard only appeared while it was under
   consultation — six of the twelve PCI obligations had never shown anything at all

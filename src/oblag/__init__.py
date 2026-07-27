@@ -1,3 +1,3 @@
 """Gazette: regulatory & framework change intelligence for GRC engineers."""
 
-__version__ = "0.24.1"
+__version__ = "0.25.0"
