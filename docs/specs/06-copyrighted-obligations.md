@@ -14,6 +14,26 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   explicitly Confidence.derived, never presented as firm). Everything else in the blog
   is ignored (no weak signals). Verified live: "Request for Comments: PCI DSS v4.0.1"
   present in the feed (2026-06-03).
+- **pci_docs** (weekly): the PCI standards themselves. `pci_ssc` reads the Perspectives
+  blog for RFC announcements, so a standard only appeared while it was under
+  consultation — six of the twelve PCI obligations had never shown anything at all
+  (3DS, MPoC, P2PE, PIN, PTS POI, TSP).
+
+  The `/document_library/` page is a nav menu: its rows load client-side and the
+  documents API behind it answers 403. But the same site publishes
+  `/rssfeed/?type=document`, 436 entries covering every document the SSC has released,
+  each with a publication date, a category, a document type and a stable `document=`
+  slug. That slug is the identity a standard keeps across revisions, so it is the
+  external key — a new edition updates the row and its date rather than stacking a
+  second one beside it.
+
+  Zero-noise by construction, matching the rest of this layer: the feed is 84 guidance
+  documents, 91 programme/certification papers, FAQs, SAQs, reporting templates and case
+  studies. Only documents typed `Standard` AND named in `DOCUMENT_OBLIGATIONS` become
+  items, so a new document category cannot quietly start filing rows against a standard.
+  One wrinkle: the MPoC standard and its summary of changes share a single `document=`
+  slug, so the title has to disambiguate them.
+
 - **iso_catalog** (weekly): editions, amendments and publication dates for *watched*
   standards (obligations with an iso.org canonical_url), read from **IEC — the
   co-publisher** — because iso.org itself cannot be read:

@@ -75,6 +75,7 @@ SOURCE_LABELS = {
     "have_your_say": "EU Have Your Say",
     "legiscan": "LegiScan",
     "pci_ssc": "PCI SSC",
+    "pci_docs": "PCI SSC",
     # read from IEC, the co-publisher of the ISO/IEC joint standards
     "iso_catalog": "ISO/IEC",
     "edpb": "EDPB",
@@ -193,6 +194,8 @@ def _signal_kind(item: dict) -> str:
         return "Rulemaking" if native == "proposed" else "Rulemaking package"
     if src == "pci_ssc":
         return "Publication" if native == "publication" else "RFC"
+    if src == "pci_docs":
+        return "Standard"
     if src == "iso_catalog":
         # An amendment is its own publication, and calling it a revision of the edition
         # it amends would be wrong. Read off the title, which carries the ISO reference

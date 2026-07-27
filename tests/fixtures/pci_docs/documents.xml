@@ -1,0 +1,546 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<rss xmlns:atom='http://www.w3.org/2005/Atom' version='2.0'>
+<channel>
+<atom:link href='https://www.pcisecuritystandards.org/rssfeed/?type=document' rel='self' type='application/rss+xml'></atom:link><title>PCI Security Standards Council Documents</title>
+<description>Latest documents from PCI SSC</description>
+<link>https://www.pcisecuritystandards.org/document_library/</link>
+<docs>http://blogs.law.harvard.edu/tech/rss</docs>
+<pubDate>Mon, 27 Jul 2026 11:58:40 +0000</pubDate>
+<item>
+<title>PCI P2PE® v3.x Technical FAQs</title>
+<description><![CDATA[ P2PE: Standard ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-technical-faq=3x ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-technical-faq=3x&x=6 ]]></guid>
+<pubDate>Wed, 08 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software v1.x Technical FAQs</title>
+<description><![CDATA[ Software Security: Standard ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_faqs ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_faqs&x=12 ]]></guid>
+<pubDate>Mon, 01 Jun 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software v2.x Technical FAQs</title>
+<description><![CDATA[ Software Security: Standard ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_faqs_v2 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_faqs_v2&x=13 ]]></guid>
+<pubDate>Mon, 01 Jun 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Hardware Security Module (HSM) Modular Security Requirements</title>
+<description><![CDATA[ PTS: Standard ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_hsm_security_requirements ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_hsm_security_requirements&x=18 ]]></guid>
+<pubDate>Mon, 18 May 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>P2PE v3.x Technical FAQs</title>
+<description><![CDATA[ P2PE: Standard ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-technical-faq=3x ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-technical-faq=3x&x=25 ]]></guid>
+<pubDate>Thu, 29 Jan 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PCI 3DS Data Matrix</title>
+<description><![CDATA[ 3DS: Standard ]]></description>
+<category><![CDATA[ 3DS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=3ds&document=3ds_matrix ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=3ds&document=3ds_matrix&x=27 ]]></guid>
+<pubDate>Thu, 15 Jan 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Standard Summary of Changes</title>
+<description><![CDATA[ Software Security: Standard ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_stdch ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_stdch&x=28 ]]></guid>
+<pubDate>Thu, 15 Jan 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Standard – Sensitive Asset Identification</title>
+<description><![CDATA[ Software Security: Standard ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_sai ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_sai&x=29 ]]></guid>
+<pubDate>Thu, 15 Jan 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Standard</title>
+<description><![CDATA[ Software Security: Standard ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_reqs_procs ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_reqs_procs&x=30 ]]></guid>
+<pubDate>Thu, 15 Jan 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>P2PE Standard</title>
+<description><![CDATA[ P2PE: Standard ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe_solution_requirements ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe_solution_requirements&x=50 ]]></guid>
+<pubDate>Mon, 30 Jun 2025 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>P2PE Summary of Changes</title>
+<description><![CDATA[ P2PE: Standard ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe_summary_changes ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe_summary_changes&x=51 ]]></guid>
+<pubDate>Mon, 30 Jun 2025 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Point of Interaction (POI) Modular Security Requirements</title>
+<description><![CDATA[ PTS: Standard ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_pts_poi_sr_2 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_pts_poi_sr_2&x=54 ]]></guid>
+<pubDate>Thu, 29 May 2025 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Mobile Payments on COTS (MPoC®) Summary of Changes</title>
+<description><![CDATA[ MPoC: Standard ]]></description>
+<category><![CDATA[ MPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpocsectest ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpocsectest&x=76 ]]></guid>
+<pubDate>Tue, 24 Dec 2024 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Mobile Payments on COTS Security and Test Requirements</title>
+<description><![CDATA[ MPoC: Standard ]]></description>
+<category><![CDATA[ MPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpocsectest ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpocsectest&x=78 ]]></guid>
+<pubDate>Mon, 25 Nov 2024 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PCI DSS Summary of Changes</title>
+<description><![CDATA[ PCI DSS: Standard ]]></description>
+<category><![CDATA[ PCI DSS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=pci_dss_summary_of_changes ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=pci_dss_summary_of_changes&x=112 ]]></guid>
+<pubDate>Sat, 24 Aug 2024 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PCI DSS</title>
+<description><![CDATA[ PCI DSS: Standard ]]></description>
+<category><![CDATA[ PCI DSS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=pci_dss ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=pci_dss&x=121 ]]></guid>
+<pubDate>Tue, 11 Jun 2024 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production and Provisioning Logical Security Requirements</title>
+<description><![CDATA[ Card Production: Standard ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production__prov_logical_security_requirements ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production__prov_logical_security_requirements&x=177 ]]></guid>
+<pubDate>Thu, 30 Jun 2022 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production and Provisioning Physical Security Requirements</title>
+<description><![CDATA[ Card Production: Standard ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_physical_security_requirements_v3.0.1 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_physical_security_requirements_v3.0.1&x=178 ]]></guid>
+<pubDate>Thu, 30 Jun 2022 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SPoC Unsupported OS Annex</title>
+<description><![CDATA[ SPoC: Standard ]]></description>
+<category><![CDATA[ SPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=spoc_uns_os ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=spoc_uns_os&x=195 ]]></guid>
+<pubDate>Thu, 20 May 2021 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PIN Security Requirements and Testing Procedures</title>
+<description><![CDATA[ PIN: Standard ]]></description>
+<category><![CDATA[ PIN ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpin__sec_req_pdf ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpin__sec_req_pdf&x=215 ]]></guid>
+<pubDate>Thu, 11 Mar 2021 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure SLC Standard Summary of Changes</title>
+<description><![CDATA[ Software Security: Standard ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_slc_std_sum ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_slc_std_sum&x=220 ]]></guid>
+<pubDate>Thu, 18 Feb 2021 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure SLC Standard</title>
+<description><![CDATA[ Software Security: Standard ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_slc_std ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_slc_std&x=221 ]]></guid>
+<pubDate>Thu, 18 Feb 2021 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Software-Based PIN Entry on COTS Test Requirements</title>
+<description><![CDATA[ SPoC: Standard ]]></description>
+<category><![CDATA[ SPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_tst_req ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_tst_req&x=230 ]]></guid>
+<pubDate>Mon, 01 Jun 2020 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SPoC MSR Annex</title>
+<description><![CDATA[ SPoC: Standard ]]></description>
+<category><![CDATA[ SPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_msr ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_msr&x=232 ]]></guid>
+<pubDate>Mon, 01 Jun 2020 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>SPoC Summary of Changes</title>
+<description><![CDATA[ SPoC: Standard ]]></description>
+<category><![CDATA[ SPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_sum ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_sum&x=233 ]]></guid>
+<pubDate>Mon, 01 Jun 2020 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Software-Based PIN Entry on COTS Security Requirements</title>
+<description><![CDATA[ SPoC: Standard ]]></description>
+<category><![CDATA[ SPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_sec_req ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=spoc&document=pin_cots_sec_req&x=235 ]]></guid>
+<pubDate>Mon, 01 Jun 2020 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Contactless Payments on COTS (CPoC™) Security and Test Requirements</title>
+<description><![CDATA[ CPoC: Standard ]]></description>
+<category><![CDATA[ CPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=cpoc&document=cpocsectest ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=cpoc&document=cpocsectest&x=246 ]]></guid>
+<pubDate>Sun, 01 Dec 2019 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PCI 3DS SDK Security Standard</title>
+<description><![CDATA[ 3DS: Standard ]]></description>
+<category><![CDATA[ 3DS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=3ds&document=3ds_sdk ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=3ds&document=3ds_sdk&x=285 ]]></guid>
+<pubDate>Sat, 01 Dec 2018 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PCI 3DS Core Security Standard</title>
+<description><![CDATA[ 3DS: Standard ]]></description>
+<category><![CDATA[ 3DS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=3ds&document=3ds_standard ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=3ds&document=3ds_standard&x=310 ]]></guid>
+<pubDate>Sun, 01 Oct 2017 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PCI TSP Security Requirements</title>
+<description><![CDATA[ TSP: Standard ]]></description>
+<category><![CDATA[ TSP ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=token_service_provider&document=pci_tsp_requirements ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=token_service_provider&document=pci_tsp_requirements&x=342 ]]></guid>
+<pubDate>Tue, 01 Dec 2015 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PCI DSS Designated Entities Supplemental Validation</title>
+<description><![CDATA[ PCI DSS: Standard ]]></description>
+<category><![CDATA[ PCI DSS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=pci_dss_v3_desv ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=pci_dss_v3_desv&x=354 ]]></guid>
+<pubDate>Mon, 01 Jun 2015 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production Physical Security Requirements</title>
+<description><![CDATA[ Card Production: Standard ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_physical_security_requirements ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_physical_security_requirements&x=358 ]]></guid>
+<pubDate>Sun, 01 Mar 2015 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production Logical Security Requirements</title>
+<description><![CDATA[ Card Production: Standard ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_logical_security_requirements ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_logical_security_requirements&x=359 ]]></guid>
+<pubDate>Sun, 01 Mar 2015 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production Summary of Changes from v1.0 to v1.1</title>
+<description><![CDATA[ Card Production: Standard ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_summary_changes ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_summary_changes&x=361 ]]></guid>
+<pubDate>Sun, 01 Mar 2015 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PIN Security Requirements</title>
+<description><![CDATA[ PIN: Standard ]]></description>
+<category><![CDATA[ PIN ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpin_security_requirements ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpin_security_requirements&x=364 ]]></guid>
+<pubDate>Mon, 01 Dec 2014 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>P2PE Hardware/Hybrid Solution Requirements and Testing Procedures</title>
+<description><![CDATA[ P2PE: Standard ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-solutions-requirements-testing ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-solutions-requirements-testing&x=394 ]]></guid>
+<pubDate>Mon, 01 Jul 2013 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>P2PE Hardware/Hardware Solution Requirements and Testing Procedures</title>
+<description><![CDATA[ P2PE: Standard ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-hardware ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-hardware&x=395 ]]></guid>
+<pubDate>Sat, 01 Jun 2013 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>P2PE Summary of Changes from Initial Release</title>
+<description><![CDATA[ P2PE: Standard ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-hardware-changes-v1 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-hardware-changes-v1&x=403 ]]></guid>
+<pubDate>Sun, 01 Apr 2012 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Unattended Payment Terminal (UPT) Security Requirements</title>
+<description><![CDATA[ PTS: Standard ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=upt ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=upt&x=427 ]]></guid>
+<pubDate>Wed, 01 Apr 2009 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>POS PIN Entry Device Form</title>
+<description><![CDATA[ PTS: Standard ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=ped_v2_1_form ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=ped_v2_1_form&x=431 ]]></guid>
+<pubDate>Thu, 01 Jan 2009 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>POS PIN Entry Device (PED) Questionnaire</title>
+<description><![CDATA[ PTS: Standard ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=ped_v2_0_questionnaire ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=ped_v2_0_questionnaire&x=434 ]]></guid>
+<pubDate>Sun, 01 Jul 2007 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>POS PIN Entry Device Security Requirements</title>
+<description><![CDATA[ PTS: Standard ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pos_pin_ed ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pos_pin_ed&x=436 ]]></guid>
+<pubDate>Wed, 01 Nov 2006 12:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Mapping PCI DSS to the NIST Cybersecurity Framework</title>
+<description><![CDATA[ Guidance Document: PCI DSS General ]]></description>
+<category><![CDATA[ Guidance Document ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=map_nist ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=map_nist&x=1 ]]></guid>
+<pubDate>Thu, 23 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>AT A GLANCE: Mapping PCI DSS to the NIST Cybersecurity Framework</title>
+<description><![CDATA[ Guidance Document: PCI DSS General ]]></description>
+<category><![CDATA[ Guidance Document ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=map_nist_glance ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=map_nist_glance&x=2 ]]></guid>
+<pubDate>Thu, 23 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>EXECUTIVE  BRIEF: Mapping PCI DSS to the NIST Cybersecurity Framework</title>
+<description><![CDATA[ Guidance Document: PCI DSS General ]]></description>
+<category><![CDATA[ Guidance Document ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=map_nist_exec ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=map_nist_exec&x=3 ]]></guid>
+<pubDate>Thu, 23 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PTS POI Technical Frequently Asked Questions</title>
+<description><![CDATA[ PTS: Frequently Asked Questions (FAQ) ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_pts_faqs ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_pts_faqs&x=4 ]]></guid>
+<pubDate>Wed, 08 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Mobile Payments on COTS (MPoC®) Technical FAQs</title>
+<description><![CDATA[ MPoC: Frequently Asked Questions (FAQ) ]]></description>
+<category><![CDATA[ MPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpoc_faq ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpoc_faq&x=5 ]]></guid>
+<pubDate>Wed, 08 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PTS HSM Technical Frequently Asked Questions</title>
+<description><![CDATA[ PTS: Frequently Asked Questions (FAQ) ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_pts_hsm_technical_faqs ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pci_pts_hsm_technical_faqs&x=7 ]]></guid>
+<pubDate>Mon, 06 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>P2PE Program Guide</title>
+<description><![CDATA[ P2PE: Program Documents ]]></description>
+<category><![CDATA[ P2PE ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-program_guide_v2 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=p2pe&document=p2pe-program_guide_v2&x=8 ]]></guid>
+<pubDate>Wed, 01 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software ROV Template for P2PE Apps</title>
+<description><![CDATA[ Software Security: v2.x Reporting Templates and Forms ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_rov_rep_p2pe_template_v2 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_rov_rep_p2pe_template_v2&x=9 ]]></guid>
+<pubDate>Wed, 01 Jul 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Guidance for Compensating Controls and the Customized Approach</title>
+<description><![CDATA[ Guidance Document: PCI DSS General ]]></description>
+<category><![CDATA[ Guidance Document ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=guidance_comp_ctrls ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=educational_resources&document=guidance_comp_ctrls&x=10 ]]></guid>
+<pubDate>Wed, 10 Jun 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Guidance for Compensating Controls and the Customized Approach</title>
+<description><![CDATA[ PCI DSS: Supporting Document ]]></description>
+<category><![CDATA[ PCI DSS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=guidance_comp_ctrls ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pcidss&document=guidance_comp_ctrls&x=11 ]]></guid>
+<pubDate>Wed, 10 Jun 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>MPoC Integration Report</title>
+<description><![CDATA[ MPoC: Supporting Document ]]></description>
+<category><![CDATA[ MPoC ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpoc_am_aov_int_rep-v1 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=mpoc&document=mpoc_am_aov_int_rep-v1&x=14 ]]></guid>
+<pubDate>Wed, 20 May 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>HSM Security Requirements Modifications: Summary of Changes</title>
+<description><![CDATA[ PTS: Supporting Document ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=hsm_security_requirements_mods ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=hsm_security_requirements_mods&x=15 ]]></guid>
+<pubDate>Mon, 18 May 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Device Testing and Approval Program Guide</title>
+<description><![CDATA[ PTS: Supporting Document ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pts_approval_guide ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=pts_approval_guide&x=16 ]]></guid>
+<pubDate>Mon, 18 May 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Hardware Security Module (HSM)</title>
+<description><![CDATA[ PTS: Derived Test Requirements ]]></description>
+<category><![CDATA[ PTS ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=hardware_security_module_(hsm) ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pts&document=hardware_security_module_(hsm)&x=17 ]]></guid>
+<pubDate>Mon, 18 May 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production and Provisioning Technical FAQs</title>
+<description><![CDATA[ Card Production: Frequently Asked Questions (FAQ) ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_technical_faqs ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=pci_card_production_technical_faqs&x=19 ]]></guid>
+<pubDate>Tue, 21 Apr 2026 07:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Attestation of Validation Template</title>
+<description><![CDATA[ Software Security: v2.x Reporting Templates and Forms ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_aov_v2 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_aov_v2&x=20 ]]></guid>
+<pubDate>Tue, 10 Feb 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Report on Validation Template</title>
+<description><![CDATA[ Software Security: v2.x Reporting Templates and Forms ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_rov_rep_template_v2 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_rov_rep_template_v2&x=21 ]]></guid>
+<pubDate>Tue, 10 Feb 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Change Impact Template</title>
+<description><![CDATA[ Software Security: v2.x Reporting Templates and Forms ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=secure_software_change_impact_template ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=secure_software_change_impact_template&x=22 ]]></guid>
+<pubDate>Tue, 10 Feb 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PIN Attestation of Compliance (AOC)</title>
+<description><![CDATA[ PIN: Reporting Template or Form ]]></description>
+<category><![CDATA[ PIN ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpinat-oc ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpinat-oc&x=23 ]]></guid>
+<pubDate>Tue, 03 Feb 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>PIN ROC Reporting Template</title>
+<description><![CDATA[ PIN: Reporting Template or Form ]]></description>
+<category><![CDATA[ PIN ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpin_rocrtp ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=pci_pin&document=pcipinpin_rocrtp&x=24 ]]></guid>
+<pubDate>Tue, 03 Feb 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Program Guide</title>
+<description><![CDATA[ Software Security: Program Documents ]]></description>
+<category><![CDATA[ Software Security ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_pg ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=sware_sec&document=sec_sware_pg&x=26 ]]></guid>
+<pubDate>Thu, 15 Jan 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Secure Software Program Guide</title>
+<description><![CDATA[ Programs and Certification: Software Security ]]></description>
+<category><![CDATA[ Programs and Certification ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=programs&document=secure_software_program_guide ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=programs&document=secure_software_program_guide&x=31 ]]></guid>
+<pubDate>Thu, 15 Jan 2026 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production AOC – Logical</title>
+<description><![CDATA[ Card Production: Reporting Template or Form ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=cpsa_aoc_logical ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=cpsa_aoc_logical&x=32 ]]></guid>
+<pubDate>Mon, 22 Dec 2025 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production AOC SOC - Physical</title>
+<description><![CDATA[ Card Production: Reporting Template or Form ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=roc_reporting_template_physical_v3 ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=roc_reporting_template_physical_v3&x=33 ]]></guid>
+<pubDate>Mon, 22 Dec 2025 08:00:00 +0000</pubDate>
+</item>
+<item>
+<title>Card Production AOC - Physical</title>
+<description><![CDATA[ Card Production: Reporting Template or Form ]]></description>
+<category><![CDATA[ Card Production ]]></category>
+<link><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=cpsa_aoc_phys ]]></link>
+<guid isPermaLink='true' ><![CDATA[ https://www.pcisecuritystandards.org/document_library/?category=card_production&document=cpsa_aoc_phys&x=34 ]]></guid>
+<pubDate>Mon, 22 Dec 2025 08:00:00 +0000</pubDate>
+</item>
+</channel>
+</rss>

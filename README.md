@@ -56,6 +56,7 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | EU Have Your Say feedback periods | JSON API (brpapi) | on by default (`OBLAG_HYS_TOPICS`, default `DIGITAL`) |
 | LegiScan (US state laws, passed/enrolled only) | JSON API | `OBLAG_LEGISCAN_API_KEY` + `OBLAG_LEGISCAN_STATES="CA,RI,…"` |
 | PCI SSC RFC announcements | blog RSS, formal signals only | on by default (weekly) |
+| PCI SSC standards themselves (all 11 tracked) | document-library RSS, curated allowlist | on by default (weekly) |
 | ISO/IEC editions & amendments | IEC webstore JSON API (iso.org disallows crawling) | on by default (weekly, watched standards) |
 | EDPB consultations & adopted guidance | news RSS, formal signals only | on by default |
 | ESMA consultations (incl. DORA RTS/ITS) | site RSS, "consults" filter | on by default |
