@@ -197,6 +197,34 @@ def rescope_items(db: Session) -> list[int]:
     return sorted(doomed)
 
 
+def rescope_sitemap_items(db: Session) -> list[int]:
+    """Re-apply the AICPA adapter's own URL filter to rows already stored.
+
+    Same idea as rescope_items, different admission test: AICPA decides relevance from
+    the sitemap URL rather than the scope vocabulary, so tightening that filter needs
+    its own pass. Seven CPA professional-conduct drafts were live when "ethics" left
+    the include list — loans, unpaid fees, tax services, section 529 plans."""
+    from oblag.adapters.aicpa import _OFF_TOPIC_RE, _RELEVANT_RE
+
+    rows = db.query(PipelineItem).filter(PipelineItem.source_system == "aicpa").all()
+    doomed = [
+        i.id
+        for i in rows
+        if i.url and (not _RELEVANT_RE.search(i.url) or _OFF_TOPIC_RE.search(i.url))
+    ]
+    if doomed:
+        annotated = {
+            i
+            for (i,) in db.query(KeyDate.pipeline_item_id).filter(
+                KeyDate.pipeline_item_id.in_(doomed), KeyDate.source_snapshot_id.is_(None)
+            )
+        }
+        doomed = [i for i in doomed if i not in annotated]
+    if doomed:
+        purge_items(db, sorted(doomed))
+    return sorted(doomed)
+
+
 def purge_retired_sources(db: Session, keep: set[str]) -> list[int]:
     """Retire items from adapters this build no longer ships (NERC, v0.21.0).
 
