@@ -415,11 +415,11 @@ def test_undated_items_never_outrank_dated_ones(client, seeded, db):
         reduce_item(
             db,
             NormalizedItem(
-                source_system="nerc",
-                external_key=("nerc_project", f"2025-0{n}"),
-                jurisdiction="US-Federal",
-                title=f"NERC Project 2025-0{n}: undated, ingested just now",
-                native_status="in_development",
+                source_system="cppa",
+                external_key=("cppa_package", f"2025-0{n}"),
+                jurisdiction="US-CA",
+                title=f"CCPA rulemaking package 2025-0{n}: undated, ingested just now",
+                native_status="proposed",
                 track="proposed",
             ),
         )

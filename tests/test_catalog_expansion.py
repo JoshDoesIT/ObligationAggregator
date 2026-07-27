@@ -29,7 +29,6 @@ EXPECTED_NEW_SLUGS = {
     "cis-controls",
     "csa-ccm",
     "hitrust-csf",
-    "nerc-cip",
 }
 
 

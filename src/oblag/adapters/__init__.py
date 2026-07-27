@@ -21,7 +21,6 @@ _BUILTIN_MODULES: list[str] = [
     "have_your_say",
     "iso_catalog",
     "legiscan",
-    "nerc",
     "nist_csrc",
     "oeil",
     "pci_ssc",

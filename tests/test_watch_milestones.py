@@ -54,13 +54,13 @@ def test_pending_outcomes_derivation(db, client):
     reduce_item(
         db,
         NormalizedItem(
-            source_system="nerc",
-            external_key=("nerc_project", "2023-03"),
-            jurisdiction="US-Federal",
-            title="NERC Project 2023-03: Internal network security monitoring INSM",
-            native_status="Board adopted and filed with FERC",
+            source_system="oeil",
+            external_key=("oeil_procedure", "2023/0303(COD)"),
+            jurisdiction="EU",
+            title="Cyber Resilience Act: awaiting signature of act",
+            native_status="Awaiting signature of act",
             track="proposed",
-            obligation_slug="nerc-cip",
+            obligation_slug="eu-cra",
         ),
     )
     # ISO edition under revision (90.92) → revision underway
@@ -98,7 +98,7 @@ def test_pending_outcomes_derivation(db, client):
     assert ("awaiting_outcome", "PCI SSC RFC: PCI KMO v1.0 Standard") in kinds
     assert (
         "adopted_pending_effective",
-        "NERC Project 2023-03: Internal network security monitoring INSM",
+        "Cyber Resilience Act: awaiting signature of act",
     ) in kinds
     assert ("revision_underway", "ISO/IEC 27017:2015") in kinds
     assert not any(w["title"] == "Some closed NPRM" for w in watch)

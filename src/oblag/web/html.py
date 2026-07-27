@@ -80,7 +80,6 @@ SOURCE_LABELS = {
     "esma": "ESMA",
     "cppa": "CPPA",
     "eba": "EBA",
-    "nerc": "NERC",
     "cis": "CIS",
     "aicpa": "AICPA",
     "hitrust": "HITRUST",
@@ -201,8 +200,6 @@ def _signal_kind(item: dict) -> str:
         return "State bill"
     if src == "aicpa":
         return "Exposure draft"
-    if src == "nerc":
-        return "Standards project"
     if src == "aiuc" and native == "scheduled":
         return "Scheduled release"
     if src in ("cis",) or native == "release":
@@ -581,34 +578,11 @@ def items_page(
         "deadlines_30d": len(deadlines_30),
     }
 
-    # Attention-first default ordering: open comment windows (nearest close first),
-    # then finals awaiting effectiveness, then fresh proposals; historical/terminal
-    # states sink. Explicit filters keep the API's recency order within the subset.
-    _state_rank = {
-        "comment_open": 0,
-        "final_pending_effective": 1,
-        "proposed": 2,
-        "comment_closed": 3,
-        "effective": 4,
-        "stalled": 5,
-        "superseded": 6,
-        "withdrawn": 7,
-    }
-
-    def _next_deadline(it: dict) -> str:
-        from datetime import date as _date
-
-        future = [
-            d["value"]
-            for d in it.get("current_dates", [])
-            if d["value"] >= _date.today().isoformat()
-        ]
-        return min(future) if future else "9999-12-31"
-
-    items_sorted = sorted(
-        data["items"],
-        key=lambda it: (_state_rank.get(it["state"], 8), _next_deadline(it), -it["id"]),
-    )
+    # Chronological, newest first, exactly as the API returns it. This page used to
+    # re-sort by (lifecycle state, next deadline, id), which read as no order at all:
+    # rows jumped between 2026 and 2015 down the page because the key that decided
+    # their position was never shown. Urgency already has two homes — the attention
+    # band at the top of this page and /deadlines — so the feed is a feed.
     from oblag.db.models import Obligation
 
     linked_obligations = [
@@ -622,7 +596,7 @@ def items_page(
         request,
         "items.html",
         {
-            "items": items_sorted,
+            "items": data["items"],
             "total": data["total"],
             "states": [s.value for s in ItemState],
             "sources": sources,

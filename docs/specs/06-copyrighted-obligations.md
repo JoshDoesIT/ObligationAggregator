@@ -61,8 +61,13 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   - **EBA** — genuinely JS-rendered (Drupal 10, JSON:API disabled): fetched via the
     **headless-browser tier** (`oblag[browser]`, spec 06 addendum below). Rows carry
     EBA/CP references (durable join keys) and consultation windows.
-  - **NERC** — the relocated standards-under-development page is static; development
-    projects ingested conservatively; ballot/comment dates via curated assertions.
+  - **NERC** — **retired in v0.21.0.** The adapter worked (the relocated
+    standards-under-development page is static and the projects parsed cleanly), so this
+    is a scope decision rather than a technical one: CIP is cybersecurity, but NERC's
+    standards-development process is a different world from the rest of the catalog and
+    the ten projects it produced read as noise beside EU acts and ISO editions. The
+    obligation is listed in `catalog.RETIRED_OBLIGATIONS`, which removes it, its items,
+    and every org-scope and watchlist reference on the next boot.
   - **CIS** — blog RSS with a strict "CIS Controls vX" release filter (zero-noise by
     design; community posts and vulnerability advisories never match).
 - **aiuc** (weekly): the AIUC-1 changelog. No feed exists (`/rss.xml`, `/feed`,

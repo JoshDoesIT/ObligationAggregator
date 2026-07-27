@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from oblag.db.models import CopyrightStatus, DisplayPolicy, Obligation
+from oblag.db.models import CopyrightStatus, DisplayPolicy, Obligation, PipelineItem
 
 CATALOG: list[dict] = [
     # --- US government works: public domain, full text allowed ---
@@ -493,15 +493,6 @@ CATALOG: list[dict] = [
         display_policy=DisplayPolicy.events_only,  # most restrictive licensing
     ),
     dict(
-        slug="nerc-cip",
-        name="NERC CIP Reliability Standards",
-        issuing_body="NERC",
-        jurisdiction="US-Federal",
-        canonical_url="https://www.nerc.com/pa/Stand/Pages/ReliabilityStandards.aspx",
-        copyright_status=CopyrightStatus.licensed,  # standards freely published by NERC
-        display_policy=DisplayPolicy.ids_and_titles,
-    ),
-    dict(
         slug="nist-ai-rmf",
         name="NIST AI Risk Management Framework",
         issuing_body="NIST",
@@ -528,7 +519,58 @@ CATALOG: list[dict] = [
 ]
 
 
+# Obligations this instance used to track and deliberately no longer does. Dropping an
+# entry from CATALOG alone leaves its row and its items behind forever, because the
+# seed only ever upserts. Listed here they are removed on the next boot, along with
+# their items and any reference from an org's scope or a watchlist filter.
+RETIRED_OBLIGATIONS: list[str] = [
+    # Electric-utility reliability standards. In scope on paper (CIP is cybersecurity),
+    # but the NERC standards-development process is a different world from the rest of
+    # the catalog and the signals it produced read as noise beside them.
+    "nerc-cip",
+]
+
+
+def retire_obligations(session: Session) -> dict[str, int]:
+    """Remove retired obligations, their items, and every reference to them.
+
+    Idempotent: once the rows are gone each slug matches nothing. Items go through
+    purge_items so their dates, events, join keys and notifications go with them —
+    an orphaned item with a dangling obligation_id is worse than no item."""
+    from oblag.db.models import Org, Watchlist
+    from oblag.maintenance import purge_items
+
+    if not RETIRED_OBLIGATIONS:
+        return {"obligations": 0, "items": 0}
+    rows = session.query(Obligation).filter(Obligation.slug.in_(RETIRED_OBLIGATIONS)).all()
+    item_ids = [
+        i
+        for (i,) in session.query(PipelineItem.id).filter(
+            PipelineItem.obligation_id.in_([o.id for o in rows] or [-1])
+        )
+    ]
+    if item_ids:
+        purge_items(session, item_ids)
+    for org in session.query(Org).filter(Org.scoped_obligations.isnot(None)):
+        kept = [s for s in (org.scoped_obligations or []) if s not in RETIRED_OBLIGATIONS]
+        if kept != (org.scoped_obligations or []):
+            # an org left following nothing is following everything, which is the
+            # documented meaning of an empty scope
+            org.scoped_obligations = kept or None
+    for wl in session.query(Watchlist).all():
+        slugs = (wl.filters or {}).get("obligation_slugs")
+        if slugs:
+            kept = [s for s in slugs if s not in RETIRED_OBLIGATIONS]
+            if kept != slugs:
+                wl.filters = {**wl.filters, "obligation_slugs": kept}
+    for ob in rows:
+        session.delete(ob)
+    session.flush()
+    return {"obligations": len(rows), "items": len(item_ids)}
+
+
 def seed_obligations(session: Session) -> int:
+    retire_obligations(session)
     count = 0
     for entry in CATALOG:
         existing = session.query(Obligation).filter_by(slug=entry["slug"]).one_or_none()
