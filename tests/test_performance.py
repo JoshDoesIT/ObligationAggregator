@@ -86,15 +86,43 @@ def test_feed_page_query_count_is_bounded(client, db):
     assert counts["n"] <= 20, f"{counts['n']} queries for the feed page — N+1 regression"
 
 
-def test_cdn_cache_header_when_auth_disabled(client, seeded):
-    # single-org (auth off): global read pages are edge-cacheable via the Vercel-specific
-    # header (plain Cache-Control s-maxage is ignored by Vercel's Python runtime)
+def test_only_pages_that_are_the_same_for_everyone_are_edge_cached(client, seeded):
+    """The JSON API is deliberately never scoped, so it is the same for every reader and
+    the CDN can hold it. HTML is not: every page renders through ctx.scope."""
+
     def edge(path):
         return client.get(path).headers.get("vercel-cdn-cache-control", "")
 
-    assert "max-age=60" in edge("/changes")
     assert "max-age=60" in edge("/api/v1/items")
-    assert "max-age=60" not in edge("/admin/versions")  # internal/admin never cached
+    assert "max-age=60" in edge("/og-banner.jpg")
+    assert "max-age=60" not in edge("/admin/versions")
+
+
+def test_personalised_pages_are_never_held_by_a_shared_cache(client, seeded, db):
+    """Reported live as "the save button clears my obligations out": saving redirected
+    to /obligations and Vercel answered with a copy up to 60s old (300 with
+    stale-while-revalidate), rendered before the save. Every page that reflects your own
+    choices must say no-store, or the write looks like it never happened."""
+    for path in ("/", "/changes", "/obligations", "/deadlines", "/watchlists"):
+        headers = client.get(path).headers
+        assert headers.get("vercel-cdn-cache-control") == "no-store", path
+        assert headers.get("cdn-cache-control") == "no-store", path
+        assert "no-store" in headers.get("cache-control", ""), path
+
+
+def test_saving_a_scope_is_visible_on_the_very_next_read(client, seeded, db):
+    import re as _re
+
+    client.post(
+        "/obligations/scope",
+        data={"csrf_token": "", "slugs": ["gdpr", "dora"]},
+        follow_redirects=False,
+    )
+    html = client.get("/obligations").text
+    checked = _re.findall(
+        r'<input type="checkbox" name="slugs" value="([^"]+)"[^>]*?checked[^>]*?>', html, _re.S
+    )
+    assert sorted(checked) == ["dora", "gdpr"]
 
 
 def test_scoped_version_pass_only_touches_given_obligations(db):
