@@ -22,6 +22,7 @@ _RULES: list[tuple[str, str]] = [
     (r"artificial intelligence act|\bai act\b|ai regulatory sandbox", "eu-ai-act"),
     (r"digital operational resilience|\bdora\b", "dora"),
     (r"\bnis ?2\b|network and information security directive", "nis2"),
+    (r"uk gdpr|data protection act 2018|\buk\b.{0,20}data protection", "uk-gdpr"),
     (r"\bgdpr\b|general data protection regulation", "gdpr"),
     (r"\beidas\b|electronic identification and trust services", "eidas2"),
     (r"cyber incident reporting for critical infrastructure|\bcircia\b", "circia"),
@@ -45,6 +46,25 @@ _RULES: list[tuple[str, str]] = [
     (r"key management operations", "pci-kmo"),
     (r"california consumer privacy|\bccpa\b|\bcpra\b", "ccpa"),
     (r"critical security controls|cis controls", "cis-controls"),
+    # AICPA publishes the Trust Services Criteria that SOC 2 reports are issued
+    # against, and its attestation standards (SSAE/AT-C) govern how. Its exposure
+    # drafts were landing unlinked, which left soc2 blank while its source was working.
+    (r"trust services|\bsoc ?2\b|\bssae\b|\bat-c\b", "soc2"),
+    # SEC cyber disclosure is Item 1.05/Item 106; SOX is ICFR. Both reach us through
+    # the Federal Register, which states the subject in the title.
+    (
+        r"cybersecurity risk management, strategy, governance and incident disclosure"
+        r"|cybersecurity disclosure|item 1\.05|form 8-k item 1\.05",
+        "sec-cyber-disclosure",
+    ),
+    (r"sarbanes.oxley|\bicfr\b|internal control over financial reporting", "sox"),
+    (r"cloud controls matrix|\bccm\b v?\d", "csa-ccm"),
+    # the remaining ISO family: 27002/27017/27018 had no rule, so a signal naming one
+    # by number could only link if an adapter stated the slug outright
+    (r"iso[/ ]?(iec )?27002", "iso-27002"),
+    (r"iso[/ ]?(iec )?27017", "iso-27017"),
+    (r"iso[/ ]?(iec )?27018", "iso-27018"),
+    (r"fips 140-3|cryptographic module validation", "fips-140-3"),
     (r"\bhitrust\b", "hitrust-csf"),
     (r"iso[/ ]?(iec )?27001", "iso-27001"),
     (r"iso[/ ]?(iec )?27701", "iso-27701"),
@@ -54,7 +74,6 @@ _RULES: list[tuple[str, str]] = [
     (r"sp 800-53\b", "nist-800-53"),
     (r"sp 800-171\b", "nist-800-171"),
     (r"sp 800-63\b", "nist-800-63"),
-    (r"fips 140-3", "fips-140-3"),
     (r"cybersecurity framework|\bcsf 2\.0\b", "nist-csf"),
 ]
 

@@ -106,6 +106,7 @@ def _repair_data() -> None:
         purge_known_bad,
         purge_retired_sources,
         rearm_backfill,
+        relink_items,
         rescope_items,
         rescope_sitemap_items,
     )
@@ -116,6 +117,8 @@ def _repair_data() -> None:
         purge_retired_sources(session, set(available_adapters()))
         rescope_items(session)
         rescope_sitemap_items(session)
+        # after the purges, so a rule added this release reaches what survived
+        relink_items(session)
         complete_concluded_consultations(session)
         # v0.20.1's dedupe grouped on join keys alone and deleted 26 Federal Register
         # items that merely shared a RIN. Re-arming makes the next daily cron re-read

@@ -49,6 +49,7 @@ uv run oblag serve         # UI + API on http://localhost:8000
 |---|---|---|
 | US Federal Register (`PRORULE`/`RULE`) | JSON API, no key | on by default |
 | NIST CSRC drafts open for comment | JSON feed | on by default |
+| NIST publications of record (SP 800, FIPS, CSWP) | CSRC series index HTML | on by default (weekly) |
 | regulations.gov dockets (enrichment) | JSON API | `OBLAG_REGSGOV_API_KEY` (free) |
 | EUR-Lex / CELLAR (EU acts + proposals) | SPARQL | on by default |
 | OEIL watched procedures | HTML (defensive) | `OBLAG_OEIL_PROCEDURES="2021/0106(COD),…"` |

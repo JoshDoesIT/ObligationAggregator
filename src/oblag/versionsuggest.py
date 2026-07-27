@@ -27,6 +27,9 @@ def _published_version(item: PipelineItem) -> str | None:
         return meta.get("published_version")
     if item.source_system == "hitrust" and item.native_status == "release":
         return meta.get("published_version")
+    if item.source_system == "nist_pubs" and item.native_status == "final":
+        # "Rev. 5" is how NIST names a version; version_key reads the number out
+        return meta.get("published_version")
     if item.source_system == "aiuc" and item.native_status == "release":
         # AIUC-1 has no version numbers: a release IS its date. A scheduled release
         # is deliberately excluded — it has not happened yet.

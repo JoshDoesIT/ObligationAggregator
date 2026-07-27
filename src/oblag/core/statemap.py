@@ -161,6 +161,21 @@ def cis_statemap(
     return ItemState.effective if native_status == "release" else None
 
 
+@register_statemap("nist_pubs")
+def nist_pubs_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """The CSRC index prints a status word per publication. Only finals are a
+    publication of record; withdrawn ones stay visible so a reader can see they went."""
+    if native_status == "final":
+        return ItemState.effective
+    if native_status == "withdrawn":
+        return ItemState.withdrawn
+    if native_status == "draft":
+        return ItemState.proposed
+    return None
+
+
 @register_statemap("aiuc")
 def aiuc_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

@@ -242,6 +242,27 @@ def purge_retired_sources(db: Session, keep: set[str]) -> list[int]:
     return sorted(doomed)
 
 
+def relink_items(db: Session) -> int:
+    """Attach already-ingested signals to obligations whose linker rule arrived later.
+
+    The reducer infers an obligation on create and fills it on update, so a new rule
+    only reaches items their source happens to re-list. AICPA's exposure drafts sat
+    unlinked for weeks that way, which left SOC 2 blank while its source was working
+    fine. Additive only: an existing link is never second-guessed."""
+    from oblag.db.models import Obligation
+    from oblag.linking import infer_obligation
+
+    by_slug = {slug: oid for slug, oid in db.query(Obligation.slug, Obligation.id)}
+    linked = 0
+    for item in db.query(PipelineItem).filter(PipelineItem.obligation_id.is_(None)):
+        slug = infer_obligation(item.title)
+        if slug and (oid := by_slug.get(slug)):
+            item.obligation_id = oid
+            linked += 1
+    db.flush()
+    return linked
+
+
 def rearm_backfill(db: Session) -> bool:
     """Clear the historical catch-up marker so the next daily cron re-reads the sources.
 
