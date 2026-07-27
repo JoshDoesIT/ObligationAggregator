@@ -62,6 +62,7 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | CPPA (California) rulemaking packages | static HTML | on by default (weekly) |
 | NERC standards under development | static HTML | on by default (weekly) |
 | CIS Controls version releases | blog RSS, strict release filter | on by default (weekly) |
+| AIUC-1 quarterly releases (+ the next one, dated) | changelog HTML, server-rendered | on by default (weekly) |
 | AICPA exposure drafts | sitemap (tolerant parser) | on by default (weekly) |
 | HITRUST CSF releases + advisories | sitemap slug signals | on by default (weekly) |
 | Unified Agenda / OIRA projected dates | — | no API; curated `oblag assert-date … --confidence agency_estimate --note "<citation>"` |

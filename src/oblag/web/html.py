@@ -84,6 +84,7 @@ SOURCE_LABELS = {
     "cis": "CIS",
     "aicpa": "AICPA",
     "hitrust": "HITRUST",
+    "aiuc": "AIUC",
     "curated": "Curated",
 }
 EVENT_LABELS = {
@@ -202,6 +203,8 @@ def _signal_kind(item: dict) -> str:
         return "Exposure draft"
     if src == "nerc":
         return "Standards project"
+    if src == "aiuc" and native == "scheduled":
+        return "Scheduled release"
     if src in ("cis",) or native == "release":
         return "Version release"
     if native == "advisory":

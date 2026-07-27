@@ -16,6 +16,12 @@ import re
 # when it IS the whole value, which is how catalog versions are written.
 _PREFIXED_RE = re.compile(r"\b(?:v|rev\.?\s*|version\s+)(\d+(?:\.\d+)*)", re.IGNORECASE)
 _BARE_RE = re.compile(r"^\s*(\d+(?:\.\d+)*)\s*$")
+# Some standards have no version numbers at all and are cited by release date (AIUC-1
+# revises quarterly and calls each release by its date). Only trusted when it IS the
+# whole value, for the same reason as _BARE_RE: "AIUC-1 2026-10-15 (scheduled)" is a
+# title, and reading a version out of a title would make the scheduled release look
+# like a published one.
+_DATE_RE = re.compile(r"^\s*(\d{4})-(\d{2})-(\d{2})\s*$")
 
 
 def version_key(text: str | None) -> tuple[int, ...] | None:
@@ -23,6 +29,10 @@ def version_key(text: str | None) -> tuple[int, ...] | None:
     are dropped so "4.0" == "4" and "5.0" == "5". None when no version token is found."""
     if not text:
         return None
+    iso = _DATE_RE.match(text)
+    if iso:
+        # never trailing-zero-stripped: 2026-04-10 and 2026-04-01 are different releases
+        return tuple(int(p) for p in iso.groups())
     m = _PREFIXED_RE.search(text) or _BARE_RE.match(text)
     if m is None:
         return None
@@ -30,6 +40,10 @@ def version_key(text: str | None) -> tuple[int, ...] | None:
     while len(parts) > 1 and parts[-1] == 0:
         parts.pop()
     return tuple(parts)
+
+
+def _is_date_key(text: str | None) -> bool:
+    return bool(text and _DATE_RE.match(text))
 
 
 def same_version(a: str | None, b: str | None) -> bool:
@@ -61,6 +75,9 @@ def plausible_successor(current: str | None, candidate: str | None) -> bool:
       ahead — enough for a long-dormant standard, tight enough to reject a stray number;
     - dotted scheme (semver-ish): the major component rises by at most one — standards
       bump majors one at a time (PCI 4.x→5.0, POI 6.2→7.0), so a jump to 12.x is noise.
+    - date scheme (a release named by its date, e.g. AIUC-1): at most a year ahead, so
+      a quarterly cadence advances freely but a mis-read year is caught. Both sides must
+      be dates: a date against a dotted baseline is a parse gone wrong, not a release.
     A scheme mismatch (a year against a dotted baseline, or vice versa) fails these bounds
     and is treated as implausible."""
     if not is_newer(candidate, current):
@@ -71,6 +88,8 @@ def plausible_successor(current: str | None, candidate: str | None) -> bool:
         return False
     if kb is None:
         return True
+    if _is_date_key(candidate) or _is_date_key(current):
+        return _is_date_key(candidate) and _is_date_key(current) and (kc[0] - kb[0]) <= 1
     if len(kb) == 1 and kb[0] >= 1990:
         return len(kc) == 1 and (kc[0] - kb[0]) <= 15
     return (kc[0] - kb[0]) <= 1

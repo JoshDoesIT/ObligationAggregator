@@ -65,6 +65,24 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
     projects ingested conservatively; ballot/comment dates via curated assertions.
   - **CIS** — blog RSS with a strict "CIS Controls vX" release filter (zero-noise by
     design; community posts and vulnerability advisories never match).
+- **aiuc** (weekly): the AIUC-1 changelog. No feed exists (`/rss.xml`, `/feed`,
+  `/atom.xml` all 404, no `<link rel=alternate>`), but the page is server-rendered
+  Next.js, so the release history is in the HTML and no browser tier is needed.
+
+  AIUC-1 is the only obligation here that revises on a **fixed quarterly cadence** and
+  **announces its next release date in advance**, so the adapter reads two things from
+  one page. Releases in the "Standard history" table plus the current one become
+  `release` items dated by their release date. The announced next release becomes a
+  `scheduled` item carrying a `projected_final` date, keyed as
+  `("aiuc_release", <its own date>)` — the key its released form will carry, so the row
+  flips in place rather than a second row appearing beside a stale one. Only the
+  "Standard history" section and the two headline sentences may create releases:
+  scanning the whole page for dates would sweep up dates quoted inside change notes.
+
+  AIUC-1 also has **no version numbers** — a release IS its date — which is why
+  `versions.version_key` learned an ISO-date scheme. It is trusted only when the date
+  is the whole value, so "AIUC-1 2026-10-15 (scheduled)" is read as a title and not as
+  a published version, and a date is never compared against a dotted baseline.
 - **AICPA: resolved via sitemap (M9).** Root cause established by intercepting the
   SPA's GraphQL traffic: its `getStaticLandingPage(slug:"exposure-drafts")` query
   **500s server-side** ("Cannot read properties of null") — the landing page is broken

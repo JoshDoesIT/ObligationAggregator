@@ -569,7 +569,7 @@ def test_scoped_pages_never_count_what_they_do_not_show(client, seeded, db):
 
 
 def test_front_page_coda_offers_the_scope_it_promises(client, seeded, db):
-    """ "Make it your paper" is a promise only scoping keeps, and scoping was reachable
+    """ "Make Gazette yours" is a promise only scoping keeps, and scoping was reachable
     only by wandering into the catalog. The coda leads with it, and once a scope is set
     the same button reads as an edit rather than a fresh choice."""
     coda = client.get("/").text.split('class="coda"')[1].split("</div>\n</div>")[0]
