@@ -87,6 +87,8 @@ SOURCE_LABELS = {
     "hitrust": "HITRUST",
     "aiuc": "AIUC",
     "fedramp": "FedRAMP",
+    "ecfr": "eCFR",
+    "uk_legislation": "legislation.gov.uk",
     "standard_pages": "Publisher",
     "curated": "Curated",
 }
@@ -198,6 +200,10 @@ def _signal_kind(item: dict) -> str:
         return "Publication" if native == "publication" else "RFC"
     if src in ("pci_docs", "standard_pages"):
         return "Standard"
+    if src == "ecfr":
+        return "Rule text"
+    if src == "uk_legislation":
+        return "Amendment"
     if src == "fedramp":
         return "Programme change"
     if src == "iso_catalog":

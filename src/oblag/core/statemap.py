@@ -169,6 +169,27 @@ def fedramp_statemap(
     return ItemState.effective if native_status == "announcement" else None
 
 
+@register_statemap("ecfr")
+def ecfr_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """The eCFR is the current text by definition: what it carries is in force."""
+    return ItemState.effective if native_status == "in_force" else None
+
+
+@register_statemap("uk_legislation")
+def uk_legislation_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """An amendment the source records as commenced is law; one it records as
+    prospective is a real, adopted instrument that has not reached the statute yet."""
+    if native_status == "in_force":
+        return ItemState.effective
+    if native_status == "pending":
+        return ItemState.final_pending_effective
+    return None
+
+
 @register_statemap("standard_pages")
 def standard_pages_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

@@ -166,6 +166,49 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   drifts (two 2025 announcements carry the crawl date), so `published_at` comes from the
   slug's own date and never from lastmod.
 
+- **Obligations that ARE a CFR part: the eCFR versioner API.** The GLBA Safeguards Rule
+  is 16 CFR 314, the SEC cybersecurity disclosure requirement is Item 106 of Regulation
+  S-K, and the SOX internal-control obligations are Exchange Act rules 13a-15/15d-15 plus
+  Reg S-K Item 308. All three showed nothing, because the only adapter that could see
+  them is the Federal Register and a rulemaking scrolls out of its window in a couple of
+  years while the rule stays in force. Item 106 was adopted in August 2023 and had
+  already fallen out of view.
+
+  `/api/versioner/v1/versions/title-17.json?part=229` answers the right question
+  directly: when was each section last amended. The most recent amendment across a
+  watched target IS the state of that obligation, and a new one updates the row.
+
+  A watched target names the part and, where a part is enormous and only one section is
+  the obligation, the exact sections. Regulation S-K is 200+ sections about executive pay
+  and mine safety; watching the whole part would report every unrelated SEC amendment as
+  a change to the cybersecurity rule.
+
+- **UK GDPR: legislation.gov.uk changes feeds.** UK GDPR had no source of any kind. The
+  text lives at legislation.gov.uk as retained Regulation 2016/679 alongside the Data
+  Protection Act 2018, and neither publishes a newsroom, but every piece of legislation
+  has a changes feed whose entries carry a structured `ukm:Effect`: the amending
+  instrument, the provisions touched, what was done to them, and commencement.
+
+  One row per amending instrument, not per provision. The Data (Use and Access) Act 2025
+  consequential regulations amend 48 articles of UK GDPR; 48 near-identical rows would
+  bury the fact a reader needs. Grouping also stabilises identity, because the same
+  instrument reappears as more of its provisions commence.
+
+  The feed distinguishes "not commenced yet" from "no date known", and so does the
+  adapter: those DUAA effects are marked `Applied="false" Prospective="true"` with no
+  date, which means commencement on a day to be appointed. That is recorded as pending
+  with no compliance date rather than guessed at.
+
+- **NIST AI RMF: a watched page.** AI 100-1 has no CSRC series index (`/publications/ai`
+  is a 404), so `nist_pubs` cannot see it, and the framework landing page is the only
+  surface that states the version. Added to `standard_pages`.
+
+  That work also hardened version extraction generally. Two fetches of the same CIS URL
+  minutes apart came back as different CDN variants, and one mentioned "CIS Controls
+  v7.1" before v8.1 — first-match would have published a superseded edition as the
+  current standard. Version pages now take the **highest** version they state, since a
+  page about v8.1 mentions older versions all the time and never a newer one.
+
 ## Statutes with no machine-readable source at all
 
 Four obligations have no feed, no API, no document library and no version page, because

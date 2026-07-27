@@ -82,6 +82,18 @@ WATCHED: tuple[WatchedPage, ...] = (
         released_group=2,
     ),
     WatchedPage(
+        key="nist-ai-rmf",
+        obligation="nist-ai-rmf",
+        jurisdiction="US-Federal",
+        url="https://www.nist.gov/itl/ai-risk-management-framework",
+        # AI 100-1 has no CSRC series index (/publications/ai is a 404), so nist_pubs
+        # cannot see it and this page is the only surface that states the version. NIST
+        # writes "AI RMF 1.0" throughout, including in the line announcing that 1.0 is
+        # being revised, which is exactly the signal we want to catch when 2.0 lands.
+        pattern=re.compile(r"AI RMF\s+(\d+(?:\.\d+)*)", re.IGNORECASE),
+        title="NIST AI Risk Management Framework {}",
+    ),
+    WatchedPage(
         key="nydfs-500",
         obligation="nydfs-500",
         jurisdiction="US-NY",
@@ -128,7 +140,7 @@ class StandardPagesAdapter(SourceAdapter):
             # the page says it is not the current one, so believe it and record nothing
             # rather than publishing a version the body has already replaced
             return
-        match = page.pattern.search(text)
+        match = _best_match(page, text)
         if match is None:
             return
         value = match.group(1)
@@ -159,6 +171,30 @@ class StandardPagesAdapter(SourceAdapter):
             ),
             native_meta=({"stated": value} if page.captures_date else {"published_version": value}),
         )
+
+
+def _best_match(page: WatchedPage, text: str) -> re.Match[str] | None:
+    """The HIGHEST version the page states, not the first one it happens to mention.
+
+    Observed live: two fetches of the same CIS URL minutes apart came back as different
+    CDN variants, and in one of them "CIS Controls v7.1" appeared before v8.1 — which
+    would have published a superseded edition as the current one. A page about v8.1
+    mentions older versions all the time (upgrade notes, mapping tables); it never
+    mentions a version newer than the one it is about.
+
+    Dates are left as first-match: a page states one amendment announcement, and
+    "highest" is not a meaningful ordering for the sentence forms we parse.
+    """
+    matches = list(page.pattern.finditer(text))
+    if not matches:
+        return None
+    if page.captures_date:
+        return matches[0]
+    return max(matches, key=lambda m: _version_key(m.group(1)))
+
+
+def _version_key(value: str) -> tuple[int, ...]:
+    return tuple(int(p) for p in re.findall(r"\d+", value)) or (0,)
 
 
 def _plain(html: str) -> str:

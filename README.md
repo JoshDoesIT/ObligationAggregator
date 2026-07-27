@@ -68,6 +68,8 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | AICPA exposure drafts | sitemap (tolerant parser) | on by default (weekly) |
 | HITRUST CSF releases + advisories | sitemap slug signals | on by default (weekly) |
 | FedRAMP baselines, rules and directive responses | sitemap slug signals (no feed exists) | on by default (weekly) |
+| Obligations that ARE a CFR part (GLBA Safeguards, SEC Item 106, SOX ICFR rules) | eCFR versioner API, watched parts/sections | on by default (weekly) |
+| UK GDPR + Data Protection Act 2018 amendments | legislation.gov.uk changes feeds, grouped per amending instrument | on by default (weekly) |
 | Statutes whose text is the only source (PIPEDA, LGPD, US state privacy) | curated milestone timelines with citations | on by default (seeded at boot) |
 | Unified Agenda / OIRA projected dates | — | no API; curated `oblag assert-date … --confidence agency_estimate --note "<citation>"` |
 
