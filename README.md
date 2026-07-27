@@ -73,6 +73,11 @@ uv run oblag serve         # UI + API on http://localhost:8000
 
 ## Beyond the feed
 
+- **Watchlists** — RSS (unguessable per-watchlist token), email digest or signed
+  webhook, filtered by obligation, lifecycle state, event type and source, or bound
+  live to "everything I'm subject to". Pausing stops delivery and keeps the feed URL
+  serving a valid empty channel, so subscribers stay subscribed and resuming needs
+  nothing from them; deleting retires the feed with a 410.
 - **Curated date assertions** — `oblag assert-date` records dates from sources without
   adapters (Unified Agenda, IAPP cross-checks) with confidence + citation; same
   append-only supersession and `date_changed` events as fetched dates.

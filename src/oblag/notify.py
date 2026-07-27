@@ -246,7 +246,11 @@ def dispatch_pending(session: Session) -> int:
     """Deliver undelivered events to matching push watchlists. Returns deliveries made."""
     watchlists = (
         session.query(Watchlist)
-        .filter(Watchlist.active.is_(True), Watchlist.channel.in_(["email", "webhook"]))
+        .filter(
+            Watchlist.active.is_(True),
+            Watchlist.deleted_at.is_(None),
+            Watchlist.channel.in_(["email", "webhook"]),
+        )
         .all()
     )
     if not watchlists:

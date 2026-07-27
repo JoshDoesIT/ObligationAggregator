@@ -258,7 +258,14 @@ class Watchlist(Base):
     # endpoint can verify authenticity. Set only for webhook channels.
     signing_secret: Mapped[str | None] = mapped_column(String(64))
     filters: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    # `active` is PAUSE and nothing else: a paused watchlist stops delivering and can be
+    # resumed. Deleting is `deleted_at`. They used to be the same flag, which meant the
+    # only button on the page ("Pause") called DELETE, a paused row offered no way back,
+    # and its RSS URL answered "unknown feed" in the subscriber's reader.
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Soft delete: the row stays so notification_log keeps its foreign key and the
+    # audit trail of what was already sent survives. Nothing lists or delivers it.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     # lets a watchlist read its org's obligation scope live (filters.use_org_scope)

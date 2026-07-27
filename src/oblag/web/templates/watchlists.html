@@ -106,6 +106,8 @@
       <td data-label="Delivery" style="max-width:22rem; overflow-wrap:anywhere">
         <span class="tag">{{ w.channel }}</span>
         {% if w.feed_url %}<div style="margin-top:.2rem"><a href="{{ w.feed_url }}">{{ w.feed_url }}</a></div>
+          {% if not w.active %}<div class="muted" style="font-size:.8rem; margin-top:.15rem">
+            Paused, so the feed is empty right now. Subscribers can stay subscribed.</div>{% endif %}
         {% elif w.target %}<div class="muted" style="margin-top:.2rem; font-size:.85rem">{{ w.target }}</div>{% endif %}</td>
       <td data-label="Watching">
         {% set f = w.filters or {} %}
@@ -118,11 +120,19 @@
       </td>
       <td data-label="Status">{% if w.active %}<span class="badge ok"><span class="dot"></span>active</span>
           {% else %}<span class="badge"><span class="dot"></span>paused</span>{% endif %}</td>
-      <td>{% if w.active %}
-        <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline">
+      <td data-label="Actions" style="white-space:nowrap">
+        {# Pause and delete are separate things now. Pausing keeps the row, the filters
+           and the RSS token, so resuming needs nothing from the subscriber. #}
+        <form method="post" action="/watchlists/{{ w.id }}/{{ 'resume' if not w.active else 'pause' }}" style="display:inline">
           {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
-          <button class="quiet" title="Stop delivering; history is kept">Pause</button>
-        </form>{% endif %}</td>
+          {% if w.active %}<button class="quiet" title="Stop delivering. Nothing is lost and you can resume any time.">Pause</button>
+          {% else %}<button class="quiet" title="Start delivering again. The feed URL is unchanged.">Resume</button>{% endif %}
+        </form>
+        <form method="post" action="/watchlists/{{ w.id }}/delete" style="display:inline"
+              onsubmit="return confirm('Delete “{{ w.name }}”? {% if w.channel == 'rss' %}Anyone subscribed to its feed URL will stop receiving it.{% else %}Deliveries to {{ w.target }} will stop.{% endif %} This cannot be undone.')">
+          {% if ctx %}<input type="hidden" name="csrf_token" value="{{ ctx.csrf_token }}">{% endif %}
+          <button class="quiet danger" title="Remove this watchlist for good">Delete</button>
+        </form></td>
     </tr>
     {% endfor %}
     </tbody>
