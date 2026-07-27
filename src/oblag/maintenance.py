@@ -101,3 +101,50 @@ def purge_known_bad(db: Session) -> int:
     if ids:
         purge_items(db, sorted(ids))
     return len(ids)
+
+
+def dedupe_split_identities(db: Session) -> dict[str, list[int]]:
+    """Retire the older half of items an adapter split by changing how it tracks a source.
+
+    An adapter's external join key is a 1:1 identity for a document. Two items from the
+    same source carrying the identical (type, value) pair are therefore one document
+    seen twice — which happened when iso_catalog moved from track "default" to "final"
+    in v0.19.0 and the reducer's same-track guard refused to match across the change.
+
+    The reducer no longer splits this way (an exact external-key hit matches whatever
+    the track), but rows already split need clearing. The survivor is the most recently
+    seen row, since that is the one the current adapter is maintaining. A row carrying a
+    curated date is never retired — a person put that there."""
+    from collections import defaultdict
+
+    groups: dict[tuple[str, str, str], list[PipelineItem]] = defaultdict(list)
+    rows = (
+        db.query(JoinKey.type, JoinKey.value, PipelineItem)
+        .join(PipelineItem, JoinKey.pipeline_item_id == PipelineItem.id)
+        .all()
+    )
+    for ktype, kvalue, item in rows:
+        groups[(item.source_system, ktype, kvalue)].append(item)
+
+    doomed: list[int] = []
+    kept: list[int] = []
+    for members in groups.values():
+        unique = {i.id: i for i in members}
+        if len(unique) < 2:
+            continue
+        ordered = sorted(unique.values(), key=lambda i: (i.last_seen_at or i.first_seen_at, i.id))
+        survivor = ordered[-1]
+        kept.append(survivor.id)
+        doomed.extend(i.id for i in ordered[:-1])
+
+    if doomed:
+        annotated = {
+            i
+            for (i,) in db.query(KeyDate.pipeline_item_id).filter(
+                KeyDate.pipeline_item_id.in_(doomed), KeyDate.source_snapshot_id.is_(None)
+            )
+        }
+        doomed = [i for i in doomed if i not in annotated]
+    if doomed:
+        purge_items(db, sorted(doomed))
+    return {"purged": sorted(doomed), "kept": sorted(kept)}
