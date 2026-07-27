@@ -167,7 +167,12 @@ def create_app() -> FastAPI:
     app.include_router(auth_routes.router)
     app.include_router(html.router)
 
-    _NO_CACHE_PREFIXES = ("/api/internal", "/admin", "/auth")
+    # Only paths whose response does NOT depend on org state may reach a shared cache.
+    # An allowlist, not a denylist: a page added later is uncached until someone decides
+    # otherwise, which is the safe direction for a cache that is shared between readers.
+    # The JSON API qualifies because it is deliberately never scoped (web/api.py), and
+    # the social banner is the same bytes for everyone.
+    _CDN_CACHEABLE_PREFIXES = ("/api/v1", "/og-banner", "/static")
 
     @app.middleware("http")
     async def _head_as_get(request, call_next):
@@ -188,21 +193,27 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def _cdn_cache(request, call_next):
         resp = await call_next(request)
-        # The read surface is global and single-writer (crons) in single-org mode — let
-        # Vercel's CDN absorb reads (≤60s stale is nothing for regulatory data), so Neon
-        # sees near-zero load between crons. Skip when auth is on (per-user/org content),
-        # on writes, on non-200, and whenever a cookie is being set.
+        # Let Vercel's CDN absorb reads of the things that are the same for everyone, so
+        # Neon sees near-zero load between crons.
+        #
+        # It used to cache the HTML too, on the premise that the read surface was global
+        # and single-writer. Obligation scoping (v0.18.0) ended that: every page now
+        # renders through ctx.scope, so caching them served one reader's edition to
+        # another. Reported as "the save button clears my obligations out" — saving
+        # redirected to /obligations and the CDN answered with a copy up to 60 seconds
+        # old (300 with stale-while-revalidate), rendered before the save.
         from oblag.auth import auth_enabled
 
-        if (
+        cacheable = (
             request.method == "GET"
             and resp.status_code == 200
             and not auth_enabled()
             and "set-cookie" not in resp.headers
             and not request.cookies  # a cookied request may be an unlocked operator —
             # its page carries the admin form/CSRF token and must not hit a shared cache
-            and not request.url.path.startswith(_NO_CACHE_PREFIXES)
-        ):
+            and request.url.path.startswith(_CDN_CACHEABLE_PREFIXES)
+        )
+        if cacheable:
             # Vercel ignores plain Cache-Control s-maxage from Python functions (verified
             # live: x-vercel-cache stayed MISS). Vercel-CDN-Cache-Control is the edge-only
             # control it honors and never forwards to the browser; CDN-Cache-Control is
@@ -210,6 +221,12 @@ def create_app() -> FastAPI:
             resp.headers["Vercel-CDN-Cache-Control"] = "max-age=60, stale-while-revalidate=300"
             resp.headers["CDN-Cache-Control"] = "max-age=60, stale-while-revalidate=300"
             resp.headers.setdefault("Cache-Control", "public, max-age=0, must-revalidate")
+        elif request.method == "GET" and resp.status_code in (200, 303):
+            # Say it explicitly rather than relying on a default. A page that reflects
+            # your own choices must not be held by any cache between you and it.
+            resp.headers["Vercel-CDN-Cache-Control"] = "no-store"
+            resp.headers["CDN-Cache-Control"] = "no-store"
+            resp.headers.setdefault("Cache-Control", "private, no-store")
         return resp
 
     return app

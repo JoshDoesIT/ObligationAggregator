@@ -76,13 +76,16 @@ def test_admin_token_gates_shared_writes(client, seeded, db, monkeypatch):
 
 
 def test_cdn_cache_skipped_for_unlocked_operator(client, seeded, monkeypatch):
+    """The admin cookie suppresses shared caching even on a path that is otherwise
+    cacheable — an unlocked operator's response carries the admin form and CSRF token.
+    (HTML pages are no-store for everyone since v0.23.0, so this asserts against the
+    JSON API, which is the surface the rule still has to hold for.)"""
     token = "s3cr3t-op"
     c = _token_client(client, monkeypatch, token)
-    # anonymous (cookieless) read is CDN-cacheable
-    assert "max-age=60" in c.get("/").headers.get("vercel-cdn-cache-control", "")
+    assert "max-age=60" in c.get("/api/v1/items").headers.get("vercel-cdn-cache-control", "")
     c.post("/admin/unlock", data={"token": token}, follow_redirects=False)
     # once the admin cookie is present, the response must NOT be publicly cached
-    assert "max-age=60" not in c.get("/").headers.get("vercel-cdn-cache-control", "")
+    assert "max-age=60" not in c.get("/api/v1/items").headers.get("vercel-cdn-cache-control", "")
     get_settings_clear(monkeypatch)
 
 
