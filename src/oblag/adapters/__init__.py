@@ -24,6 +24,7 @@ _BUILTIN_MODULES: list[str] = [
     "nist_csrc",
     "nist_pubs",
     "oeil",
+    "pci_docs",
     "pci_ssc",
     "regulations_gov",
 ]

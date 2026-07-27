@@ -161,6 +161,15 @@ def cis_statemap(
     return ItemState.effective if native_status == "release" else None
 
 
+@register_statemap("pci_docs")
+def pci_docs_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """A published PCI standard is the one in force. The library carries no draft or
+    withdrawn state — a superseded edition simply stops being listed."""
+    return ItemState.effective if native_status == "standard" else None
+
+
 @register_statemap("nist_pubs")
 def nist_pubs_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

@@ -32,12 +32,15 @@ DAILY_ADAPTERS = {
 # pages). weekly_due_today() selects the ones due on a given weekday.
 WEEKLY_ADAPTERS: dict[str, tuple[int, str]] = {
     "pci_ssc": (0, "08:10"),
+    "pci_docs": (0, "08:15"),
     "iso_catalog": (1, "08:30"),
     "cppa": (1, "08:45"),
     "eba": (2, "09:00"),  # browser-rendered; self-disables without playwright
+    "nist_pubs": (2, "09:15"),  # publications of record change rarely
     "cis": (3, "09:30"),
     "aicpa": (3, "09:45"),  # sitemap-based (the landing SPA is broken upstream — spec 06)
     "hitrust": (4, "09:55"),
+    "aiuc": (4, "10:05"),  # releases quarterly, so a weekly look is ample
 }
 
 # Groups reused by the serverless cron endpoints (web/internal.py)

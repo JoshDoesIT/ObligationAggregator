@@ -395,7 +395,7 @@ def test_cron_daily_spreads_weekly_across_weekdays(cron_client, monkeypatch):
     hdr = {"Authorization": "Bearer s3cret"}
     _cron_day(monkeypatch, internal, 2026, 7, 20)  # Monday
     body = cron_client.get("/api/internal/run-group/daily", headers=hdr).json()
-    assert body["weekly_included"] == weekly_due_today(0) == ["pci_ssc"]
+    assert body["weekly_included"] == weekly_due_today(0) == ["pci_ssc", "pci_docs"]
     ran = {x["adapter"] for x in body["runs"]}
     assert set(ADAPTER_GROUPS["daily"]) <= ran and "pci_ssc" in ran
     assert "hitrust" not in ran  # due Friday, not today
@@ -411,6 +411,20 @@ def test_cron_daily_spreads_weekly_across_weekdays(cron_client, monkeypatch):
 
     covered = [a for wd in range(7) for a in weekly_due_today(wd)]
     assert sorted(covered) == sorted(WEEKLY_ADAPTERS)
+
+
+def test_every_registered_adapter_has_a_schedule():
+    """An adapter in neither DAILY_ADAPTERS nor WEEKLY_ADAPTERS never runs on a cadence
+    at all — it only ever moves when the historical catch-up sweeps every adapter. Both
+    aiuc and nist_pubs shipped that way: their schedule entries were never added, and
+    nothing said so, because the old coverage check only compared WEEKLY_ADAPTERS
+    against itself."""
+    from oblag.adapters import available_adapters
+    from oblag.scheduler import DAILY_ADAPTERS, WEEKLY_ADAPTERS
+
+    scheduled = set(DAILY_ADAPTERS) | set(WEEKLY_ADAPTERS)
+    unscheduled = sorted(set(available_adapters()) - scheduled)
+    assert unscheduled == [], f"registered but never scheduled: {unscheduled}"
 
 
 def test_cron_run_group_respects_time_budget(cron_client, monkeypatch):
