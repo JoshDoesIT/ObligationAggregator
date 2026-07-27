@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from hashlib import sha256
 
 from oblag.adapters.base import NormalizedItem
 from oblag.core.reducer import reduce_item
@@ -77,7 +78,7 @@ def _fr(db, title: str, abstract: str, obligation: str | None = None):
         db,
         NormalizedItem(
             source_system="federal_register",
-            external_key=("fr_doc_number", f"doc-{abs(hash(title)) % 10**6}"),
+            external_key=("fr_doc_number", f"doc-{sha256(title.encode()).hexdigest()[:12]}"),
             jurisdiction="US-Federal",
             title=title,
             abstract=abstract,
@@ -289,7 +290,7 @@ def test_the_aicpa_filter_is_re_applied_to_rows_already_stored(db):
             state=ItemState.proposed,
             native_status="exposure_draft",
             track="proposed",
-            content_fingerprint=url,
+            content_fingerprint=sha256(url.encode()).hexdigest(),
         )
         db.add(item)
     db.commit()
