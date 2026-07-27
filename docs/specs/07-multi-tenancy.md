@@ -94,6 +94,24 @@ changes — `user.email` remains the join point.
   Outbound webhook targets must be validated against SSRF (no private IP
   ranges, no redirects) once orgs can point them anywhere.
 
+### Watchlist lifecycle (v0.27.0)
+
+Pause and delete are separate states, because they were not and it showed. Until
+v0.27.0 both were the single `active` flag: the only button on the watchlists page
+said "Pause" and called `DELETE`, a paused watchlist offered no way back, and its feed
+answered 404 — which every reader surfaces as "unknown feed", indistinguishable from a
+dead link.
+
+- **Paused** (`active=False`): stops email and webhook delivery, and the RSS URL keeps
+  serving a well-formed channel with no entries and a description saying why. The token
+  is untouched, so resuming needs nothing from the subscriber.
+- **Deleted** (`deleted_at` set): never listed, never delivered, and the feed answers
+  **410 Gone** so a reader drops the subscription instead of retrying forever. The row
+  itself stays, because `notification_log` points at it and the record of what was
+  already sent must survive someone tidying up their list.
+
+Quota counts everything not deleted — pausing is not a way around the limit.
+
 ## 6. BYOL isolation — **obsolete (feature removed in v0.9.0)**
 
 Phase 3 gave the BYOL store org-partitioned storage and org-scoped queries. The

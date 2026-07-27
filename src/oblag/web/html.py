@@ -840,7 +840,14 @@ async def quick_watch(
         filters = wl_api.WatchlistFilters(source_systems=[item.source_system])
     from oblag.db.models import Watchlist
 
-    exists = db.query(Watchlist).filter_by(name=name, active=True, org_id=org.id).first()
+    # a paused watchlist of this name still counts as existing — subscribing again
+    # should not quietly build a second copy beside the one they turned off
+    exists = (
+        db.query(Watchlist)
+        .filter_by(name=name, org_id=org.id)
+        .filter(Watchlist.deleted_at.is_(None))
+        .first()
+    )
     if exists is None:
         wl_api.create_watchlist(
             wl_api.WatchlistIn(name=name, channel="rss", target=None, filters=filters),
@@ -1004,20 +1011,31 @@ async def watchlists_create(
     return RedirectResponse("/watchlists", status_code=303)
 
 
-@router.post("/watchlists/{watchlist_id}/delete", response_class=HTMLResponse)
-async def watchlists_delete(
+@router.post("/watchlists/{watchlist_id}/{action}", response_class=HTMLResponse)
+async def watchlists_action(
     watchlist_id: int,
+    action: str,
     request: Request,
     db: Session = Depends(get_db),
     ctx: Context = Depends(get_context),
 ):
+    """Pause, resume or delete. These were one route and one flag until v0.27.0, which
+    is why the only button on the page called DELETE and a paused watchlist had no way
+    back — see the note on Watchlist.active."""
     if r := _login_redirect(ctx):
         return r
     from oblag.web import watchlists as wl_api
 
+    if action not in ("pause", "resume", "delete"):
+        raise HTTPException(404, "unknown action")
     form = await request.form()
     check_csrf(ctx, str(form.get("csrf_token", "")))
-    wl_api.delete_watchlist(watchlist_id, db=db, ctx=ctx)
+    if action == "pause":
+        wl_api.pause_watchlist(watchlist_id, request=request, db=db, ctx=ctx)
+    elif action == "resume":
+        wl_api.resume_watchlist(watchlist_id, request=request, db=db, ctx=ctx)
+    else:
+        wl_api.delete_watchlist(watchlist_id, db=db, ctx=ctx)
     return RedirectResponse("/watchlists", status_code=303)
 
 

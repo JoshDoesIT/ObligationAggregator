@@ -228,6 +228,9 @@
     button:hover { transform:translate(1px,1px); box-shadow:1px 1px 0 var(--ink); }
     button:active { transform:translate(2px,2px); box-shadow:none; }
     button.quiet { background:var(--panel); color:var(--fg2); }
+    /* destructive, and it should look it — but only on hover, so a row of actions
+       doesn't shout before anyone has aimed at it */
+    button.quiet.danger:hover { background:var(--accent); color:#fff; }
     /* labelled checkbox groups — replaces hand-typed enum CSV in the watchlist builder */
     .checkgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
                  gap:.15rem .8rem; margin-top:.35rem; }

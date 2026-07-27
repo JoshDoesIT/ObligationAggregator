@@ -97,6 +97,11 @@ def init_db(engine: Engine | None = None) -> None:
     if "signing_secret" not in wl_cols:
         with eng.begin() as conn:
             conn.execute(sql_text("ALTER TABLE watchlist ADD COLUMN signing_secret VARCHAR(64)"))
+    # v0.27.0: watchlist.deleted_at — pause and delete used to share the `active` flag
+    if "deleted_at" not in wl_cols:
+        ts_type = "TIMESTAMPTZ" if eng.dialect.name == "postgresql" else "TIMESTAMP"
+        with eng.begin() as conn:
+            conn.execute(sql_text(f"ALTER TABLE watchlist ADD COLUMN deleted_at {ts_type}"))
     # v0.4.0 (spec 07 Phase 3): per-org email prefs. (The sibling private_document
     # migration went away with the BYOL feature in v0.9.0; any legacy table is inert.)
     org_cols = {c["name"] for c in sa_inspect(eng).get_columns("org")}

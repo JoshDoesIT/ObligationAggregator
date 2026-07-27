@@ -298,7 +298,13 @@ def enforce_quota(session: Session, org_id: int, kind: str) -> None:
     limit, current = {
         "watchlists": (
             settings.quota_watchlists,
-            lambda: session.query(Watchlist).filter_by(org_id=org_id, active=True).count(),
+            # pausing is not a way to dodge the quota; deleting is
+            lambda: (
+                session.query(Watchlist)
+                .filter_by(org_id=org_id)
+                .filter(Watchlist.deleted_at.is_(None))
+                .count()
+            ),
         ),
         "api_keys": (
             settings.quota_api_keys,

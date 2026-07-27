@@ -64,6 +64,15 @@ def _to_dict(wl: Watchlist, request: Request | None = None) -> dict:
     return d
 
 
+def _owned(db: Session, watchlist_id: int, org: Org) -> Watchlist:
+    """A live watchlist this org owns. Another org's row, or a deleted one, is a 404 —
+    never a different error, which would confirm the id exists."""
+    wl = db.get(Watchlist, watchlist_id)
+    if wl is None or wl.org_id != org.id or wl.deleted_at is not None:
+        raise HTTPException(404, "watchlist not found")
+    return wl
+
+
 @router.get("/watchlists")
 def list_watchlists(
     request: Request = None,  # type: ignore[assignment]
@@ -71,7 +80,11 @@ def list_watchlists(
     ctx: Context = Depends(get_context),
 ):
     org = require_org(ctx)
-    rows = db.query(Watchlist).filter(Watchlist.org_id == org.id).order_by(Watchlist.id)
+    rows = (
+        db.query(Watchlist)
+        .filter(Watchlist.org_id == org.id, Watchlist.deleted_at.is_(None))
+        .order_by(Watchlist.id)
+    )
     return {"watchlists": [_to_dict(w, request) for w in rows]}
 
 
@@ -117,15 +130,45 @@ def create_watchlist(
     return _to_dict(wl, request)
 
 
+@router.post("/watchlists/{watchlist_id}/pause")
+def pause_watchlist(
+    watchlist_id: int,
+    request: Request = None,  # type: ignore[assignment]
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    """Stop delivering, keep everything. Reversible with /resume."""
+    wl = _owned(db, watchlist_id, require_org(ctx))
+    wl.active = False
+    db.flush()
+    return _to_dict(wl, request)
+
+
+@router.post("/watchlists/{watchlist_id}/resume")
+def resume_watchlist(
+    watchlist_id: int,
+    request: Request = None,  # type: ignore[assignment]
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
+    """Start delivering again. The RSS token is unchanged, so a reader that stayed
+    subscribed through the pause simply starts seeing entries again."""
+    wl = _owned(db, watchlist_id, require_org(ctx))
+    wl.active = True
+    db.flush()
+    return _to_dict(wl, request)
+
+
 @router.delete("/watchlists/{watchlist_id}", status_code=204)
 def delete_watchlist(
     watchlist_id: int, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
 ):
-    org = require_org(ctx)
-    wl = db.get(Watchlist, watchlist_id)
-    if wl is None or wl.org_id != org.id:  # never reveal other orgs' watchlists
-        raise HTTPException(404, "watchlist not found")
-    wl.active = False  # soft delete keeps the notification audit log intact
+    """Gone for good. The row survives so notification_log keeps its foreign key and
+    the record of what was already sent stays intact, but nothing lists or delivers it
+    and the feed answers 410 rather than pretending the token was never real."""
+    wl = _owned(db, watchlist_id, require_org(ctx))
+    wl.active = False
+    wl.deleted_at = datetime.now(UTC)
     return Response(status_code=204)
 
 
@@ -134,20 +177,27 @@ rss_router = APIRouter(include_in_schema=False)
 
 @rss_router.get("/rss/{token}.xml")
 def rss_feed(token: str, request: Request, db: Session = Depends(get_db)):
-    wl = (
-        db.query(Watchlist)
-        .filter_by(channel="rss", target=token)
-        .filter(Watchlist.active.is_(True))
-        .one_or_none()
-    )
+    wl = db.query(Watchlist).filter_by(channel="rss", target=token).first()
     if wl is None:
         raise HTTPException(404, "unknown feed")
+    if wl.deleted_at is not None:
+        # 410, not 404: the token WAS real, and a reader that gets "gone" removes the
+        # subscription cleanly instead of retrying a URL that will never come back.
+        raise HTTPException(410, "this feed was deleted")
     # same reason as _to_dict: a feed read in someone's reader must link somewhere
     # reachable, and base_url is the localhost default until a deployment sets it
     from oblag.web.urls import site_base
 
     base = site_base(request)
-    events = db.query(Event).order_by(Event.id.desc()).limit(500).all()
+    # A paused feed stays a FEED. Answering 404 made every reader say "unknown feed",
+    # which reads as a broken link rather than a setting the owner chose, and there was
+    # no way back short of re-subscribing. An empty channel that says why is honest and
+    # resumes on its own the moment the watchlist is switched back on.
+    events = (
+        db.query(Event).order_by(Event.id.desc()).limit(500).all()
+        if wl.active
+        else []  # paused: no entries, but a well-formed channel
+    )
     entries: list[str] = []
     for ev in events:
         item = db.get(PipelineItem, ev.pipeline_item_id) if ev.pipeline_item_id else None
@@ -167,13 +217,16 @@ def rss_feed(token: str, request: Request, db: Session = Depends(get_db)):
         )
         if len(entries) >= 100:
             break
+    description = (
+        "Regulatory change events"
+        if wl.active
+        else "This watchlist is paused. Resume it in Gazette and entries appear here again."
+    )
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<rss version="2.0"><channel>'
-        f"<title>oblag — {escape(wl.name)}</title>"
-        f"<link>{escape(base)}</link>"
-        "<description>Regulatory change events</description>"
-        + "".join(entries)
-        + "</channel></rss>"
+        f"<title>Gazette — {escape(wl.name)}</title>"
+        f"<link>{escape(base)}/watchlists</link>"
+        f"<description>{escape(description)}</description>" + "".join(entries) + "</channel></rss>"
     )
     return Response(content=xml, media_type="application/rss+xml")
