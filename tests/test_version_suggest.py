@@ -435,19 +435,19 @@ def test_boot_purges_known_bad_items(db):
     reduce_item(
         db,
         NormalizedItem(
-            source_system="nerc",
-            external_key=("nerc_project", "2025-04"),
+            source_system="federal_register",
+            external_key=("fr_doc_number", "2026-9999"),
             jurisdiction="US-Federal",
-            title="NERC Project 2025-04: Breakout Session",
-            native_status="under_development",
-            track="proposed",
-            obligation_slug="nerc-cip",
+            title="Additions to the Entity List; United Arab Emirates Under the "
+            "Export Administration Regulations",
+            native_status="RULE",
+            track="final",
         ),
     )
     db.commit()
     assert purge_known_bad(db) == 1
     db.commit()
-    assert db.query(PipelineItem).filter_by(source_system="nerc").count() == 0
+    assert db.query(PipelineItem).filter_by(source_system="federal_register").count() == 0
     assert db.query(Event).count() == 0
     assert purge_known_bad(db) == 0  # idempotent
 

@@ -46,7 +46,6 @@ _RULES: list[tuple[str, str]] = [
     (r"california consumer privacy|\bccpa\b|\bcpra\b", "ccpa"),
     (r"critical security controls|cis controls", "cis-controls"),
     (r"\bhitrust\b", "hitrust-csf"),
-    (r"\bnerc\b|critical infrastructure protection reliability", "nerc-cip"),
     (r"iso[/ ]?(iec )?27001", "iso-27001"),
     (r"iso[/ ]?(iec )?27701", "iso-27701"),
     (r"iso[/ ]?(iec )?42001", "iso-42001"),

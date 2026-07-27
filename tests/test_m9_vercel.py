@@ -24,12 +24,16 @@ def _items(adapter, *fixture):
 
 def test_aicpa_exposure_drafts_from_sitemap(db):
     items = _items(AicpaAdapter(), "aicpa", "sitemap.xml")
-    assert len(items) >= 6  # assurance/GRC-relevant drafts only; noise/articles/accounting excluded
+    assert len(items) == 3  # attestation/QM drafts only
     assert all("exposure" in i.url.lower() or "exposure" in i.title.lower() for i in items)
-    ethics = next(i for i in items if "529" in i.url)
-    assert ethics.native_status == "exposure_draft"
-    assert ethics.title.startswith("AICPA exposure draft: ")
-    res = reduce_item(db, ethics, today=date(2026, 7, 18))
+    # AICPA's ethics drafts are CPA professional conduct — section 529 plans, tax
+    # services, unpaid fees — and none of them is a SOC 2 obligation. Seven landed in
+    # the live feed before the exclusion; the include list had "ethics" in it.
+    assert not [i for i in items if "ethics" in i.url]
+    draft = next(i for i in items if "quality-management" in i.url)
+    assert draft.native_status == "exposure_draft"
+    assert draft.title.startswith("AICPA exposure draft: ")
+    res = reduce_item(db, draft, today=date(2026, 7, 18))
     assert res.item.state is ItemState.proposed
 
     # curated deadline assertion upgrades it into the comment-window lifecycle
@@ -444,12 +448,12 @@ def test_malformed_sitemap_falls_back_to_tolerant_parse():
     bad = (
         b'<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         b"<url><loc>https://www.aicpa-cima.com/news/article/bad-a&a-slug</loc></url>"
-        b"<url><loc>https://www.aicpa-cima.com/news/download/ethics-exposure-draft-x</loc>"
+        b"<url><loc>https://www.aicpa-cima.com/news/download/attestation-exposure-draft-x</loc>"
         b"<lastmod>2026-06-01</lastmod></url></urlset>"
     )
     items = list(AicpaAdapter().normalize(RawDocument(url="https://t", content=bad)))
     assert len(items) == 1
-    assert items[0].url.endswith("ethics-exposure-draft-x")
+    assert items[0].url.endswith("attestation-exposure-draft-x")
     assert items[0].dates and items[0].dates[0].value == date(2026, 6, 1)
 
 

@@ -60,7 +60,6 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | ESMA consultations (incl. DORA RTS/ITS) | site RSS, "consults" filter | on by default |
 | EBA consultations | **headless-browser rendered** | `uv sync --extra browser` (self-disables without it) |
 | CPPA (California) rulemaking packages | static HTML | on by default (weekly) |
-| NERC standards under development | static HTML | on by default (weekly) |
 | CIS Controls version releases | blog RSS, strict release filter | on by default (weekly) |
 | AIUC-1 quarterly releases (+ the next one, dated) | changelog HTML, server-rendered | on by default (weekly) |
 | AICPA exposure drafts | sitemap (tolerant parser) | on by default (weekly) |
@@ -96,9 +95,12 @@ uv run oblag serve         # UI + API on http://localhost:8000
 
 ## Roadmap (not yet built, and why)
 
-- Every body from the original "unparseable" list (EBA, ESMA, EDPB, CPPA, NERC, CIS,
-  AICPA, HITRUST) now has an adapter — feed/sitemap-first, headless-browser tier where
+- Every body from the original "unparseable" list (EBA, ESMA, EDPB, CPPA, CIS, AICPA,
+  HITRUST) now has an adapter — feed/sitemap-first, headless-browser tier where
   genuinely needed (see `docs/specs/06` for the per-source mechanisms and evidence).
+  NERC was built and then **retired** in v0.21.0: CIP is cybersecurity on paper, but the
+  standards-development process is a different world from the rest of the catalog and
+  its signals read as noise beside them.
 - **OSCAL control-level crosswalk** (set-theory relations) — deliberately curated-only
   until mappings can carry human review; the OSCAL catalog export ships today.
 - **Multi-tenant workspaces / SSO / hosted SaaS** — self-host single-workspace first.

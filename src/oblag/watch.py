@@ -21,7 +21,7 @@ from oblag.db.models import DateType, ItemState, PipelineItem
 # consultation sources whose closed windows imply a pending outcome (rulemakings from
 # broad legal sources are excluded: agencies may lawfully let dockets die quietly, so
 # "closed" there is not a promise of an outcome)
-_CONSULTATION_SOURCES = {"pci_ssc", "have_your_say", "edpb", "esma", "eba", "aicpa", "nerc"}
+_CONSULTATION_SOURCES = {"pci_ssc", "have_your_say", "edpb", "esma", "eba", "aicpa"}
 
 
 def _live(dates: dict[Any, Any], dtype: DateType) -> Any:

@@ -87,8 +87,13 @@
         <a href="/items/{{ item.id }}">{{ item.title }}</a>
         {% if item.obligation %}<a class="tag" href="/changes?obligation={{ item.obligation }}"
           title="all changes for this obligation">{{ item.obligation }}</a>{% endif %}
-        <div class="sub">{{ item | signal_kind }}<span class="sep">·</span>{{
-          item.source_system | human_source }}<span class="sep">·</span>{{ item.jurisdiction }}</div>
+        {# The feed is ordered by the date the SOURCE published each document, so that
+           date has to be on the row. Without it the order looked arbitrary, because the
+           only dates shown were comment/effective deadlines, which run the other way. #}
+        <div class="sub"><span class="filed">{{ item.published_at[:10] if item.published_at
+          else 'undated' }}</span><span class="sep">·</span>{{ item | signal_kind
+          }}<span class="sep">·</span>{{ item.source_system | human_source
+          }}<span class="sep">·</span>{{ item.jurisdiction }}</div>
       </td>
       <td>{{ state_badge(item.state) }}</td>
       <td data-label="Key dates">

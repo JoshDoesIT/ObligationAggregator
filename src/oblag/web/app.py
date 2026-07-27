@@ -95,22 +95,27 @@ def _provision_tenancy() -> None:
 def _repair_data() -> None:
     """Purge rows produced by since-fixed parser defects (oblag.maintenance) so live
     deployments heal on deploy. Idempotent; no-op once the rows are gone."""
+    from oblag.adapters import available_adapters
     from oblag.maintenance import (
         complete_concluded_consultations,
         dedupe_split_identities,
         purge_known_bad,
+        purge_retired_sources,
         rearm_backfill,
+        rescope_items,
     )
 
     with session_scope() as session:
         purge_known_bad(session)
         dedupe_split_identities(session)
+        purge_retired_sources(session, set(available_adapters()))
+        rescope_items(session)
         complete_concluded_consultations(session)
         # v0.20.1's dedupe grouped on join keys alone and deleted 26 Federal Register
         # items that merely shared a RIN. Re-arming makes the next daily cron re-read
         # every source, which restores them. Idempotent: this deployment's boot runs
         # once, and a re-observed document updates its row rather than duplicating it.
-        if __version__ == "0.20.2":
+        if __version__ in ("0.20.2", "0.21.0"):
             rearm_backfill(session)
 
 

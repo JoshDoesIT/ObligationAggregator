@@ -20,7 +20,16 @@ _SOC_RE = re.compile(r"(?i)trust-services|soc-2|soc2|attestation")
 # (GASB implementation guidance, DC plan contributions) that are out of scope.
 _RELEVANT_RE = re.compile(
     r"(?i)trust-services|soc-?[123]|attestation|ssae|at-c|cyber|quality-management"
-    r"|peer-review|information-security|privacy|ethics|client-information|confidential"
+    r"|information-security|privacy|client-information|confidential"
+)
+# "ethics" used to be in the include list and it pulled in seven straight drafts about
+# CPA professional conduct — loans, unpaid fees, tax services, section 529 plans,
+# accounting-standards implementation services. Those are real AICPA exposure drafts
+# and none of them is a SOC 2 obligation. The exclusion wins over the include list, so
+# an ethics draft that also names SSAE still drops.
+_OFF_TOPIC_RE = re.compile(
+    r"(?i)ethics|tax-services|unpaid-fees|loans|section-529|accounting-standards"
+    r"|employee-benefit|gasb|fasb|auditing-standards-board-proposes"
 )
 
 
@@ -37,7 +46,7 @@ class AicpaAdapter(SitemapAdapter):
         for loc, lastmod in self.iter_urls(raw):
             if not _EXPOSURE_RE.search(loc) or _NEWS_RE.search(loc):
                 continue
-            if not _RELEVANT_RE.search(loc):
+            if not _RELEVANT_RE.search(loc) or _OFF_TOPIC_RE.search(loc):
                 continue
             dates = []
             if lastmod:

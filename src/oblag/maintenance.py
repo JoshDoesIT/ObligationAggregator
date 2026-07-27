@@ -43,10 +43,6 @@ def purge_items(db: Session, item_ids: list[int]) -> dict[str, int | list[int]]:
 # Purged at boot so live deployments heal on deploy without a manual endpoint call;
 # idempotent — once the rows are gone each pattern matches nothing.
 KNOWN_BAD_ITEMS: list[tuple[str, str]] = [
-    # NERC titles fabricated from webinar copy on the listing page (v0.5.5 parser fix);
-    # the projects themselves were also non-CIP and out of scope
-    ("nerc", "%Breakout Session%"),
-    ("nerc", "%: and Project%"),
     # BIS export-controls rule admitted by the scope gate via an "AI" mention in the
     # abstract — export policy, not a security/privacy obligation (operator-reviewed)
     ("federal_register", "%United Arab Emirates Under the Export Administration%"),
@@ -156,6 +152,66 @@ def dedupe_split_identities(db: Session) -> dict[str, list[int]]:
     if doomed:
         purge_items(db, sorted(doomed))
     return {"purged": sorted(doomed), "kept": sorted(kept)}
+
+
+# Sources broad enough to need the relevance gate (oblag.scope). Everything else is a
+# security/privacy publisher by definition and never consults it.
+GATED_SOURCES = ("federal_register", "cellar", "have_your_say")
+
+
+def rescope_items(db: Session) -> list[int]:
+    """Retire ingested items the relevance gate would no longer admit.
+
+    Tightening the gate only stops NEW noise; what is already in the feed stays until
+    something clears it. Measured live before the v0.21.0 tightening: halibut fishery
+    rules, HUD noise abatement, MARAD citizenship and a futures-trading RFC had all been
+    admitted on a passing mention in their abstracts.
+
+    Destructive, so it re-runs the gate the adapters use rather than inventing a rule,
+    and it keeps anything with a reason to stay:
+      * an item linked to a tracked obligation is relevant by definition whatever its
+        wording — the CELEX corrigenda to DORA and NIS2 have bare-id titles;
+      * a curated date means a person asserted something about it;
+      * sources that never consult the gate are never judged by it."""
+    from oblag.scope import in_scope
+
+    candidates = (
+        db.query(PipelineItem)
+        .filter(
+            PipelineItem.source_system.in_(GATED_SOURCES),
+            PipelineItem.obligation_id.is_(None),
+        )
+        .all()
+    )
+    doomed = [i.id for i in candidates if not in_scope(i.title, i.abstract)]
+    if doomed:
+        annotated = {
+            i
+            for (i,) in db.query(KeyDate.pipeline_item_id).filter(
+                KeyDate.pipeline_item_id.in_(doomed), KeyDate.source_snapshot_id.is_(None)
+            )
+        }
+        doomed = [i for i in doomed if i not in annotated]
+    if doomed:
+        purge_items(db, sorted(doomed))
+    return sorted(doomed)
+
+
+def purge_retired_sources(db: Session, keep: set[str]) -> list[int]:
+    """Retire items from adapters this build no longer ships (NERC, v0.21.0).
+
+    An item whose adapter is gone can never be re-observed, corrected or retired by its
+    own source, so it would sit in the feed unchanged forever. `keep` is the live
+    adapter registry; "curated" is always kept because a person put it there."""
+    doomed = [
+        i
+        for (i,) in db.query(PipelineItem.id).filter(
+            PipelineItem.source_system.notin_(sorted(keep | {"curated"}))
+        )
+    ]
+    if doomed:
+        purge_items(db, doomed)
+    return sorted(doomed)
 
 
 def rearm_backfill(db: Session) -> bool:

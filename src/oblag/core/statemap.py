@@ -174,32 +174,6 @@ def aiuc_statemap(
     return None
 
 
-@register_statemap("nerc")
-def nerc_statemap(
-    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
-) -> ItemState | None:
-    """Project-page status text → state. NERC's development flow: drafting/SAR →
-    comment periods (+ concurrent ballots) → board adoption → FERC filing/approval."""
-    s = native_status.lower()
-    if not s:
-        return None
-    if s == "unknown":
-        # status block missing/restructured — the project IS under development
-        # (that's the listing's premise); an anomaly already flagged the parse
-        return ItemState.proposed
-    if "board adopted" in s or "filed with ferc" in s:
-        # adopted; effectiveness awaits FERC approval + the standard's effective date,
-        # which the status text does not carry
-        return ItemState.final_pending_effective
-    if "comment" in s and ("concluded" in s or "closed" in s or "ended" in s):
-        return ItemState.comment_closed
-    if "comment" in s and ("open" in s or "period" in s):
-        return ItemState.comment_open
-    if "ballot" in s:
-        return ItemState.comment_closed
-    return ItemState.proposed  # drafting, SAR development, team formation, …
-
-
 @register_statemap("curated")
 def curated_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
