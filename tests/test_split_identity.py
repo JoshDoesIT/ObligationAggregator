@@ -110,3 +110,69 @@ def test_the_repair_is_a_no_op_on_clean_data(db):
     reduce_item(db, _iso("final", "published", "ISO/IEC 27018:2025"), today=date(2026, 7, 27))
     db.commit()
     assert dedupe_split_identities(db) == {"purged": [], "kept": []}
+
+
+def test_the_repair_never_touches_documents_that_merely_share_an_umbrella_key(db):
+    """Shipped grouping on the join key alone and it deleted 26 live Federal Register
+    items: every airworthiness directive hangs off FAA RIN 2120-AA64."""
+    from oblag.maintenance import dedupe_split_identities
+
+    for number, title in (
+        ("2026-0001", "Airworthiness Directive A"),
+        ("2026-0002", "Airworthiness Directive B"),
+    ):
+        reduce_item(
+            db,
+            NormalizedItem(
+                source_system="federal_register",
+                external_key=("fr_doc_number", number),
+                jurisdiction="US-Federal",
+                title=title,
+                native_status="RULE",
+                track="final",
+                join_keys=[("rin", "2120-AA64")],
+            ),
+            today=date(2026, 7, 27),
+        )
+    db.commit()
+
+    assert dedupe_split_identities(db)["purged"] == []
+    assert db.query(PipelineItem).count() == 2
+
+
+def test_same_title_and_key_but_one_track_is_left_alone(db):
+    """Belt and braces: without a track split there is nothing for this repair to fix,
+    so two same-titled rows on one track stay put rather than being guessed at."""
+    from oblag.db.models import ItemState, JoinKey
+    from oblag.maintenance import dedupe_split_identities
+
+    for number in ("2026-0001", "2026-0002"):
+        item = PipelineItem(
+            source_system="federal_register",
+            jurisdiction="US-Federal",
+            title="Privacy Act of 1974; Implementation",
+            state=ItemState.effective,
+            native_status="RULE",
+            track="final",
+            content_fingerprint=number,
+        )
+        db.add(item)
+        db.flush()
+        db.add(JoinKey(pipeline_item_id=item.id, type="docket_id", value="AGENCY-2026-0001"))
+    db.commit()
+
+    assert dedupe_split_identities(db)["purged"] == []
+    assert db.query(PipelineItem).count() == 2
+
+
+def test_rearm_clears_the_catchup_marker_so_the_next_cron_refetches(db):
+    from oblag.db.models import KVMeta
+    from oblag.maintenance import rearm_backfill
+    from oblag.rebuild import CATCHUP_KEY
+
+    assert rearm_backfill(db) is False  # nothing to clear
+    db.add(KVMeta(key=CATCHUP_KEY, value='{"days": 730, "done_for_days": 730}'))
+    db.commit()
+    assert rearm_backfill(db) is True
+    db.commit()
+    assert db.get(KVMeta, CATCHUP_KEY) is None
