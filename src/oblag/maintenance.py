@@ -106,31 +106,39 @@ def purge_known_bad(db: Session) -> int:
 def dedupe_split_identities(db: Session) -> dict[str, list[int]]:
     """Retire the older half of items an adapter split by changing how it tracks a source.
 
-    An adapter's external join key is a 1:1 identity for a document. Two items from the
-    same source carrying the identical (type, value) pair are therefore one document
-    seen twice — which happened when iso_catalog moved from track "default" to "final"
-    in v0.19.0 and the reducer's same-track guard refused to match across the change.
+    iso_catalog moved from track "default" to "final" in v0.19.0, and the reducer's
+    same-track guard refused to match across the change, so every base ISO standard came
+    back a second time beside its old row. The reducer no longer splits this way, but
+    rows already split need clearing.
 
-    The reducer no longer splits this way (an exact external-key hit matches whatever
-    the track), but rows already split need clearing. The survivor is the most recently
-    seen row, since that is the one the current adapter is maintaining. A row carrying a
-    curated date is never retired — a person put that there."""
+    This is a DESTRUCTIVE repair, so it is scoped tightly to that exact shape: same
+    source, same join key, same title, and more than one track represented. All four
+    together are what "one document our own modelling split in two" looks like.
+
+    Grouping on the join key alone is not enough, and shipping it that way deleted 26
+    live Federal Register items. Distinct rulemakings legitimately share umbrella keys
+    (every airworthiness directive hangs off FAA RIN 2120-AA64) — the same hole the
+    reducer's identity guard exists to close. Two documents that merely share a docket
+    differ in title AND sit on one track, so either extra condition would have held.
+
+    The survivor is the most recently seen row, since that is the one the current
+    adapter is maintaining. A row carrying a curated date is never retired."""
     from collections import defaultdict
 
-    groups: dict[tuple[str, str, str], list[PipelineItem]] = defaultdict(list)
+    groups: dict[tuple[str, str, str, str], list[PipelineItem]] = defaultdict(list)
     rows = (
         db.query(JoinKey.type, JoinKey.value, PipelineItem)
         .join(PipelineItem, JoinKey.pipeline_item_id == PipelineItem.id)
         .all()
     )
     for ktype, kvalue, item in rows:
-        groups[(item.source_system, ktype, kvalue)].append(item)
+        groups[(item.source_system, ktype, kvalue, item.title)].append(item)
 
     doomed: list[int] = []
     kept: list[int] = []
     for members in groups.values():
         unique = {i.id: i for i in members}
-        if len(unique) < 2:
+        if len(unique) < 2 or len({i.track for i in unique.values()}) < 2:
             continue
         ordered = sorted(unique.values(), key=lambda i: (i.last_seen_at or i.first_seen_at, i.id))
         survivor = ordered[-1]
@@ -148,3 +156,20 @@ def dedupe_split_identities(db: Session) -> dict[str, list[int]]:
     if doomed:
         purge_items(db, sorted(doomed))
     return {"purged": sorted(doomed), "kept": sorted(kept)}
+
+
+def rearm_backfill(db: Session) -> bool:
+    """Clear the historical catch-up marker so the next daily cron re-reads the sources.
+
+    Needed after a repair deleted rows it should not have: re-running the backfill
+    restores anything a source still lists, and costs nothing when nothing was lost,
+    because the reducer matches on join keys and a re-observed document updates its row
+    rather than duplicating it. Returns whether a marker was actually cleared."""
+    from oblag.db.models import KVMeta
+    from oblag.rebuild import CATCHUP_KEY
+
+    row = db.get(KVMeta, CATCHUP_KEY)
+    if row is None:
+        return False
+    db.delete(row)
+    return True

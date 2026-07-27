@@ -99,12 +99,19 @@ def _repair_data() -> None:
         complete_concluded_consultations,
         dedupe_split_identities,
         purge_known_bad,
+        rearm_backfill,
     )
 
     with session_scope() as session:
         purge_known_bad(session)
         dedupe_split_identities(session)
         complete_concluded_consultations(session)
+        # v0.20.1's dedupe grouped on join keys alone and deleted 26 Federal Register
+        # items that merely shared a RIN. Re-arming makes the next daily cron re-read
+        # every source, which restores them. Idempotent: this deployment's boot runs
+        # once, and a re-observed document updates its row rather than duplicating it.
+        if __version__ == "0.20.2":
+            rearm_backfill(session)
 
 
 def _seed_milestones() -> None:
