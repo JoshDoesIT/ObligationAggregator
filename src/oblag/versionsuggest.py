@@ -27,6 +27,10 @@ def _published_version(item: PipelineItem) -> str | None:
         return meta.get("published_version")
     if item.source_system == "hitrust" and item.native_status == "release":
         return meta.get("published_version")
+    if item.source_system == "standard_pages" and item.native_status == "current":
+        # only pages that state a VERSION claim one; a page stating an amendment
+        # date records the date instead and never proposes a version
+        return meta.get("published_version")
     if item.source_system == "nist_pubs" and item.native_status == "final":
         # "Rev. 5" is how NIST names a version; version_key reads the number out
         return meta.get("published_version")

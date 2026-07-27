@@ -27,6 +27,7 @@ _BUILTIN_MODULES: list[str] = [
     "pci_docs",
     "pci_ssc",
     "regulations_gov",
+    "standard_pages",
 ]
 
 
