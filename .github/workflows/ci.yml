@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Manual run, for when GitHub does not create the pull_request run at all
+  # (observed: a PR sat with zero check runs while its Vercel status arrived
+  # normally, so webhooks were fine). Without this there is no way to ask for one.
+  workflow_dispatch:
 
 jobs:
   test:
