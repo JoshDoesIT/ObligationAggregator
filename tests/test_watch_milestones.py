@@ -10,11 +10,26 @@ from oblag.milestones import seed_milestones
 from oblag.watch import pending_outcomes
 
 
+def _curated(db, key: str) -> PipelineItem:
+    from oblag.db.models import JoinKey
+
+    return (
+        db.query(PipelineItem)
+        .join(JoinKey)
+        .filter(
+            PipelineItem.source_system == "curated",
+            JoinKey.type == "curated_timeline",
+            JoinKey.value == key,
+        )
+        .one()
+    )
+
+
 def test_milestone_seeding_is_idempotent_and_effective(db):
     seed_obligations(db)
     seed_milestones(db)
     db.commit()
-    item = db.query(PipelineItem).filter_by(source_system="curated").one()
+    item = _curated(db, "eu-ai-act-timeline")
     assert "EU AI Act" in item.title
     assert item.state == ItemState.effective  # entry into force 2024-08-01 has passed
     assert item.obligation.slug == "eu-ai-act"
@@ -28,8 +43,53 @@ def test_milestone_seeding_is_idempotent_and_effective(db):
     seed_milestones(db)  # re-seed: no duplicate assertions, no state churn
     db.commit()
     db.expire_all()
-    item = db.query(PipelineItem).filter_by(source_system="curated").one()
+    item = _curated(db, "eu-ai-act-timeline")
     assert len(item.key_dates) == n_dates
+
+
+def test_statutes_with_no_feed_at_all_get_a_curated_timeline(db):
+    """PIPEDA, the LGPD and the US state privacy laws have no machine-readable change
+    source between them: Justice Canada publishes no feed, Planalto publishes no feed,
+    and fifty legislatures need a LegiScan key. Each showed nothing at all until this.
+    Every date here is one a compliance team plans against."""
+    seed_obligations(db)
+    seed_milestones(db)
+    db.commit()
+
+    for key, slug in (
+        ("pipeda-timeline", "pipeda"),
+        ("lgpd-timeline", "lgpd"),
+        ("us-state-privacy-timeline", "us-state-privacy"),
+    ):
+        item = _curated(db, key)
+        assert item.obligation is not None and item.obligation.slug == slug, key
+        assert item.key_dates, key
+        assert item.abstract
+
+    # in force already, so the reader sees an obligation that applies today
+    assert _curated(db, "pipeda-timeline").state is ItemState.effective
+    assert _curated(db, "lgpd-timeline").state is ItemState.effective
+
+    # PIPEDA's live change is Bill C-15: Royal Assent recorded, commencement NOT stated,
+    # because it commences by order of the Governor in Council and no date exists yet
+    c15 = [
+        kd for kd in _curated(db, "pipeda-timeline").key_dates if kd.date_type is DateType.adopted
+    ]
+    assert len(c15) == 1 and c15[0].value == date(2026, 3, 26)
+    assert "not yet in force" in (c15[0].label or "")
+
+    # the state laws still ahead are the point of the entry
+    ahead = {kd.value for kd in _curated(db, "us-state-privacy-timeline").key_dates}
+    assert date(2027, 1, 1) in ahead and date(2027, 5, 1) in ahead
+
+
+def test_forward_dated_state_privacy_deadlines_reach_the_deadlines_page(db, client):
+    seed_obligations(db)
+    seed_milestones(db)
+    db.commit()
+    html = client.get("/deadlines").text
+    assert "Oklahoma Consumer Data Privacy Act" in html
+    assert "Alabama Personal Data Protection Act" in html
 
 
 def test_pending_outcomes_derivation(db, client):

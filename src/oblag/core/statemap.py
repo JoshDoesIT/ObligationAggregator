@@ -161,6 +161,14 @@ def cis_statemap(
     return ItemState.effective if native_status == "release" else None
 
 
+@register_statemap("fedramp")
+def fedramp_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """A FedRAMP announcement states something the programme has already done."""
+    return ItemState.effective if native_status == "announcement" else None
+
+
 @register_statemap("standard_pages")
 def standard_pages_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

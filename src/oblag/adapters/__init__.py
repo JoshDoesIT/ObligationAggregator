@@ -18,6 +18,7 @@ _BUILTIN_MODULES: list[str] = [
     "edpb",
     "esma",
     "federal_register",
+    "fedramp",
     "have_your_say",
     "iso_catalog",
     "legiscan",
