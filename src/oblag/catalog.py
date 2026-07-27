@@ -501,6 +501,30 @@ CATALOG: list[dict] = [
         copyright_status=CopyrightStatus.licensed,  # standards freely published by NERC
         display_policy=DisplayPolicy.ids_and_titles,
     ),
+    dict(
+        slug="nist-ai-rmf",
+        name="NIST AI Risk Management Framework",
+        issuing_body="NIST",
+        jurisdiction="US-Federal",
+        canonical_url="https://www.nist.gov/itl/ai-risk-management-framework",
+        current_version="1.0",  # NIST AI 100-1, published 2023-01-26
+        copyright_status=CopyrightStatus.public_domain,
+        display_policy=DisplayPolicy.full_text,
+    ),
+    dict(
+        slug="aiuc-1",
+        name="AIUC-1 (AI Agent Security & Trust)",
+        issuing_body="AIUC",
+        jurisdiction="Global",
+        canonical_url="https://www.aiuc-1.com/",
+        # AIUC-1 versions ARE their release dates, and it revises quarterly rather than
+        # annually, so this field moves four times a year — see the aiuc adapter.
+        current_version="2026-07-15",
+        copyright_status=CopyrightStatus.copyrighted,
+        # requirement and control titles are published openly on aiuc-1.com; the
+        # evidence and audit text behind them is not
+        display_policy=DisplayPolicy.ids_and_titles,
+    ),
 ]
 
 

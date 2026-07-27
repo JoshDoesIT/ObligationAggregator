@@ -161,6 +161,19 @@ def cis_statemap(
     return ItemState.effective if native_status == "release" else None
 
 
+@register_statemap("aiuc")
+def aiuc_statemap(
+    native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date
+) -> ItemState | None:
+    """AIUC-1 revises quarterly and announces the next date in advance, so a
+    release we have not reached yet is a real, dated thing rather than a rumour."""
+    if native_status == "release":
+        return ItemState.effective
+    if native_status == "scheduled":
+        return ItemState.proposed
+    return None
+
+
 @register_statemap("nerc")
 def nerc_statemap(
     native_status: str, meta: dict[str, str], dates: CurrentDateMap, today: date

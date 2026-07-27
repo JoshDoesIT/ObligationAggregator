@@ -43,6 +43,8 @@ _OBLIGATION_MAP = {
     ("SP", "800-63"): "nist-800-63",
     ("FIPS", "140-3"): "fips-140-3",
     ("CSWP", "29"): "nist-csf",  # CSF 2.0 publishes as CSWP 29
+    ("AI", "100-1"): "nist-ai-rmf",
+    ("AI", "600-1"): "nist-ai-rmf",  # the Generative AI Profile is a profile OF the RMF
 }
 
 

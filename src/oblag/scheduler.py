@@ -38,7 +38,7 @@ WEEKLY_ADAPTERS: dict[str, tuple[int, str]] = {
     "nerc": (2, "09:15"),
     "cis": (3, "09:30"),
     "aicpa": (3, "09:45"),  # sitemap-based (the landing SPA is broken upstream — spec 06)
-    "hitrust": (4, "09:55"),  # sitemap-based (no feed, WP REST disabled)
+    "hitrust": (4, "09:55"),
 }
 
 # Groups reused by the serverless cron endpoints (web/internal.py)

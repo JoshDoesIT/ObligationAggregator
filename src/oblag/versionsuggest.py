@@ -27,6 +27,10 @@ def _published_version(item: PipelineItem) -> str | None:
         return meta.get("published_version")
     if item.source_system == "hitrust" and item.native_status == "release":
         return meta.get("published_version")
+    if item.source_system == "aiuc" and item.native_status == "release":
+        # AIUC-1 has no version numbers: a release IS its date. A scheduled release
+        # is deliberately excluded — it has not happened yet.
+        return meta.get("published_version")
     if item.source_system == "iso_catalog" and item.state == ItemState.effective:
         # An ISO edition's version is the year in its reference, not the year it was
         # printed: ISO/IEC 27001:2022/AMD1:2024 is an amendment TO the 2022 edition and

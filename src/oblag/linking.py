@@ -17,6 +17,8 @@ import re
 # ordered: first match wins; longer/more specific names before shorter ones
 _RULES: list[tuple[str, str]] = [
     (r"cyber resilience act", "eu-cra"),
+    (r"ai risk management framework|\bai rmf\b|\bai 100-1\b|\bai 600-1\b", "nist-ai-rmf"),
+    (r"\baiuc-?1\b", "aiuc-1"),
     (r"artificial intelligence act|\bai act\b|ai regulatory sandbox", "eu-ai-act"),
     (r"digital operational resilience|\bdora\b", "dora"),
     (r"\bnis ?2\b|network and information security directive", "nis2"),
