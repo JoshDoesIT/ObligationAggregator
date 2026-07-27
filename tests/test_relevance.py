@@ -358,3 +358,35 @@ def test_relink_never_second_guesses_an_existing_link(db):
     db.commit()
     assert relink_items(db) == 0
     assert db.query(PipelineItem).one().obligation_id == gdpr.id
+
+
+def test_links_handed_to_a_user_are_never_localhost(client, seeded):
+    """base_url is http://localhost:8000 until a deployment sets OBLAG_BASE_URL, and
+    Vercel never does — so watchlist RSS URLs were being shown as localhost. A URL
+    someone pastes into a reader has to be reachable from outside."""
+    r = client.post(
+        "/api/v1/watchlists",
+        json={"name": "feed", "channel": "rss", "filters": {}},
+    )
+    assert r.status_code == 201, r.text
+    feed_url = r.json()["feed_url"]
+    assert "localhost" not in feed_url, feed_url
+    assert feed_url.startswith("http://testserver/rss/"), feed_url
+
+    # the feed body's own links too, not just the URL of the feed
+    token = r.json()["target"]
+    body = client.get(f"/rss/{token}.xml").text
+    assert "localhost" not in body
+
+    # and the page that displays it
+    assert "localhost" not in client.get("/watchlists").text
+
+
+def test_a_configured_base_url_still_wins(monkeypatch):
+    from oblag.config import get_settings
+    from oblag.web.urls import site_base
+
+    monkeypatch.setenv("OBLAG_BASE_URL", "https://gazette.example.com")
+    get_settings.cache_clear()
+    assert site_base(None) == "https://gazette.example.com"
+    get_settings.cache_clear()

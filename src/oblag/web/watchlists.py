@@ -5,11 +5,10 @@ from datetime import UTC, datetime
 from email.utils import format_datetime
 from xml.sax.saxutils import escape
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from oblag.config import get_settings
 from oblag.db.models import Event, Org, PipelineItem, Watchlist
 from oblag.notify import _event_summary, matches
 from oblag.web.deps import Context, get_context, get_db
@@ -44,8 +43,14 @@ class WatchlistIn(BaseModel):
     filters: WatchlistFilters = Field(default_factory=WatchlistFilters)
 
 
-def _to_dict(wl: Watchlist) -> dict:
-    base = get_settings().base_url.rstrip("/")
+def _to_dict(wl: Watchlist, request: Request | None = None) -> dict:
+    from oblag.web.urls import site_base
+
+    # An RSS URL is meant to be pasted into a reader on another machine, so it has to
+    # be reachable from outside. base_url is still the localhost default on any
+    # deployment that never set OBLAG_BASE_URL — Vercel included, which is why these
+    # were being shown as http://localhost:8000/rss/....
+    base = site_base(request)
     d = {
         "id": wl.id,
         "name": wl.name,
@@ -60,15 +65,22 @@ def _to_dict(wl: Watchlist) -> dict:
 
 
 @router.get("/watchlists")
-def list_watchlists(db: Session = Depends(get_db), ctx: Context = Depends(get_context)):
+def list_watchlists(
+    request: Request = None,  # type: ignore[assignment]
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
+):
     org = require_org(ctx)
     rows = db.query(Watchlist).filter(Watchlist.org_id == org.id).order_by(Watchlist.id)
-    return {"watchlists": [_to_dict(w) for w in rows]}
+    return {"watchlists": [_to_dict(w, request) for w in rows]}
 
 
 @router.post("/watchlists", status_code=201)
 def create_watchlist(
-    body: WatchlistIn, db: Session = Depends(get_db), ctx: Context = Depends(get_context)
+    body: WatchlistIn,
+    request: Request = None,  # type: ignore[assignment]
+    db: Session = Depends(get_db),
+    ctx: Context = Depends(get_context),
 ):
     org = require_org(ctx)
     from oblag.auth import QuotaError, enforce_quota
@@ -102,7 +114,7 @@ def create_watchlist(
     )
     db.add(wl)
     db.flush()
-    return _to_dict(wl)
+    return _to_dict(wl, request)
 
 
 @router.delete("/watchlists/{watchlist_id}", status_code=204)
@@ -121,7 +133,7 @@ rss_router = APIRouter(include_in_schema=False)
 
 
 @rss_router.get("/rss/{token}.xml")
-def rss_feed(token: str, db: Session = Depends(get_db)):
+def rss_feed(token: str, request: Request, db: Session = Depends(get_db)):
     wl = (
         db.query(Watchlist)
         .filter_by(channel="rss", target=token)
@@ -130,7 +142,11 @@ def rss_feed(token: str, db: Session = Depends(get_db)):
     )
     if wl is None:
         raise HTTPException(404, "unknown feed")
-    base = get_settings().base_url.rstrip("/")
+    # same reason as _to_dict: a feed read in someone's reader must link somewhere
+    # reachable, and base_url is the localhost default until a deployment sets it
+    from oblag.web.urls import site_base
+
+    base = site_base(request)
     events = db.query(Event).order_by(Event.id.desc()).limit(500).all()
     entries: list[str] = []
     for ev in events:
