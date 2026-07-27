@@ -120,3 +120,93 @@ def test_email_delivery(db, circia_item, monkeypatch):
     assert sent["to"] == "grc@example.com"
     assert "CIRCIA" in sent["body"]
     assert "2 change event(s)" in sent["subject"]
+
+
+def _settings(monkeypatch, **overrides):
+    """Point get_settings at a config with these values, for every module that reads it."""
+    from oblag import config, notify
+
+    base = config.Settings(**overrides)
+    monkeypatch.setattr(notify, "get_settings", lambda: base)
+    return base
+
+
+def test_email_is_disabled_until_a_backend_is_configured(monkeypatch):
+    from oblag import notify
+
+    _settings(monkeypatch)
+    assert notify.mail_backend() is None
+    assert notify.email_enabled() is False
+
+
+def test_auto_prefers_resend_because_a_verified_domain_is_the_point(monkeypatch):
+    from oblag import notify
+
+    _settings(monkeypatch, resend_api_key="re_test", smtp_host="smtp.gmail.com")
+    assert notify.mail_backend() == "resend"
+
+    _settings(monkeypatch, smtp_host="smtp.gmail.com")
+    assert notify.mail_backend() == "smtp"
+
+
+def test_pinning_a_backend_that_is_not_configured_reports_nothing_rather_than_falling_back():
+    """Silently sending from a personal mailbox when the operator asked for the verified
+    domain would be the wrong kind of helpful."""
+    import pytest
+
+    from oblag import config, notify
+
+    monkeypatch = pytest.MonkeyPatch()
+    try:
+        _settings(monkeypatch, mail_backend="resend", smtp_host="smtp.gmail.com")
+        assert notify.mail_backend() is None
+        assert notify.email_enabled() is False
+        _settings(monkeypatch, mail_backend="smtp", resend_api_key="re_test")
+        assert notify.mail_backend() is None
+        assert config.Settings().mail_backend == "auto"
+    finally:
+        monkeypatch.undo()
+
+
+def test_resend_posts_the_message_and_carries_the_display_name(monkeypatch):
+    from oblag import notify
+
+    _settings(monkeypatch, resend_api_key="re_test", smtp_from="alerts@example.com")
+    sent = {}
+
+    class _Resp:
+        status_code = 200
+        text = "{}"
+
+    def fake_post(url, json, headers, timeout):
+        sent.update(url=url, json=json, headers=headers)
+        return _Resp()
+
+    monkeypatch.setattr(notify.httpx, "post", fake_post)
+    notify._send_email(
+        ["someone@example.com"], "Subject", "Body", from_name="Gazette", reply_to="me@example.com"
+    )
+    assert sent["url"] == notify.RESEND_API
+    assert sent["headers"]["Authorization"] == "Bearer re_test"
+    assert sent["json"]["from"] == "Gazette <alerts@example.com>"
+    assert sent["json"]["to"] == ["someone@example.com"]
+    assert sent["json"]["reply_to"] == "me@example.com"
+    assert sent["json"]["text"] == "Body"
+
+
+def test_a_resend_rejection_says_what_resend_said(monkeypatch):
+    """Its errors name the actual problem — unverified domain, a From it does not own —
+    and a generic failure would leave an operator with nothing to act on."""
+    import pytest
+
+    from oblag import notify
+
+    _settings(monkeypatch, resend_api_key="re_test")
+
+    class _Resp:
+        status_code = 403
+        text = '{"message":"The example.com domain is not verified"}'
+
+    monkeypatch.setattr(notify.httpx, "post", lambda *a, **k: _Resp())
+    with pytest.raises(RuntimeError, match="not verified"):
+        notify._send_email(["someone@example.com"], "s", "b")

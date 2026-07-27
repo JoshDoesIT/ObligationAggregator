@@ -153,3 +153,53 @@ def test_subscribing_again_does_not_duplicate_a_paused_watchlist(client, seeded,
 
 def test_watchlists_html_page(client, seeded):
     assert client.get("/watchlists").status_code == 200
+
+
+def test_email_is_not_offered_when_the_instance_cannot_send_it(client, seeded, monkeypatch):
+    """Offering it regardless was a trap: the watchlist saved, listed as active, and
+    delivered nothing forever, because delivery raised on the missing SMTP host and the
+    dispatcher treated that as a transient failure to retry."""
+    from oblag import notify
+
+    monkeypatch.setattr(notify, "email_enabled", lambda: False)
+    page = client.get("/watchlists").text
+    assert '<option value="email">' not in page
+    assert '<option value="rss">' in page and '<option value="webhook">' in page
+    assert "Email is off until a sending domain is set up" in page
+
+    r = client.post(
+        "/api/v1/watchlists",
+        json={"name": "digest", "channel": "email", "target": "someone@example.com"},
+    )
+    assert r.status_code == 422
+    assert "could never be delivered" in r.json()["detail"]
+
+
+def test_email_is_offered_once_sending_is_configured(client, seeded, monkeypatch):
+    from oblag import notify
+
+    monkeypatch.setattr(notify, "email_enabled", lambda: True)
+    assert '<option value="email">' in client.get("/watchlists").text
+    r = client.post(
+        "/api/v1/watchlists",
+        json={"name": "digest", "channel": "email", "target": "someone@example.com"},
+    )
+    assert r.status_code == 201
+
+
+def test_an_existing_undeliverable_email_watchlist_says_so(client, seeded, db, monkeypatch):
+    """One created before sending was turned off should not sit there claiming to be
+    active with no hint that nothing is arriving."""
+    from oblag import notify
+    from oblag.db.models import Watchlist
+
+    monkeypatch.setattr(notify, "email_enabled", lambda: True)
+    client.post(
+        "/api/v1/watchlists",
+        json={"name": "legacy digest", "channel": "email", "target": "someone@example.com"},
+    )
+    assert db.query(Watchlist).filter_by(channel="email").count() == 1
+
+    monkeypatch.setattr(notify, "email_enabled", lambda: False)
+    page = client.get("/watchlists").text
+    assert "Not being delivered" in page

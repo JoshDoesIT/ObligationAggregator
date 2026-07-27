@@ -97,23 +97,21 @@ def test_ops_alert_emails_unhealthy_adapters_once_per_day(db, monkeypatch):
     monkeypatch.setattr(
         notify, "_send_plain_email", lambda to, subj, body: sent.append((to, subj, body))
     )
+    # The real Settings, not a hand-rolled stand-in: a stub with a hand-picked subset
+    # of fields silently breaks every time config gains one, which is exactly what
+    # happened when the mail backend was added.
+    from oblag.config import Settings
+
     monkeypatch.setattr(
         notify,
         "get_settings",
-        lambda: type(
-            "S",
-            (),
-            {
-                "smtp_host": "smtp.x",
-                "smtp_port": 587,
-                "smtp_user": None,
-                "smtp_password": None,
-                "smtp_from": "ops@x.com",
-                "ops_alert_emails": "",
-                "instance_admins": "admin@x.com",
-                "base_url": "https://x",
-            },
-        )(),
+        lambda: Settings(
+            smtp_host="smtp.x",
+            smtp_from="ops@x.com",
+            ops_alert_emails="",
+            instance_admins="admin@x.com",
+            base_url="https://x",
+        ),
     )
 
     assert notify.alert_unhealthy_adapters(db) == 1
@@ -130,14 +128,18 @@ def test_ops_alert_noop_without_smtp(db, monkeypatch):
 
     db.add(AdapterHealth(adapter="cellar", consecutive_failures=5))
     db.commit()
+    from oblag.config import Settings
+
     monkeypatch.setattr(
         notify,
         "get_settings",
-        lambda: type(
-            "S",
-            (),
-            {"smtp_host": None, "ops_alert_emails": "", "instance_admins": "", "smtp_from": ""},
-        )(),
+        lambda: Settings(
+            smtp_host=None,
+            resend_api_key=None,
+            ops_alert_emails="",
+            instance_admins="",
+            smtp_from="",
+        ),
     )
     assert notify.alert_unhealthy_adapters(db) == 0
 

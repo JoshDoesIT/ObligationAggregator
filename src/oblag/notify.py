@@ -124,12 +124,105 @@ def _deliver_webhook(watchlist: Watchlist, events: list[tuple[Event, PipelineIte
     resp.raise_for_status()
 
 
+RESEND_API = "https://api.resend.com/emails"
+
+
+def mail_backend() -> str | None:
+    """Which backend can send right now: "resend", "smtp", or None for neither.
+
+    "auto" prefers resend when a key is present, because an instance that has gone to
+    the trouble of verifying a domain means to send from it.
+    """
+    settings = get_settings()
+    choice = (settings.mail_backend or "auto").strip().lower()
+    if choice == "resend":
+        return "resend" if settings.resend_api_key else None
+    if choice == "smtp":
+        return "smtp" if settings.smtp_host else None
+    if settings.resend_api_key:
+        return "resend"
+    return "smtp" if settings.smtp_host else None
+
+
+def email_enabled() -> bool:
+    """Can this instance actually deliver email?
+
+    Offering the channel without this was a quiet trap: an email watchlist saved fine,
+    listed as active, and never delivered anything, because delivery raised on the
+    missing host and the dispatcher treated it as a transient failure to retry forever.
+    The UI asks this before offering the option, and creation refuses without it.
+    """
+    return mail_backend() is not None
+
+
+def _send_email(
+    recipients: list[str],
+    subject: str,
+    body: str,
+    *,
+    from_name: str | None = None,
+    reply_to: str | None = None,
+) -> None:
+    """Deliver one plain-text email through whichever backend is configured."""
+    settings = get_settings()
+    backend = mail_backend()
+    if backend is None:
+        raise RuntimeError(
+            "no mail backend is configured (set OBLAG_RESEND_API_KEY or OBLAG_SMTP_HOST)"
+        )
+    sender = f"{from_name} <{settings.smtp_from}>" if from_name else settings.smtp_from
+    if backend == "resend":
+        _send_via_resend(sender, recipients, subject, body, reply_to)
+        return
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = ", ".join(recipients)
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    msg.set_content(body)
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:  # type: ignore[arg-type]
+        if settings.smtp_user and settings.smtp_password:
+            smtp.starttls()
+            smtp.login(settings.smtp_user, settings.smtp_password)
+        smtp.send_message(msg)
+
+
+def _send_via_resend(
+    sender: str, recipients: list[str], subject: str, body: str, reply_to: str | None
+) -> None:
+    """Resend's HTTP API. No SMTP port needed, which also matters on serverless hosts
+    that block outbound 587."""
+    settings = get_settings()
+    payload: dict[str, object] = {
+        "from": sender,
+        "to": recipients,
+        "subject": subject,
+        "text": body,
+    }
+    if reply_to:
+        payload["reply_to"] = reply_to
+    resp = httpx.post(
+        RESEND_API,
+        json=payload,
+        headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+        timeout=15.0,
+    )
+    if resp.status_code >= 400:
+        # Surface what Resend actually said. Its errors are the useful kind — an
+        # unverified domain, a From that does not belong to it — and swallowing them
+        # would leave an operator staring at a generic failure.
+        raise RuntimeError(f"resend rejected the message ({resp.status_code}): {resp.text[:400]}")
+
+
 def _deliver_email(
     session: Session, watchlist: Watchlist, events: list[tuple[Event, PipelineItem | None]]
 ) -> None:
     settings = get_settings()
-    if not settings.smtp_host:
-        raise RuntimeError("SMTP is not configured (OBLAG_SMTP_HOST)")
+    if not email_enabled():
+        raise RuntimeError(
+            "no mail backend is configured (set OBLAG_RESEND_API_KEY or OBLAG_SMTP_HOST)"
+        )
     if not watchlist.target:
         raise ValueError("email watchlist has no target address")
     base = settings.base_url.rstrip("/")
@@ -141,25 +234,17 @@ def _deliver_email(
         lines.append("• " + _event_summary(ev, item))
         if item:
             lines.append(f"  {base}/items/{item.id}")
-    msg = EmailMessage()
-    msg["Subject"] = f"[oblag] {len(events)} change event(s) — {watchlist.name}"
     # per-org email preferences (Phase 3): a friendly From display name and Reply-To
     from oblag.db.models import Org
 
     org = session.get(Org, watchlist.org_id) if watchlist.org_id else None
-    if org is not None and org.notify_from_name:
-        msg["From"] = f"{org.notify_from_name} <{settings.smtp_from}>"
-    else:
-        msg["From"] = settings.smtp_from
-    if org is not None and org.notify_reply_to:
-        msg["Reply-To"] = org.notify_reply_to
-    msg["To"] = watchlist.target
-    msg.set_content("\n".join(lines))
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:
-        if settings.smtp_user and settings.smtp_password:
-            smtp.starttls()
-            smtp.login(settings.smtp_user, settings.smtp_password)
-        smtp.send_message(msg)
+    _send_email(
+        [watchlist.target],
+        f"[oblag] {len(events)} change event(s) — {watchlist.name}",
+        "\n".join(lines),
+        from_name=org.notify_from_name if org is not None else None,
+        reply_to=org.notify_reply_to if org is not None else None,
+    )
 
 
 def _ops_recipients() -> list[str]:
@@ -172,17 +257,7 @@ def _ops_recipients() -> list[str]:
 
 
 def _send_plain_email(recipients: list[str], subject: str, body: str) -> None:
-    settings = get_settings()
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = settings.smtp_from
-    msg["To"] = ", ".join(recipients)
-    msg.set_content(body)
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:  # type: ignore[arg-type]
-        if settings.smtp_user and settings.smtp_password:
-            smtp.starttls()
-            smtp.login(settings.smtp_user, settings.smtp_password)
-        smtp.send_message(msg)
+    _send_email(recipients, subject, body)
 
 
 # Alert once per calendar day per adapter — a persistently-broken source becomes a
@@ -201,7 +276,7 @@ def alert_unhealthy_adapters(session: Session, *, min_failures: int = 2) -> int:
 
     settings = get_settings()
     recipients = _ops_recipients()
-    if not settings.smtp_host or not recipients:
+    if not email_enabled() or not recipients:
         return 0
     unhealthy = (
         session.query(AdapterHealth)

@@ -24,7 +24,9 @@ for snapshots/attestations.
 | `OBLAG_BASE_URL` | your deployment URL (used in notifications/RSS links) |
 | `OBLAG_REGSGOV_API_KEY` … | source credentials as desired (regulations.gov, LegiScan, OEIL procedures, HYS topics) |
 | `OBLAG_BROWSER_CDP_URL` | optional: a remote Chromium CDP websocket (e.g. Browserless) — enables the EBA browser adapter serverlessly |
-| `OBLAG_SMTP_*` | email delivery — also required for magic-link login below |
+| `OBLAG_RESEND_API_KEY` | email delivery from a verified domain (see below) — also required for magic-link login |
+| `OBLAG_SMTP_*` | the SMTP alternative to Resend; fine for an instance mailing its own operator |
+| `OBLAG_MAIL_BACKEND` | `auto` (default; prefers Resend when its key is set), or pin `resend` / `smtp` |
 | `OBLAG_AUTH` | `disabled` (default, single-org) or `magic-link` (multi-org public app, spec 07) |
 | `OBLAG_INSTANCE_ADMINS` | csv of emails granted instance-admin operations (only with `magic-link`) |
 
@@ -115,11 +117,38 @@ a cron secret) is locked automatically with no extra configuration; unlock with 
 cron secret you already have. The write is fully open only when *neither* is set (fine
 for local/private use). Set `OBLAG_ADMIN_TOKEN` when you want a distinct operator
 secret separate from the cron secret. For full multi-user isolation, set
-`OBLAG_AUTH=magic-link` instead (requires SMTP).
+`OBLAG_AUTH=magic-link` instead (requires a mail backend).
+
+## Email delivery
+
+Until one backend is configured, the email channel is hidden in the UI and refused by
+the API. Nothing half-configured is reachable, and no watchlist can be created that
+would silently deliver nothing.
+
+**Resend (recommended).** Mail sent from a personal mailbox is authenticated by that
+mailbox's provider, not by you: SPF and DKIM name them, recipients see a personal
+address, and consumer providers cap sending. A verified domain fixes all three.
+
+1. Create an account at resend.com and add your domain.
+2. Resend gives you DNS records to add at your registrar: a TXT for DKIM, an MX and TXT
+   for the return path, and optionally a DMARC TXT. Add them and wait for verification
+   (usually minutes).
+3. Create an API key.
+4. Set `OBLAG_RESEND_API_KEY`, and `OBLAG_SMTP_FROM` to an address at the verified
+   domain (it names the sender for both backends), e.g. `alerts@yourdomain`.
+5. Redeploy. Environment variables only reach a new deployment.
+
+Resend rejects a `from` at an unverified domain, and the error it returns is surfaced
+verbatim in the delivery log rather than flattened into a generic failure.
+
+**SMTP.** Set `OBLAG_SMTP_HOST`, `OBLAG_SMTP_PORT` (587), `OBLAG_SMTP_USER`,
+`OBLAG_SMTP_PASSWORD` and `OBLAG_SMTP_FROM`. With Gmail, `OBLAG_SMTP_FROM` must equal
+`OBLAG_SMTP_USER` (it refuses to send as an address you do not own) and the password
+must be an App Password, which requires 2-Step Verification on the account.
 
 ### Failure alerts
 
-Set `OBLAG_SMTP_*` and `OBLAG_OPS_ALERT_EMAILS` (csv; falls back to
+Set a mail backend and `OBLAG_OPS_ALERT_EMAILS` (csv; falls back to
 `OBLAG_INSTANCE_ADMINS`, then `OBLAG_SMTP_FROM`). After each cron group, any data
 source stuck failing (`consecutive_failures ≥ 2`) triggers one email per source
 per day. Source health is always visible at `/health`.

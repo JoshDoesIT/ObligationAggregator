@@ -30,7 +30,13 @@ class Settings(BaseSettings):
     regsgov_api_key: str | None = None
     legiscan_api_key: str | None = None
 
-    # Notifications
+    # Notifications.
+    # Delivery backend: "auto" picks resend when an API key is set, else SMTP. Set it
+    # explicitly to pin one. SMTP is fine for an instance mailing its own operator;
+    # sending to anyone else wants a verified domain, which is what resend is for —
+    # a personal mailbox's SPF/DKIM authenticate the mailbox provider, not you.
+    mail_backend: str = "auto"  # auto | smtp | resend
+    resend_api_key: str | None = None
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None

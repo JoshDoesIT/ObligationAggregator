@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from oblag import notify
 from oblag.db.models import Event, Org, PipelineItem, Watchlist
 from oblag.notify import _event_summary, matches
 from oblag.web.deps import Context, get_context, get_db
@@ -104,6 +105,15 @@ def create_watchlist(
         raise HTTPException(409, str(exc)) from None
     if body.channel in ("email", "webhook") and not body.target:
         raise HTTPException(422, f"{body.channel} watchlists require a target")
+    if body.channel == "email" and not notify.email_enabled():
+        # Refusing beats accepting one that can never deliver: the old behaviour saved
+        # it, showed it as active, and dropped every digest on the floor.
+        raise HTTPException(
+            422,
+            "email delivery is not configured on this instance, so an email watchlist "
+            "could never be delivered. Use an RSS feed or a webhook, or set the mail "
+            "settings first.",
+        )
     target = body.target
     signing_secret = None
     if body.channel == "rss":

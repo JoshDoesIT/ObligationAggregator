@@ -966,6 +966,7 @@ def watchlists_page(
 ):
     if r := _login_redirect(ctx):
         return r
+    from oblag import notify
     from oblag.db.models import EventType, Obligation
     from oblag.web import watchlists as wl_api
 
@@ -978,6 +979,8 @@ def watchlists_page(
     data["states"] = [s.value for s in ItemState]
     data["event_types"] = [e.value for e in EventType]
     data["sources"] = sorted(row[0] for row in db.query(PipelineItem.source_system).distinct())
+    # The email channel is only offered when the instance can actually send mail
+    data["email_ok"] = notify.email_enabled()
     data["ctx"] = ctx
     return templates.TemplateResponse(request, "watchlists.html", data)
 
