@@ -86,6 +86,7 @@ SOURCE_LABELS = {
     "aicpa": "AICPA",
     "hitrust": "HITRUST",
     "aiuc": "AIUC",
+    "fedramp": "FedRAMP",
     "standard_pages": "Publisher",
     "curated": "Curated",
 }
@@ -197,6 +198,8 @@ def _signal_kind(item: dict) -> str:
         return "Publication" if native == "publication" else "RFC"
     if src in ("pci_docs", "standard_pages"):
         return "Standard"
+    if src == "fedramp":
+        return "Programme change"
     if src == "iso_catalog":
         # An amendment is its own publication, and calling it a revision of the edition
         # it amends would be wrong. Read off the title, which carries the ISO reference

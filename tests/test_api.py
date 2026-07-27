@@ -5,11 +5,11 @@ def test_items_list_and_filters(client, seeded):
     r = client.get("/api/v1/items")
     assert r.status_code == 200
     body = r.json()
-    # the seeded CIRCIA item + the boot-seeded curated AI Act timeline
-    assert body["total"] == 2
+    # the seeded CIRCIA item + the four boot-seeded curated timelines
+    assert body["total"] == 5
 
     assert client.get("/api/v1/items?state=comment_open").json()["total"] == 1
-    assert client.get("/api/v1/items?state=effective").json()["total"] == 1  # the timeline
+    assert client.get("/api/v1/items?state=effective").json()["total"] == 4  # the timelines
     assert client.get("/api/v1/items?q=circia").json()["total"] == 1
     assert client.get("/api/v1/items?state=bogus").status_code == 422
 

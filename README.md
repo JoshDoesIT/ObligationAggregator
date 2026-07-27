@@ -67,6 +67,8 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | AIUC-1 quarterly releases (+ the next one, dated) | changelog HTML, server-rendered | on by default (weekly) |
 | AICPA exposure drafts | sitemap (tolerant parser) | on by default (weekly) |
 | HITRUST CSF releases + advisories | sitemap slug signals | on by default (weekly) |
+| FedRAMP baselines, rules and directive responses | sitemap slug signals (no feed exists) | on by default (weekly) |
+| Statutes whose text is the only source (PIPEDA, LGPD, US state privacy) | curated milestone timelines with citations | on by default (seeded at boot) |
 | Unified Agenda / OIRA projected dates | — | no API; curated `oblag assert-date … --confidence agency_estimate --note "<citation>"` |
 
 ## Beyond the feed

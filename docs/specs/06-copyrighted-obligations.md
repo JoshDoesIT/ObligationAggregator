@@ -149,6 +149,40 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   lastmod as each item's `published_at` so "newest" rankings follow the source's
   chronology instead of ingestion batches.
 
+- **FedRAMP: resolved via sitemap.** No feed exists — `/news`, `/rss.xml`, `/feed.json`
+  and `/documents` all 404, and the Rev 5 documents page states no version anywhere in
+  its markup. The sitemap (1116 URLs) does carry the signal: every announcement slug
+  begins with its own date (`/2026-06-25-propelling-change-…-consolidated-rules…/`, and
+  older ones under `/archive/`).
+
+  The filter is where the work is. Most FedRAMP announcements are programme news — a new
+  leader, an RFQ, a shutdown notice, "authorizations hit 300", the annual survey recap —
+  and none of it changes what an agency or a CSP must do, so per spec 00 none of it is an
+  item. A slug has to name a thing that changes the requirement: a baseline, a revision,
+  the rules, a policy, a directive response. On the live sitemap that takes 52 dated
+  announcements down to 17. Two details cost a re-run to find: upstream casing is
+  inconsistent (`…-updated-3PAO-obligations-and-performance-standards-document`), so the
+  slug pattern is case-insensitive and the slug is lowercased for identity; and lastmod
+  drifts (two 2025 announcements carry the crawl date), so `published_at` comes from the
+  slug's own date and never from lastmod.
+
+## Statutes with no machine-readable source at all
+
+Four obligations have no feed, no API, no document library and no version page, because
+the publisher's only artifact is the statute text: **PIPEDA**, **the LGPD**, **US state
+comprehensive privacy laws**, and the **EU AI Act**'s phased deadlines. Justice Canada
+and Planalto publish consolidated law, not change streams; fifty state legislatures need
+a LegiScan key and even then produce bills rather than compliance dates.
+
+These get curated milestone timelines (`oblag/milestones.py`) instead of an adapter.
+They are seeded at boot through the ordinary reducer, so they get items, events,
+deadlines, ICS export and watchlists like any fetched signal, and append-only date
+assertions keep re-seeding idempotent. Every entry carries a citation URL and states
+what is *not* known: PIPEDA's data-mobility framework (Bill C-15) has Royal Assent
+recorded as `adopted` and no in-force date, because it commences on a day fixed by order
+of the Governor in Council and that day does not exist yet. Asserting a plausible one
+would be exactly the confidently-wrong output this project refuses to produce.
+
 ## Headless-browser tier (addendum)
 
 `src/oblag/browserfetch.py`: last-resort rendering for sources with no feed, API, or
