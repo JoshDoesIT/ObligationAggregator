@@ -301,3 +301,60 @@ def test_the_aicpa_filter_is_re_applied_to_rows_already_stored(db):
     survivor = db.query(PipelineItem).one()
     assert "ssae-qm" in survivor.url
     assert rescope_sitemap_items(db) == []  # idempotent
+
+
+def test_a_new_linker_rule_reaches_signals_already_ingested(db):
+    """The reducer infers an obligation on create and fills it on update, so a rule
+    added later only reaches items their source happens to re-list. AICPA's exposure
+    drafts sat unlinked that way, leaving SOC 2 blank while its source worked fine."""
+    from oblag.catalog import seed_obligations
+    from oblag.db.models import ItemState, Obligation
+    from oblag.maintenance import relink_items
+
+    seed_obligations(db)
+    soc2 = db.query(Obligation).filter_by(slug="soc2").one()
+    for title in (
+        "AICPA exposure draft: Exposure draft proposed ssae qm",
+        "Some unrelated notice",
+    ):
+        db.add(
+            PipelineItem(
+                source_system="aicpa",
+                jurisdiction="Global",
+                title=title,
+                state=ItemState.proposed,
+                native_status="exposure_draft",
+                track="proposed",
+                content_fingerprint=sha256(title.encode()).hexdigest(),
+            )
+        )
+    db.commit()
+
+    assert relink_items(db) == 1
+    db.commit()
+    linked = db.query(PipelineItem).filter(PipelineItem.obligation_id.isnot(None)).one()
+    assert linked.obligation_id == soc2.id
+    assert relink_items(db) == 0  # idempotent
+
+
+def test_relink_never_second_guesses_an_existing_link(db):
+    from oblag.catalog import seed_obligations
+    from oblag.db.models import ItemState, Obligation
+    from oblag.maintenance import relink_items
+
+    seed_obligations(db)
+    gdpr = db.query(Obligation).filter_by(slug="gdpr").one()
+    item = PipelineItem(
+        source_system="edpb",
+        jurisdiction="EU",
+        title="Trust services guidance",  # would infer soc2 if it were reconsidered
+        state=ItemState.proposed,
+        native_status="consultation",
+        track="proposed",
+        content_fingerprint="z",
+        obligation_id=gdpr.id,
+    )
+    db.add(item)
+    db.commit()
+    assert relink_items(db) == 0
+    assert db.query(PipelineItem).one().obligation_id == gdpr.id

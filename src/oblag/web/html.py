@@ -68,6 +68,7 @@ CONF_HELP = {
 SOURCE_LABELS = {
     "federal_register": "Federal Register",
     "nist_csrc": "NIST CSRC",
+    "nist_pubs": "NIST",
     "regulations_gov": "Regulations.gov",
     "cellar": "EUR-Lex",
     "oeil": "OEIL",
@@ -182,6 +183,8 @@ def _signal_kind(item: dict) -> str:
         return "Proposed rule" if native == "prorule" else "Final rule"
     if src == "nist_csrc":
         return "Draft standard" if native in _NIST_DRAFT_STAGES else "Publication"
+    if src == "nist_pubs":
+        return "Publication"
     if src == "cellar":
         return "Proposed act" if item.get("track") == "proposed" else "EU act"
     if src in ("have_your_say", "edpb", "esma", "eba"):
@@ -670,8 +673,11 @@ def obligations_page(
                 "next_deadline": next_deadline.get(o.id),
             }
         )
-    # obligations with activity first, most active on top
-    rows.sort(key=lambda r: (-r["active_items"], -r["total_items"], r["name"]))
+    # Alphabetical. This is the page where you tick the obligations you're subject to,
+    # so it is scanned by name — you already know what you're looking for. Sorting by
+    # activity instead moved a row every time its source published, which is the last
+    # thing a checklist should do.
+    rows.sort(key=lambda r: r["name"].lower())
     return templates.TemplateResponse(request, "obligations.html", {"rows": rows})
 
 

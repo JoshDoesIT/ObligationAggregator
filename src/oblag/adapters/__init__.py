@@ -22,6 +22,7 @@ _BUILTIN_MODULES: list[str] = [
     "iso_catalog",
     "legiscan",
     "nist_csrc",
+    "nist_pubs",
     "oeil",
     "pci_ssc",
     "regulations_gov",
