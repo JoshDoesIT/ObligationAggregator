@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from hashlib import sha256
 
 from oblag.adapters.base import NormalizedItem
 from oblag.core.reducer import reduce_item
@@ -77,7 +78,7 @@ def _fr(db, title: str, abstract: str, obligation: str | None = None):
         db,
         NormalizedItem(
             source_system="federal_register",
-            external_key=("fr_doc_number", f"doc-{abs(hash(title)) % 10**6}"),
+            external_key=("fr_doc_number", f"doc-{sha256(title.encode()).hexdigest()[:12]}"),
             jurisdiction="US-Federal",
             title=title,
             abstract=abstract,
@@ -246,3 +247,57 @@ def test_the_feed_is_actually_chronological(client, seeded, db):
     # undated rows sort last rather than riding our ingestion clock to the top
     if "undated" in filed:
         assert filed.index("undated") >= len(dated)
+
+
+def test_removing_a_catalog_entry_counts_as_drift(db, monkeypatch):
+    """_sync_catalog only compared the entries CATALOG still ships, so a REMOVED one
+    was invisible and retirement never ran. nerc-cip stayed live in production through
+    a deploy that had already deleted its adapter."""
+    from oblag.catalog import CATALOG, RETIRED_OBLIGATIONS, seed_obligations
+    from oblag.db.models import Obligation
+
+    seed_obligations(db)
+    db.add(Obligation(slug="nerc-cip", name="NERC CIP", issuing_body="NERC", jurisdiction="US"))
+    db.commit()
+
+    rows = {o.slug: o for o in db.query(Obligation).all()}
+    shipped_drift = any(
+        (row := rows.get(entry["slug"])) is None
+        or any(getattr(row, field) != value for field, value in entry.items())
+        for entry in CATALOG
+    )
+    assert not shipped_drift, "nothing the catalog still ships has changed"
+    assert any(slug in rows for slug in RETIRED_OBLIGATIONS), "yet a retired one is live"
+
+
+def test_the_aicpa_filter_is_re_applied_to_rows_already_stored(db):
+    """Tightening a URL filter only stops new rows. Seven CPA professional-conduct
+    drafts were live when "ethics" left the include list."""
+    from oblag.db.models import ItemState
+    from oblag.maintenance import rescope_sitemap_items
+
+    urls = [
+        "https://www.aicpa-cima.com/news/download/ethics-exposure-draft-tax-services",
+        "https://www.aicpa-cima.com/news/download/ethics-exposure-draft-section-529-plans",
+        "https://www.aicpa-cima.com/resources/download/exposure-draft-proposed-ssae-qm",
+    ]
+    for url in urls:
+        item = PipelineItem(
+            source_system="aicpa",
+            jurisdiction="Global",
+            title=f"AICPA exposure draft: {url.rsplit('/', 1)[-1]}",
+            url=url,
+            state=ItemState.proposed,
+            native_status="exposure_draft",
+            track="proposed",
+            content_fingerprint=sha256(url.encode()).hexdigest(),
+        )
+        db.add(item)
+    db.commit()
+
+    purged = rescope_sitemap_items(db)
+    db.commit()
+    assert len(purged) == 2
+    survivor = db.query(PipelineItem).one()
+    assert "ssae-qm" in survivor.url
+    assert rescope_sitemap_items(db) == []  # idempotent

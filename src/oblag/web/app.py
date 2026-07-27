@@ -57,7 +57,7 @@ def _sync_catalog() -> None:
     code is authoritative, so any drift — new slugs, new fields, or edited values (e.g.
     a current_version bump when a standards body publishes) — re-upserts on boot. One
     50-row SELECT per cold start; the upsert itself only runs when something changed."""
-    from oblag.catalog import CATALOG, seed_obligations
+    from oblag.catalog import CATALOG, RETIRED_OBLIGATIONS, seed_obligations
     from oblag.db.models import Obligation
 
     with session_scope() as session:
@@ -67,6 +67,10 @@ def _sync_catalog() -> None:
             or any(getattr(row, field) != value for field, value in entry.items())
             for entry in CATALOG
         )
+        # A REMOVED entry is drift too. Checking only the shipped entries meant
+        # retiring an obligation was a silent no-op: nerc-cip stayed live through a
+        # deploy that had already deleted its adapter (observed, v0.21.0).
+        drift = drift or any(slug in rows for slug in RETIRED_OBLIGATIONS)
         if drift:
             # A catalog current_version edit is the always-wins override for an
             # auto-detected version: clear the auto value so the corrected baseline
@@ -103,6 +107,7 @@ def _repair_data() -> None:
         purge_retired_sources,
         rearm_backfill,
         rescope_items,
+        rescope_sitemap_items,
     )
 
     with session_scope() as session:
@@ -110,6 +115,7 @@ def _repair_data() -> None:
         dedupe_split_identities(session)
         purge_retired_sources(session, set(available_adapters()))
         rescope_items(session)
+        rescope_sitemap_items(session)
         complete_concluded_consultations(session)
         # v0.20.1's dedupe grouped on join keys alone and deleted 26 Federal Register
         # items that merely shared a RIN. Re-arming makes the next daily cron re-read
