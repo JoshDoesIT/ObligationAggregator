@@ -38,7 +38,9 @@ WEEKLY_ADAPTERS: dict[str, tuple[int, str]] = {
     "eba": (2, "09:00"),  # browser-rendered; self-disables without playwright
     "nist_pubs": (2, "09:15"),  # publications of record change rarely
     "fedramp": (2, "09:25"),
+    "ecfr": (2, "09:35"),  # the CFR changes on rulemaking timescales
     "standard_pages": (3, "09:20"),
+    "uk_legislation": (3, "09:25"),
     "cis": (3, "09:30"),
     "aicpa": (3, "09:45"),  # sitemap-based (the landing SPA is broken upstream — spec 06)
     "hitrust": (4, "09:55"),

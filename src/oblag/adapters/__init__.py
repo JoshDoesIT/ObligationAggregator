@@ -15,6 +15,7 @@ _BUILTIN_MODULES: list[str] = [
     "hitrust",
     "cppa",
     "eba",
+    "ecfr",
     "edpb",
     "esma",
     "federal_register",
@@ -29,6 +30,7 @@ _BUILTIN_MODULES: list[str] = [
     "pci_ssc",
     "regulations_gov",
     "standard_pages",
+    "uk_legislation",
 ]
 
 

@@ -78,3 +78,32 @@ def test_an_unrecognisable_page_yields_nothing_rather_than_a_guess():
     for meta in ({"page": "cis-controls"}, {"page": "nope"}, {}):
         raw = RawDocument(url="t", content=b"<html>nothing here</html>", meta=meta)
         assert list(StandardPagesAdapter().normalize(raw)) == []
+
+
+def test_the_highest_version_on_the_page_wins_not_the_first_one_mentioned():
+    """Observed live: two fetches of the same CIS URL minutes apart came back as
+    different CDN variants, and one mentioned v7.1 before v8.1. First-match would have
+    published a superseded edition as the current standard."""
+    html = (
+        b"<html><body><p>Upgrading from CIS Controls v7.1 to CIS Controls v8.1. "
+        b"See the CIS Controls v8 mapping.</p></body></html>"
+    )
+    raw = RawDocument(url="t", content=html, meta={"page": "cis-controls"})
+    (item,) = StandardPagesAdapter().normalize(raw)
+    assert item.title == "CIS Critical Security Controls v8.1"
+
+
+def test_the_ai_rmf_page_is_watched_because_no_series_index_carries_it():
+    """AI 100-1 has no CSRC series index (/publications/ai is a 404), so nist_pubs
+    cannot see it and this page is the only surface stating the version."""
+    page = next(p for p in WATCHED if p.key == "nist-ai-rmf")
+    assert page.obligation == "nist-ai-rmf"
+    html = (
+        b"<html><body><p>The AI RMF 1.0 is being revised. "
+        b"Download the AI RMF 1.0.</p></body></html>"
+    )
+    raw = RawDocument(url="t", content=html, meta={"page": "nist-ai-rmf"})
+    (item,) = StandardPagesAdapter().normalize(raw)
+    assert item.title == "NIST AI Risk Management Framework 1.0"
+    assert item.obligation_slug == "nist-ai-rmf"
+    assert item.native_meta["published_version"] == "1.0"
