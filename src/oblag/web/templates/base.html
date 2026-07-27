@@ -148,9 +148,16 @@
     /* the change title is the scan target — give it the room, not the date column */
     table.feed { table-layout:fixed; }
     table.feed th:nth-child(1) { width:55%; }
-    table.feed th:nth-child(2) { width:14%; }
-    table.feed th:nth-child(3) { width:31%; }
+    table.feed th:nth-child(2) { width:17%; }
+    table.feed th:nth-child(3) { width:28%; }
     table.feed td:nth-child(1) { overflow-wrap:anywhere; }
+    /* Nothing in a fixed-layout table may be wider than its column. Badges and date
+       chips are nowrap so they never break mid-label inline — but "FINAL · PENDING
+       EFFECTIVE" measured 228px in a 159px cell at every desktop width, so it painted
+       over the Key dates column and pushed the wrapper into a sideways scroll. In here
+       they wrap instead; a two-line badge is fine in a row that is already two lines. */
+    table.feed td .badge { white-space:normal; max-width:100%; }
+    table.feed .datechip { white-space:normal; }
 
     /* ---- badges ---- */
     .badge { display:inline-flex; align-items:center; gap:.4rem; padding:.1rem .5rem;

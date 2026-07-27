@@ -339,15 +339,10 @@ templates.env.filters.update(
 
 
 def _site_base(request: Request) -> str:
-    """Absolute origin for canonical links and social-card image URLs. The configured
-    base_url wins; an unconfigured install (localhost default) falls back to the
-    request's own origin so self-hosted cards still point somewhere real."""
-    from oblag.config import get_settings
+    """Absolute origin for canonical links and social-card image URLs (oblag.web.urls)."""
+    from oblag.web.urls import site_base
 
-    base = get_settings().base_url.rstrip("/")
-    if base and "localhost" not in base:
-        return base
-    return str(request.base_url).rstrip("/")
+    return site_base(request)
 
 
 templates.env.globals.update(conf_help=CONF_HELP, state_labels=STATE_LABELS, site_base=_site_base)
@@ -957,7 +952,7 @@ def watchlists_page(
     from oblag.db.models import EventType, Obligation
     from oblag.web import watchlists as wl_api
 
-    data = wl_api.list_watchlists(db=db, ctx=ctx)
+    data = wl_api.list_watchlists(request=request, db=db, ctx=ctx)
     data["obligations"] = [
         {"slug": slug, "name": name}
         for slug, name in db.query(Obligation.slug, Obligation.name).order_by(Obligation.name)

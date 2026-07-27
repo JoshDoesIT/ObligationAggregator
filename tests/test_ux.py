@@ -598,3 +598,15 @@ def test_catalog_picker_is_thumb_shaped_on_mobile(client, seeded):
     assert "table.stack td.titlecell { overflow:hidden; width:auto; }" in html
     assert "table.catalog td[data-label]::before { display:inline" in html
     assert 'class="rows stack catalog"' in html
+
+
+def test_nothing_in_the_feed_table_is_wider_than_its_column(client, seeded):
+    """Measured live at every desktop width: the "FINAL · PENDING EFFECTIVE" badge was
+    228px inside a 159px cell, so it painted over the Key dates column and pushed the
+    wrapper into a sideways scroll. Badges and date chips are nowrap so short labels
+    never break mid-phrase — inside this fixed-layout table they have to wrap instead."""
+    html = client.get("/changes").text
+    assert "table.feed td .badge { white-space:normal; max-width:100%; }" in html
+    assert "table.feed .datechip { white-space:normal; }" in html
+    # and the state column got the room the long label actually needs
+    assert "table.feed th:nth-child(2) { width:17%; }" in html
