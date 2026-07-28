@@ -460,6 +460,22 @@
     });
     form.querySelectorAll('.js-apply').forEach(function (btn) { btn.hidden = true; });
   });
+  // 1b. Copy-to-clipboard. The field is a readonly input that selects on focus, so
+  //     without JS (or without clipboard permission) it is still copyable by hand.
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var field = document.querySelector(btn.getAttribute('data-copy'));
+      if (!field) { return; }
+      field.select();
+      var done = function () { btn.textContent = 'Copied'; setTimeout(function () {
+        btn.textContent = 'Copy link'; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(field.value).then(done, function () {});
+      } else if (document.execCommand) {
+        document.execCommand('copy'); done();
+      }
+    });
+  });
   // 2. Type-to-filter for long checkbox lists. Inserted by JS so that without it the
   //    list is simply a scrollable group — nothing is hidden behind a control that
   //    cannot work.

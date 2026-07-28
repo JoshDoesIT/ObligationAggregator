@@ -94,6 +94,38 @@ changes — `user.email` remains the join point.
   Outbound webhook targets must be validated against SSRF (no private IP
   ranges, no redirects) once orgs can point them anywhere.
 
+### Editions: a bookmarkable scope (v0.30.0)
+
+`Org.scoped_obligations` is one value for the whole instance. On the single-org
+deployment that is every visitor's view, so changing it changes what everyone sees and
+there is no way to have your own — and it does not travel, because it is a property of
+the deployment rather than of you.
+
+An **edition** is that selection made portable: a row carrying the chosen slugs and an
+unguessable token, reachable at `/e/<token>`. Opening it adopts it in that browser (a
+year-long `oblag_edition` cookie) and redirects home, so every subsequent page is read
+through it. Adopting rather than scoping only the landing page is the point: otherwise
+the first nav click would drop you back to everyone's view.
+
+- **One edition per org**, created on the first save and updated in place afterwards.
+  The token never rotates on an edit, because a bookmark that breaks the moment you
+  refine your list is worthless.
+- **The edition wins over the org setting** when present. The org value stays in sync as
+  the fallback for a visitor who has never opened a link.
+- **`/e`** forgets the edition on this device without destroying it, so the link still
+  works elsewhere.
+- **An unknown token is ignored** rather than raising, so a stale bookmark degrades to
+  the ordinary site.
+- The adopt redirect sets a cookie, so it must never be edge-cached. It is `no-store`
+  like every other non-API response, and a test pins that.
+
+Anyone holding the link reads *and can edit* the same edition — it behaves like a shared
+document link, not a private account. That is what makes "the same curated site on any
+device" work with no sign-in, and it is the trade being made.
+
+Watchlists still bind to org scope rather than to an edition, because a watchlist is a
+server-side object owned by the org and delivers when no browser is present.
+
 ### Watchlist lifecycle (v0.27.0)
 
 Pause and delete are separate states, because they were not and it showed. Until

@@ -80,6 +80,16 @@ uv run oblag serve         # UI + API on http://localhost:8000
   live to "everything I'm subject to". Pausing stops delivery and keeps the feed URL
   serving a valid empty channel, so subscribers stay subscribed and resuming needs
   nothing from them; deleting retires the feed with a 410.
+
+  Email is only offered once the instance can actually send it, because a watchlist
+  that saves, reports itself active and quietly delivers nothing is worse than no
+  option at all. Two backends: **Resend** (`OBLAG_RESEND_API_KEY`) sends from a domain
+  you verify, which is what you want for mail to anyone but yourself; **SMTP**
+  (`OBLAG_SMTP_HOST` and friends) suits an instance mailing its own operator.
+  `OBLAG_MAIL_BACKEND` is `auto` by default and prefers Resend when a key is present;
+  pin it to `smtp` or `resend` to be explicit. Pinning a backend that is not configured
+  reports email as unavailable rather than falling back, so "send from the verified
+  domain" never silently becomes "send from the personal mailbox".
 - **Curated date assertions** — `oblag assert-date` records dates from sources without
   adapters (Unified Agenda, IAPP cross-checks) with confidence + citation; same
   append-only supersession and `date_changed` events as fetched dates.

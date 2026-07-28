@@ -29,6 +29,29 @@ the <a href="/changes">change feed</a> is a signal about one of these.</p>
   </div>
 </div>
 
+{# The selection is only useful if it travels. This link is the thing you bookmark:
+   open it on a phone and that browser reads the site the same way, no account. #}
+{% if edition_url %}
+<div class="panel">
+  <h3>Your edition, on any device</h3>
+  <div class="pad">
+    <p class="muted" style="margin:0 0 .6rem; font-size:.9rem">Bookmark this link, or open it on
+    another device, and Gazette will show only the obligations you picked. It keeps working when
+    you change your selection, so you only have to save the bookmark once.</p>
+    <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap">
+      <input id="edition-url" value="{{ edition_url }}" readonly
+             style="flex:1 1 22rem; min-width:0; font-size:.85rem"
+             onfocus="this.select()">
+      <button type="button" class="quiet" data-copy="#edition-url">Copy link</button>
+    </div>
+    {% if ctx and ctx.edition %}
+    <p class="muted" style="font-size:.82rem; margin:.7rem 0 0">This browser is reading through
+      that edition. <a href="/e">Show everything here instead</a> — the link keeps working.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 <div class="panel">
   <div class="tablewrap">
   <table class="rows stack catalog">
