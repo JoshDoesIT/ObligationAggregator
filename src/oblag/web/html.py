@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import secrets
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -406,8 +407,83 @@ def save_scope(
     chosen = sorted(set(slugs) & known)
     org = db.merge(ctx.org)
     org.scoped_obligations = chosen or None
+    # The same selection also becomes a bookmarkable edition, so it can travel to a
+    # phone or a colleague without an account. Editing keeps the existing token: a
+    # bookmark that stops working the moment you refine your list is worthless.
+    edition = _upsert_edition(db, ctx, chosen)
     db.commit()
-    return RedirectResponse("/obligations", status_code=303)
+    response = RedirectResponse("/obligations", status_code=303)
+    if edition is not None:
+        _set_edition_cookie(response, edition.token)
+    return response
+
+
+def _upsert_edition(db: Session, ctx: Context, chosen: list[str]):
+    """This browser's edition, created on first save and updated after that."""
+    from oblag.db.models import Edition
+
+    row = ctx.edition
+    if row is None and ctx.org is not None:
+        row = (
+            db.query(Edition)
+            .filter_by(org_id=ctx.org.id)
+            .order_by(Edition.id)
+            .first()  # one per org: "your edition", not a pile of near-identical links
+        )
+    if row is None:
+        if not chosen:
+            return None  # nothing chosen and nothing to carry — no link worth minting
+        row = Edition(
+            org_id=ctx.org.id if ctx.org else None,
+            token=secrets.token_urlsafe(12),
+            slugs=chosen,
+        )
+        db.add(row)
+        db.flush()
+        return row
+    row.slugs = chosen
+    return row
+
+
+def _set_edition_cookie(response, token: str) -> None:
+    from oblag.config import get_settings
+    from oblag.web.deps import EDITION_COOKIE, EDITION_COOKIE_MAX_AGE
+
+    response.set_cookie(
+        EDITION_COOKIE,
+        token,
+        max_age=EDITION_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=get_settings().base_url.startswith("https"),
+    )
+
+
+@router.get("/e/{token}", response_class=HTMLResponse)
+def adopt_edition(token: str, db: Session = Depends(get_db)):
+    """Open a bookmarked edition. Adopting it in this browser (rather than scoping only
+    the page you landed on) is what makes the rest of the site yours as you navigate —
+    otherwise the first nav click would drop you back to everyone's view."""
+    from oblag.db.models import Edition
+
+    row = db.query(Edition).filter_by(token=token).one_or_none()
+    if row is None:
+        # A dead bookmark should land somewhere useful rather than on an error
+        return RedirectResponse("/obligations?edition=unknown", status_code=303)
+    response = RedirectResponse("/", status_code=303)
+    _set_edition_cookie(response, row.token)
+    return response
+
+
+@router.get("/e", response_class=HTMLResponse)
+def leave_edition():
+    """Stop reading through an edition on this device. The edition itself is untouched,
+    so the bookmark still works — this only forgets it here."""
+    from oblag.web.deps import EDITION_COOKIE
+
+    response = RedirectResponse("/obligations", status_code=303)
+    response.delete_cookie(EDITION_COOKIE)
+    return response
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -686,7 +762,20 @@ def obligations_page(
     # activity instead moved a row every time its source published, which is the last
     # thing a checklist should do.
     rows.sort(key=lambda r: r["name"].lower())
-    return templates.TemplateResponse(request, "obligations.html", {"rows": rows})
+    # The bookmarkable link for this selection, shown once there is a selection to carry
+    edition = ctx.edition or _org_edition(db, ctx)
+    edition_url = f"{_site_base(request)}/e/{edition.token}" if edition is not None else None
+    return templates.TemplateResponse(
+        request, "obligations.html", {"rows": rows, "edition_url": edition_url}
+    )
+
+
+def _org_edition(db: Session, ctx: Context):
+    from oblag.db.models import Edition
+
+    if ctx.org is None:
+        return None
+    return db.query(Edition).filter_by(org_id=ctx.org.id).order_by(Edition.id).first()
 
 
 @router.get("/items/{item_id}", response_class=HTMLResponse)

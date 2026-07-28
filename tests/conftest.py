@@ -85,6 +85,13 @@ def client(engine, db, monkeypatch):
 
 
 @pytest.fixture()
+def app(client):
+    """The same wired app the `client` fixture drives, for tests that need a SECOND
+    client with its own cookie jar — a different device reading the same instance."""
+    return client.app
+
+
+@pytest.fixture()
 def seeded(db):
     """Catalog + one CIRCIA-like item with a future comment_close."""
     from datetime import date, timedelta

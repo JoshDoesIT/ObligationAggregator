@@ -334,6 +334,31 @@ class Org(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class Edition(Base):
+    """A saved obligation selection, reachable by a URL you can bookmark.
+
+    Org scope (`Org.scoped_obligations`) is one setting for the whole instance, so on a
+    single-org deployment changing it changes what every visitor sees, and there is no
+    way to have your own. An edition is that same selection made personal and portable:
+    an unguessable token you can bookmark, open on a phone, or hand to a colleague, with
+    no account to create.
+
+    The token is stable across edits on purpose. Refining your list has to keep the
+    bookmark working, or the bookmark is worthless.
+    """
+
+    __tablename__ = "edition"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # who minted it; kept so an org can find its own edition again
+    org_id: Mapped[int | None] = mapped_column(ForeignKey("org.id"), index=True)
+    token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    name: Mapped[str | None] = mapped_column(String(255))
+    slugs: Mapped[list[str]] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class User(Base):
     # "user" is reserved in Postgres; the table is app_user.
     __tablename__ = "app_user"

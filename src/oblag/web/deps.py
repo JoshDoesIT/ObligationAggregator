@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from oblag import auth
-from oblag.db.models import Org, User
+from oblag.db.models import Edition, Org, User, utcnow
 from oblag.db.session import get_session_factory
 
 
@@ -35,6 +35,8 @@ class Context:
     raw_session: str | None
     auth_on: bool = False
     role: str | None = None  # the user's role in the active org (owner|admin|member)
+    # the bookmarked edition this browser is reading through, if any
+    edition: Edition | None = None
 
     @property
     def authed(self) -> bool:
@@ -42,7 +44,14 @@ class Context:
 
     @property
     def scope(self) -> list[str]:
-        """Obligation slugs this org is subject to; empty means everything."""
+        """Obligation slugs to read the site through; empty means everything.
+
+        An edition adopted in this browser wins over the org setting. The org setting is
+        one value for the whole instance, so without this there is no way to have your
+        own selection on a shared deployment.
+        """
+        if self.edition is not None:
+            return list(self.edition.slugs or [])
         return list(getattr(self.org, "scoped_obligations", None) or []) if self.org else []
 
     @property
@@ -143,8 +152,26 @@ def get_context(request: Request, db: Session = Depends(get_db)) -> Context:
                 auth_on=True,
                 role=role,
             )
+    ctx.edition = resolve_edition(db, request.cookies.get(EDITION_COOKIE))
     request.state.ctx = ctx  # base.html reads this for the nav
     return ctx
+
+
+EDITION_COOKIE = "oblag_edition"
+# A bookmark is meant to outlive a browser restart, and there is nothing sensitive in
+# it — the token names a list of public obligations, nothing more.
+EDITION_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
+
+def resolve_edition(db: Session, token: str | None) -> Edition | None:
+    """The edition this browser is reading through. An unknown token is simply ignored,
+    so a stale bookmark degrades to the ordinary site rather than an error page."""
+    if not token:
+        return None
+    row = db.query(Edition).filter_by(token=token).one_or_none()
+    if row is not None:
+        row.last_used_at = utcnow()
+    return row
 
 
 def login_redirect(ctx: Context):
