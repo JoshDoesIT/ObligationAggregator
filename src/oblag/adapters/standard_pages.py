@@ -20,6 +20,7 @@ Anything that does not match yields nothing rather than a guess.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -174,23 +175,33 @@ class StandardPagesAdapter(SourceAdapter):
 
 
 def _best_match(page: WatchedPage, text: str) -> re.Match[str] | None:
-    """The HIGHEST version the page states, not the first one it happens to mention.
+    """The version the page states MOST OFTEN, ties broken by the highest.
 
-    Observed live: two fetches of the same CIS URL minutes apart came back as different
-    CDN variants, and in one of them "CIS Controls v7.1" appeared before v8.1 — which
-    would have published a superseded edition as the current one. A page about v8.1
-    mentions older versions all the time (upgrade notes, mapping tables); it never
-    mentions a version newer than the one it is about.
+    Two failure modes, both observed live on the same CIS page:
+
+    * First-match is wrong. Two fetches minutes apart came back as different CDN
+      variants, and one mentioned "CIS Controls v7.1" before v8.1 — first-match would
+      have published a superseded edition as the current standard.
+    * Highest-match is wrong too, which is what replacing it with `max` then caused.
+      CIS lists companion documents on the same page, and a white paper titled
+      "CIS Controls v8.1.2 AI Security Guidance Workbook" made the row claim a Controls
+      release that does not exist.
+
+    Counting fixes both, because a page about v8.1 says v8.1 over and over (seven times
+    here) while an incidental mention appears once. The highest tie-break keeps the
+    original CDN-variant fix working when every mention is equally rare.
 
     Dates are left as first-match: a page states one amendment announcement, and
-    "highest" is not a meaningful ordering for the sentence forms we parse.
+    "most often" is not a meaningful ordering for the sentence forms we parse.
     """
     matches = list(page.pattern.finditer(text))
     if not matches:
         return None
     if page.captures_date:
         return matches[0]
-    return max(matches, key=lambda m: _version_key(m.group(1)))
+    counts = Counter(m.group(1) for m in matches)
+    winner = max(counts, key=lambda v: (counts[v], _version_key(v)))
+    return next(m for m in matches if m.group(1) == winner)
 
 
 def _version_key(value: str) -> tuple[int, ...]:

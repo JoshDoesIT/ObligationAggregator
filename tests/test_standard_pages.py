@@ -80,13 +80,30 @@ def test_an_unrecognisable_page_yields_nothing_rather_than_a_guess():
         assert list(StandardPagesAdapter().normalize(raw)) == []
 
 
-def test_the_highest_version_on_the_page_wins_not_the_first_one_mentioned():
-    """Observed live: two fetches of the same CIS URL minutes apart came back as
-    different CDN variants, and one mentioned v7.1 before v8.1. First-match would have
-    published a superseded edition as the current standard."""
+def test_a_variant_that_leads_with_an_old_version_does_not_win():
+    """Two fetches of the same CIS URL minutes apart came back as different CDN
+    variants, and one mentioned v7.1 before v8.1. First-match would have published a
+    superseded edition as the current standard."""
     html = (
         b"<html><body><p>Upgrading from CIS Controls v7.1 to CIS Controls v8.1. "
         b"See the CIS Controls v8 mapping.</p></body></html>"
+    )
+    raw = RawDocument(url="t", content=html, meta={"page": "cis-controls"})
+    (item,) = StandardPagesAdapter().normalize(raw)
+    assert item.title == "CIS Critical Security Controls v8.1"
+
+
+def test_a_companion_document_does_not_become_the_standards_version():
+    """Observed live on 2026-07-29: CIS listed a white paper titled "CIS Controls v8.1.2
+    AI Security Guidance Workbook" in its Information Hub, and taking the highest
+    version made the row claim a Controls release that does not exist. The page says
+    v8.1 seven times and v8.1.2 once."""
+    html = (
+        b"<html><body><p>CIS Controls v8.1 is the current release. Download CIS Controls "
+        b"v8.1. Read about CIS Controls v8.1 mappings. CIS Controls v8.1 FAQ. "
+        b"CIS Controls v8.1 poster. CIS Controls v8.1 guide. CIS Controls v8.1 change log."
+        b"</p><aside>White Paper 07.27.2026 CIS Controls v8.1.2 AI Security Guidance "
+        b"Workbook</aside></body></html>"
     )
     raw = RawDocument(url="t", content=html, meta={"page": "cis-controls"})
     (item,) = StandardPagesAdapter().normalize(raw)
