@@ -22,8 +22,22 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   Each entry names the page, the obligation, and a pattern that extracts what the page
   states. When the page starts saying something different, that IS the change signal —
   the same idea as iso_catalog and nist_pubs, generalised to bodies that publish nothing
-  else. NYDFS has no version number at all, so its pattern captures the amendment DATE
-  instead ("On November 1, 2023, DFS announced amendments to Cybersecurity Regulation").
+  else.
+
+  Some bodies state currency by **where a stable link points** rather than in prose, so
+  an entry can match the URL the fetch resolved to instead of the body (`match_url`).
+  NYDFS is the case that forced it. It used to be read as a dated sentence ("On
+  November 1, 2023, DFS announced amendments to Cybersecurity Regulation"), then DFS
+  rebuilt its site: the old URL became a link hub and the word "amendment" now appears
+  on none of its cybersecurity pages. The regulation is served as one consolidated PDF
+  under a dated CMS path, so `/cybersecurity/23-NYCRR-Part-500` — a stable alias that
+  302s to it — is the surface. Reissuing the text moves the path, and that is the
+  signal. The pattern anchors on the filename as well as the date, because DFS files
+  everything under `/documents/YYYY/MM/`.
+
+  A `match_url` date comes from the document's own `Last-Modified`, which says the body
+  rewrote the file and nothing about when the regulation takes effect. It sets
+  `published_at` only; asserting it as `effective` would invent a source statement.
 
   Two guards, both from live evidence:
   * A pattern must anchor on words the body uses about its own standard, never a bare
@@ -34,7 +48,11 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
     without the guard we would have published CCM v4.0 (2021) as current while v4.1
     (2026) was out — the exact staleness this adapter exists to catch.
 
-  No match yields nothing rather than a guess.
+  No match yields nothing rather than a guess — but it no longer yields nothing
+  *quietly*. Each page is fetched with `meta["expect_item"]`, and the runner records any
+  such page that parsed to zero items on adapter health (see spec 02). That is what was
+  missing when DFS rebuilt its site: the fetch was a 200, the run was a success, and the
+  row just stopped updating while still serving what it last said.
 
 - **pci_docs** (weekly): the PCI standards themselves. `pci_ssc` reads the Perspectives
   blog for RFC announcements, so a standard only appeared while it was under

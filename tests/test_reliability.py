@@ -400,3 +400,98 @@ def test_catchup_survives_a_dead_source(db, monkeypatch):
     assert result["status"] == "done"
     assert any("iso_catalog" in e for e in result["errors"])
     assert result["ran"] == 1  # the source behind it still ran
+
+
+def _stub_adapter(docs, items_for):
+    from oblag.adapters.base import SourceAdapter
+
+    class Stub(SourceAdapter):
+        name = "stub"
+        jurisdiction = "Global"
+
+        def fetch_raw(self, ctx):
+            return list(docs)
+
+        def normalize(self, raw):
+            return items_for(raw)
+
+    return Stub()
+
+
+def test_a_watched_page_that_stops_matching_lands_on_adapter_health(db, monkeypatch):
+    """The failure this closes: DFS rebuilt its site, the sentence standard_pages parsed
+    disappeared, and the row simply stopped updating while still serving what it last
+    said. The fetch was a 200, the run was a success, nothing anywhere said otherwise.
+    A page an adapter declares it expects an item from must not fail silently."""
+    from oblag.adapters.base import NormalizedItem, RawDocument
+    from oblag.core import runner
+
+    good = RawDocument(url="https://x/ok", content=b"a", meta={"page": "ok", "expect_item": "1"})
+    blind = RawDocument(
+        url="https://x/gone", content=b"b", meta={"page": "gone", "expect_item": "1"}
+    )
+
+    def items_for(raw):
+        if raw.meta["page"] != "ok":
+            return []
+        return [
+            NormalizedItem(
+                source_system="stub",
+                external_key=("watched_page", "ok"),
+                jurisdiction="Global",
+                title="Something v1",
+                native_status="current",
+            )
+        ]
+
+    monkeypatch.setattr(runner, "get_adapter", lambda n: _stub_adapter([good, blind], items_for))
+    stats = runner.run_adapter(db, "stub")
+
+    assert stats.blind == ["gone: nothing matched"]
+    health = db.query(AdapterHealth).filter_by(adapter="stub").one()
+    assert health.last_error == "gone: nothing matched"
+    # the run still succeeded: the page that DID match produced its item, and a blind
+    # page must not trip the failure counter that self-disables an adapter
+    assert stats.items == 1
+    assert health.consecutive_failures == 0
+    assert health.last_success_at is not None
+
+
+def test_a_clean_run_clears_a_previous_blind_warning(db, monkeypatch):
+    from oblag.adapters.base import NormalizedItem, RawDocument
+    from oblag.core import runner
+
+    doc = RawDocument(url="https://x/ok", content=b"a", meta={"page": "ok", "expect_item": "1"})
+    seen = {"n": 0}
+
+    def items_for(raw):
+        seen["n"] += 1
+        if seen["n"] == 1:
+            return []
+        return [
+            NormalizedItem(
+                source_system="stub",
+                external_key=("watched_page", "ok"),
+                jurisdiction="Global",
+                title="Something v1",
+                native_status="current",
+            )
+        ]
+
+    monkeypatch.setattr(runner, "get_adapter", lambda n: _stub_adapter([doc], items_for))
+    runner.run_adapter(db, "stub")
+    assert db.query(AdapterHealth).filter_by(adapter="stub").one().last_error
+    runner.run_adapter(db, "stub")
+    assert db.query(AdapterHealth).filter_by(adapter="stub").one().last_error is None
+
+
+def test_pages_that_never_promised_an_item_are_not_flagged(db, monkeypatch):
+    """Most adapters page through listings where an empty page is ordinary."""
+    from oblag.adapters.base import RawDocument
+    from oblag.core import runner
+
+    doc = RawDocument(url="https://x/page2", content=b"[]", meta={})
+    monkeypatch.setattr(runner, "get_adapter", lambda n: _stub_adapter([doc], lambda raw: []))
+    stats = runner.run_adapter(db, "stub")
+    assert stats.blind == []
+    assert db.query(AdapterHealth).filter_by(adapter="stub").one().last_error is None

@@ -25,6 +25,8 @@ class RunStats:
     created: int = 0
     events: list[Event] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    # pages the adapter declared it expects an item from, which parsed to nothing
+    blind: list[str] = field(default_factory=list)
     skipped: bool = False
 
 
@@ -77,7 +79,9 @@ def run_adapter(
                     http_headers=headers,
                     fetched_at=raw.fetched_at,
                 )
+                from_this_page = 0
                 for ni in adapter.normalize(raw):
+                    from_this_page += 1
                     try:
                         res = reduce_item(session, ni, snapshot_id=snap.id, today=today)
                         stats.items += 1
@@ -90,6 +94,13 @@ def run_adapter(
                         msg = f"reduce failed for {ni.external_key}: {exc}"
                         log.exception(msg)
                         stats.errors.append(msg)
+                if raw.meta.get("expect_item") and not from_this_page:
+                    # A page an adapter watches on purpose fetched fine and parsed to
+                    # nothing. That is our pattern going stale, not the source going
+                    # quiet, and it used to leave no trace anywhere: the row simply
+                    # stopped updating and kept serving whatever it last said. NYDFS
+                    # rebuilt its site and we did not notice until a spot check.
+                    stats.blind.append(f"{raw.meta.get('page') or raw.url}: nothing matched")
         stats.events.extend(link_resolved_items(session))
         # advance any standard whose newer version this run just ingested, and close out
         # consultations that publication resolved (automatic; implausible parses are
@@ -121,7 +132,10 @@ def run_adapter(
     health = _health(session, name)
     health.last_success_at = datetime.now(UTC)
     health.consecutive_failures = 0
-    health.last_error = None
+    # A blind page is not a failed run — the fetch worked and the other pages produced
+    # good data, so the run counts as a success and nothing self-disables. It does need
+    # to be visible, and last_error is what /api/v1/health and the digest already show.
+    health.last_error = "; ".join(stats.blind) if stats.blind else None
     health.items_seen_last_run = stats.items
     session.commit()
     return stats

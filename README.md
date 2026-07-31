@@ -63,7 +63,7 @@ uv run oblag serve         # UI + API on http://localhost:8000
 | EBA consultations | **headless-browser rendered** | `uv sync --extra browser` (self-disables without it) |
 | CPPA (California) rulemaking packages | static HTML | on by default (weekly) |
 | CIS Controls version releases | blog RSS, strict release filter | on by default (weekly) |
-| Standards whose only surface is one page (CIS Controls, CSA CCM, NYDFS 23 NYCRR 500) | watched-page version extraction | on by default (weekly) |
+| Standards whose only surface is one page (CIS Controls, CSA CCM, NIST AI RMF, NYDFS 23 NYCRR 500) | watched-page version extraction, or the link the body points at | on by default (weekly) |
 | AIUC-1 quarterly releases (+ the next one, dated) | changelog HTML, server-rendered | on by default (weekly) |
 | AICPA exposure drafts | sitemap (tolerant parser) | on by default (weekly) |
 | HITRUST CSF releases + advisories | sitemap slug signals | on by default (weekly) |

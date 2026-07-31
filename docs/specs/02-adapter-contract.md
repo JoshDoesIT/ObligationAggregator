@@ -28,6 +28,15 @@ class SourceAdapter(ABC):
   (type, value) matches. `external_key` must be stable across fetches.
 - Adapters MUST be defensive: unknown enum values (e.g. a new NIST draft stage) map to a
   conservative default and emit an `anomaly` event rather than raising.
+- **Declaring an expectation.** An adapter that fetches a specific page it knows should
+  produce exactly one item sets `meta["expect_item"]` on that `RawDocument`. If it
+  normalizes to zero, the runner records it in `RunStats.blind` and on
+  `adapter_health.last_error`, while still counting the run a success — the fetch
+  worked, the other pages produced good data, and nothing should self-disable.
+  Without this, a body redesigning its site is indistinguishable from a body with
+  nothing to say: the fetch returns 200, the parse returns nothing, and the row goes on
+  serving whatever it last said. That is exactly how the NYDFS watch went blind
+  (spec 06). Listing endpoints do NOT set it — an empty page there is ordinary.
 - Incremental fetch: `FetchContext.since` (datetime|None) — adapters use source-native
   incremental parameters where available; `FetchContext.window` for bounded backfills.
 
