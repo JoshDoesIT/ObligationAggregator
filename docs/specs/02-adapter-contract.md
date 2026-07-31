@@ -24,6 +24,11 @@ class SourceAdapter(ABC):
   obligation_slug?, raw_summary?`.
 - `content_fingerprint` = SHA-256 over the normalized semantic content (NOT raw bytes), so
   cosmetic feed reordering does not fire `content_changed`.
+- `published_at` is **fill-if-None**: the first observed value stands, so a sitemap
+  lastmod touch cannot make an old filing look newly published. An adapter whose row
+  stands for a living page rather than a fixed document sets `published_at_moves` to opt
+  out — but the reducer still only moves the date to one the source states, so an empty
+  parse cannot erase a good value.
 - Identity: an incoming item matches a stored `pipeline_item` iff any join key
   (type, value) matches. `external_key` must be stable across fetches.
 - Adapters MUST be defensive: unknown enum values (e.g. a new NIST draft stage) map to a

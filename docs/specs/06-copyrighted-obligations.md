@@ -39,6 +39,12 @@ Version releases, transition deadlines, RFC windows as pipeline items/KeyDates.
   rewrote the file and nothing about when the regulation takes effect. It sets
   `published_at` only; asserting it as `effective` would invent a source statement.
 
+  Watched-page rows set `published_at_moves` (spec 02). They stand for a living page
+  rather than a fixed document, so when the body reissues its standard the date has to
+  follow the title. Without it, the NYDFS row read "posted 16 July 2026" while its
+  `published_at` still said 2023-11-01 — self-contradictory, and sorted into the
+  archive.
+
   Two guards, both from live evidence:
   * A pattern must anchor on words the body uses about its own standard, never a bare
     version number. The CSA page carries `?ver=4.0.13` on a WordPress asset, and a loose

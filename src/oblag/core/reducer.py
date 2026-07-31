@@ -457,9 +457,13 @@ def reduce_item(
         item.track = ni.track
     # Fill-if-None only: the first observed value approximates publication; letting a
     # later sitemap-lastmod touch overwrite it would make old documents look newly
-    # published every time their page is edited.
+    # published every time their page is edited. Rows that stand for a living page opt
+    # out — see NormalizedItem.published_at_moves — but only ever to a date the source
+    # actually states, so a parse that comes back empty cannot erase a good value.
     if item.published_at is None:
         item.published_at = _published_dt(ni)
+    elif ni.published_at_moves and (moved := _published_dt(ni)) is not None:
+        item.published_at = moved
     item.last_seen_at = datetime.now(UTC)
     _note_item_anomalies(session, item, ni, snapshot_id, events)
     session.flush()

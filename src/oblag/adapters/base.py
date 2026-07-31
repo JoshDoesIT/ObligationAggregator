@@ -53,6 +53,12 @@ class NormalizedItem:
     # publication_date). Deliberately NOT part of the content fingerprint: a sitemap
     # lastmod drifts when a page is touched, and a touch is not a content change.
     published_at: date | None = None
+    # Set by adapters whose rows stand for a LIVING PAGE rather than a fixed document.
+    # The reducer otherwise fills published_at once and never moves it, because a sitemap
+    # lastmod touch must not make an old document look newly published. A watched-page
+    # row is the opposite case: it has no birth date of its own, it reports what one page
+    # currently says, and the date moving IS the change it exists to catch.
+    published_at_moves: bool = False
     native_meta: dict[str, str] = field(default_factory=dict)  # extra statemap inputs
     anomalies: list[str] = field(default_factory=list)  # defensive-parse notes → anomaly events
     # Supplementary documents (comment extensions, corrections, delays, withdrawals)
