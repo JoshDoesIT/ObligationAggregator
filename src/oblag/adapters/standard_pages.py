@@ -186,6 +186,11 @@ class StandardPagesAdapter(SourceAdapter):
             track="final",
             obligation_slug=page.obligation,
             published_at=stated,
+            # this row reports what one page says today, so when the body reissues its
+            # standard the date has to follow the title rather than stay at whatever we
+            # first saw. NYDFS shipped with the title reading 16 July 2026 and
+            # published_at still on 2023-11-01, which is worse than either alone.
+            published_at_moves=True,
             dates=(
                 # a match_url date is the moment the body last wrote the file to its CMS,
                 # which says the text was reissued and nothing at all about when it takes

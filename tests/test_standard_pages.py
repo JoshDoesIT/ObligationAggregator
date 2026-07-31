@@ -167,3 +167,66 @@ def test_the_ai_rmf_page_is_watched_because_no_series_index_carries_it():
     assert item.title == "NIST AI Risk Management Framework 1.0"
     assert item.obligation_slug == "nist-ai-rmf"
     assert item.native_meta["published_version"] == "1.0"
+
+
+def test_a_reissued_standard_moves_its_publication_date(db):
+    """Shipped broken in v0.31.0 and caught on the live site: the NYDFS title read
+    "posted 16 July 2026" while published_at still said 2023-11-01, so the row
+    contradicted itself and sorted into the archive.
+
+    The reducer fills published_at once and never moves it, which is right for a
+    document — a sitemap lastmod touch must not make an old filing look new. A watched
+    page is the other case: the row has no publication date of its own, it reports what
+    the page says now, and that date moving is the change it exists to catch."""
+    from oblag.core.reducer import reduce_item
+
+    def ingest(resolved, last_modified):
+        raw = RawDocument(
+            url="https://www.dfs.ny.gov/cybersecurity/23-NYCRR-Part-500",
+            content=b"%PDF-1.7",
+            http_headers={"last-modified": last_modified},
+            meta={"page": "nydfs-500", "resolved_url": resolved},
+        )
+        (ni,) = StandardPagesAdapter().normalize(raw)
+        return reduce_item(db, ni).item
+
+    old = (
+        "https://www.dfs.ny.gov/system/files/documents/2023/11/"
+        "NYCRR-part-500-Cybersecurity-Regulation.pdf"
+    )
+    item = ingest(old, "Wed, 01 Nov 2023 12:00:00 GMT")
+    assert item.published_at.date() == date(2023, 11, 1)
+
+    item = ingest(_PART_500_PDF, "Thu, 16 Jul 2026 17:29:15 GMT")
+    db.commit()
+    assert item.title == "23 NYCRR Part 500: regulation text posted 16 July 2026"
+    assert item.published_at.date() == date(2026, 7, 16)
+
+    # but a fetch that states no date must not erase the good one
+    item = ingest(_PART_500_PDF, "not a date")
+    db.commit()
+    assert item.published_at.date() == date(2026, 7, 16)
+
+
+def test_an_ordinary_document_still_keeps_its_first_publication_date(db):
+    """The guard this opts out of is load-bearing everywhere else: a sitemap lastmod
+    touch must not make an old filing look newly published."""
+    from oblag.adapters.base import NormalizedItem
+    from oblag.core.reducer import reduce_item
+
+    def ingest(when):
+        return reduce_item(
+            db,
+            NormalizedItem(
+                source_system="hitrust",
+                external_key=("hitrust_release", "11.8.0"),
+                jurisdiction="Global",
+                title="HITRUST CSF v11.8.0",
+                native_status="current",
+                published_at=when,
+            ),
+        ).item
+
+    assert ingest(date(2026, 5, 8)).published_at.date() == date(2026, 5, 8)
+    db.commit()
+    assert ingest(date(2026, 7, 30)).published_at.date() == date(2026, 5, 8)
