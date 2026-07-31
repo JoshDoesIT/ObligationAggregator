@@ -30,12 +30,55 @@ def test_cis_controls_version_comes_off_its_own_page():
     assert item.native_meta["published_version"] == "8.1"
 
 
-def test_nydfs_amendment_date_is_read_as_a_date_not_a_version():
-    """23 NYCRR 500 has no version number; DFS states amendments as a dated sentence."""
-    item = _items("nydfs-500", "nydfs.html")[0]
+def _nydfs(resolved: str, last_modified: str | None = None):
+    raw = RawDocument(
+        url="https://www.dfs.ny.gov/cybersecurity/23-NYCRR-Part-500",
+        content=b"%PDF-1.7 binary regulation text",
+        content_type="application/pdf",
+        http_headers={"last-modified": last_modified} if last_modified else {},
+        meta={"page": "nydfs-500", "resolved_url": resolved},
+    )
+    return list(StandardPagesAdapter().normalize(raw))
+
+
+_PART_500_PDF = (
+    "https://www.dfs.ny.gov/system/files/documents/2026/07/"
+    "NYCRR-part-500-Cybersecurity-Regulation.pdf"
+)
+
+
+def test_nydfs_currency_is_read_from_where_the_link_points():
+    """DFS rebuilt its site and deleted the sentence this used to parse ("On November 1,
+    2023, DFS announced amendments to Cybersecurity Regulation"). The word "amendment"
+    now appears on none of its cybersecurity pages — the regulation is served as one
+    consolidated PDF under a dated CMS path. So the signal is the resolved link: when
+    DFS reissues the text, the path moves and this row changes."""
+    (item,) = _nydfs(_PART_500_PDF, "Thu, 16 Jul 2026 17:29:15 GMT")
     assert item.obligation_slug == "nydfs-500"
-    assert item.published_at == date(2023, 11, 1)
-    assert "published_version" not in item.native_meta
+    assert item.title == "23 NYCRR Part 500: regulation text posted 16 July 2026"
+    assert item.published_at == date(2026, 7, 16)
+    # the dated path is only ever a month, so it is the identity marker and the
+    # document's own timestamp supplies the day
+    assert item.native_meta["published_version"] == "2026/07"
+
+
+def test_a_cms_timestamp_is_never_asserted_as_an_effective_date():
+    """Last-Modified says the body rewrote the file, which is not a claim about when the
+    regulation takes effect. Publishing it as `effective` would invent a source statement."""
+    (item,) = _nydfs(_PART_500_PDF, "Thu, 16 Jul 2026 17:29:15 GMT")
+    assert item.dates == []
+    # and an unparseable header costs the date, not the item
+    (bare,) = _nydfs(_PART_500_PDF, "not a date")
+    assert bare.published_at is None
+    assert bare.title == "23 NYCRR Part 500: regulation text posted 2026/07"
+
+
+def test_another_document_in_the_same_dated_folder_is_not_the_regulation():
+    """DFS files everything under /documents/YYYY/MM/, so the date alone proves nothing.
+    The filename has to carry Part 500 as well."""
+    other = "https://www.dfs.ny.gov/system/files/documents/2026/07/il20260716-vishing.pdf"
+    assert _nydfs(other) == []
+    assert _nydfs("https://www.dfs.ny.gov/cybersecurity") == []
 
 
 def test_csa_ccm_carries_its_version_and_release_date():

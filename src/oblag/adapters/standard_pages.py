@@ -24,6 +24,7 @@ from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
+from email.utils import parsedate_to_datetime
 
 from oblag.adapters import register
 from oblag.adapters.base import (
@@ -49,6 +50,9 @@ class WatchedPage:
     captures_date: bool = False
     # optional second group: the date the page says that version was released
     released_group: int | None = None
+    # match the URL the fetch RESOLVED TO rather than the body. Some bodies state the
+    # current text by what a stable link points at, not by prose — see nydfs-500.
+    match_url: bool = False
 
 
 # A body telling us "this page is not the current one" outranks anything else on it.
@@ -98,14 +102,19 @@ WATCHED: tuple[WatchedPage, ...] = (
         key="nydfs-500",
         obligation="nydfs-500",
         jurisdiction="US-NY",
-        url="https://www.dfs.ny.gov/industry_guidance/cybersecurity",
-        # DFS states its amendments as a sentence with the date in it
-        pattern=re.compile(
-            r"On (\w+ \d{1,2}, \d{4}), DFS announced amendments to Cybersecurity Regulation",
-            re.IGNORECASE,
-        ),
-        title="23 NYCRR Part 500: amendments announced {}",
-        captures_date=True,
+        # A stable alias that 302s to the regulation text. DFS rebuilt this site and the
+        # sentence we used to parse ("On November 1, 2023, DFS announced amendments to
+        # Cybersecurity Regulation") is gone from every HTML page it has: the old URL now
+        # redirects to a link hub, and the word "amendment" appears nowhere on the hub,
+        # the requirements page or the FAQs. The regulation is served as one consolidated
+        # PDF instead, so what the body states about currency is WHERE THIS LINK POINTS.
+        url="https://www.dfs.ny.gov/cybersecurity/23-NYCRR-Part-500",
+        # DFS files documents under a dated CMS path, so republishing the text moves the
+        # link. Anchored on the filename as well as the date so an unrelated document
+        # sharing the /documents/YYYY/MM/ prefix cannot satisfy it.
+        pattern=re.compile(r"/documents/(\d{4}/\d{2})/[^/]*part-500[^/]*\.pdf", re.IGNORECASE),
+        title="23 NYCRR Part 500: regulation text posted {}",
+        match_url=True,
     ),
 )
 
@@ -126,22 +135,30 @@ class StandardPagesAdapter(SourceAdapter):
             yield RawDocument(
                 url=page.url,
                 content=resp.content,
-                content_type="text/html",
+                content_type=resp.headers.get("content-type", "text/html"),
                 http_status=resp.status_code,
                 http_headers=dict(resp.headers),
-                meta={"page": page.key},
+                # resolved_url is what the fetch ended on after redirects, which for
+                # match_url pages IS the signal. expect_item makes a page that stops
+                # matching show up on adapter health instead of vanishing quietly.
+                meta={"page": page.key, "resolved_url": str(resp.url), "expect_item": "1"},
             )
 
     def normalize(self, raw: RawDocument) -> Iterable[NormalizedItem]:
         page = next((p for p in WATCHED if p.key == raw.meta.get("page")), None)
         if page is None:
             return
-        text = _plain(raw.content.decode("utf-8", errors="replace"))
-        if _SUPERSEDED.search(text):
-            # the page says it is not the current one, so believe it and record nothing
-            # rather than publishing a version the body has already replaced
-            return
-        match = _best_match(page, text)
+        if page.match_url:
+            # the body is the document itself (a PDF here), so there is nothing to read
+            # for prose and nothing to check for a supersession notice
+            haystack = raw.meta.get("resolved_url", "")
+        else:
+            haystack = _plain(raw.content.decode("utf-8", errors="replace"))
+            if _SUPERSEDED.search(haystack):
+                # the page says it is not the current one, so believe it and record
+                # nothing rather than publishing a version the body has already replaced
+                return
+        match = _best_match(page, haystack)
         if match is None:
             return
         value = match.group(1)
@@ -151,6 +168,10 @@ class StandardPagesAdapter(SourceAdapter):
             stated = _parse_date(value)
         elif page.released_group:
             stated = _parse_date(match.group(page.released_group))
+        elif page.match_url:
+            # the document's own Last-Modified is an exact date; the dated path it sits
+            # under is only ever a month, so prefer the header and fall back to neither
+            stated = _http_date(raw.http_headers.get("last-modified"))
         else:
             stated = None
         yield NormalizedItem(
@@ -159,15 +180,19 @@ class StandardPagesAdapter(SourceAdapter):
             # updates, which is exactly the change we are here to catch
             external_key=("watched_page", page.key),
             jurisdiction=page.jurisdiction,
-            title=page.title.format(value),
+            title=page.title.format(_shown(page, value, stated)),
             url=page.url,
             native_status="current",
             track="final",
             obligation_slug=page.obligation,
             published_at=stated,
             dates=(
+                # a match_url date is the moment the body last wrote the file to its CMS,
+                # which says the text was reissued and nothing at all about when it takes
+                # effect. published_at carries it; asserting effective from it would be a
+                # claim the source never made.
                 [NormalizedDate(DateType.effective, stated, Confidence.published_firm)]
-                if stated
+                if stated and not page.match_url
                 else []
             ),
             native_meta=({"stated": value} if page.captures_date else {"published_version": value}),
@@ -202,6 +227,23 @@ def _best_match(page: WatchedPage, text: str) -> re.Match[str] | None:
     counts = Counter(m.group(1) for m in matches)
     winner = max(counts, key=lambda v: (counts[v], _version_key(v)))
     return next(m for m in matches if m.group(1) == winner)
+
+
+def _shown(page: WatchedPage, value: str, stated: date | None) -> str:
+    """What goes in the title. A dated CMS path is only ever a month, so when the
+    document's own timestamp gives an exact day, say the day."""
+    if page.match_url and stated:
+        return f"{stated.day} {stated.strftime('%B %Y')}"
+    return value
+
+
+def _http_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return parsedate_to_datetime(value).date()
+    except (TypeError, ValueError):
+        return None
 
 
 def _version_key(value: str) -> tuple[int, ...]:
